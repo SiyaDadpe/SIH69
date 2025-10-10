@@ -1,30 +1,41 @@
 "use client"
 
 import { useState } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Progress } from "@/components/ui/progress"
-import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart } from "lucide-react"
+import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2 } from "lucide-react"
+import users from "@/data/users.json"
 
 const HEADER_HEIGHT = 10
 
 export default function Sidebar() {
   const [sidebarOpen] = useState(true)
-  const [isLoading] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
 
   const isActive = (path) => location.pathname === path
+
+  const currentUser = users?.[0]
+  const initials = (currentUser?.name || "User")
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
+
+  const handleLogout = () => {
+    navigate("/login")
+  }
 
   return (
     <aside
       className={cn(
-        "fixed bottom-0 left-0 top-0 z-30 w-[260px] border-r bg-card text-card-foreground transition-transform duration-200 ease-out",
+        "fixed bottom-0 left-0 top-0 z-30 w-[260px] border-r text-card-foreground transition-transform duration-200 ease-out",
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       )}
       aria-label="Sidebar navigation"
-      style={{ paddingTop: HEADER_HEIGHT }}
+      style={{ paddingTop: HEADER_HEIGHT, backgroundColor: "#F7F7F4" }}
     >
       <nav className="flex h-full flex-col">
         <div className="px-3 py-4">
@@ -97,31 +108,39 @@ export default function Sidebar() {
         </div>
 
         <div className="mt-auto px-3 py-4">
-          <Card className="border-dashed">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm">Storage</CardTitle>
-              <CardDescription className="text-xs">Used 62% of 40GB</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isLoading ? (
-                <>
-                  <Skeleton className="h-2 w-full" />
-                  <div className="flex items-center justify-between text-xs">
-                    <Skeleton className="h-3 w-10" />
-                    <Skeleton className="h-3 w-8" />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Progress value={62} className="h-2" />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>24.8 GB</span>
-                    <span>40 GB</span>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex w-full items-center gap-3 rounded-md border bg-card px-3 py-2 text-left shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                {initials || <User2 className="size-4" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{currentUser?.name || "User"}</p>
+                <p className="truncate text-xs text-muted-foreground">{currentUser?.email}</p>
+              </div>
+              <ChevronsUpDown className="size-4 text-muted-foreground" />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute bottom-14 left-0 right-0 z-50 overflow-hidden rounded-md border bg-popover shadow-lg">
+                <div className="px-3 py-2">
+                  <p className="text-sm font-medium">{currentUser?.name}</p>
+                  <p className="text-xs text-muted-foreground">{currentUser?.organization}</p>
+                </div>
+                <div className="h-px bg-border" />
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                >
+                  <LogOut className="size-4" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     </aside>

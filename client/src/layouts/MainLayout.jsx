@@ -2,15 +2,10 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 
 function MainLayout() {
-  const SIDEBAR_WIDTH = 260; // Based on the w-[260px] class in Sidebar.jsx
-  
   return (
-    <div className="flex min-h-screen">
+    <div className="fixed inset-0">
       <Sidebar />
-      <main 
-        className="flex-1 transition-all duration-200 ease-out p-4"
-        style={{ marginLeft: SIDEBAR_WIDTH }}
-      >
+      <main className="absolute inset-y-0 left-[260px] right-0 overflow-auto p-6 bg-[#efefe8]">
         <Outlet />
       </main>
     </div>

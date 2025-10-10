@@ -1,0 +1,52 @@
+[
+  {
+    "id": "p-101",
+    "name": "Aluminum Recycling Optimization",
+    "metalType": "Aluminum",
+    "processType": "Recycling",
+    "lastModified": "2025-10-05T10:15:00Z",
+    "circularityScore": 78.5,
+    "gwp": 1200.4,
+    "status": "active"
+  },
+  {
+    "id": "p-102",
+    "name": "Steel Smelting Efficiency",
+    "metalType": "Steel",
+    "processType": "Smelting",
+    "lastModified": "2025-09-28T08:00:00Z",
+    "circularityScore": 65.2,
+    "gwp": 2100.0,
+    "status": "paused"
+  },
+  {
+    "id": "p-103",
+    "name": "Copper Refining Benchmark",
+    "metalType": "Copper",
+    "processType": "Refining",
+    "lastModified": "2025-09-20T13:45:00Z",
+    "circularityScore": 82.1,
+    "gwp": 980.7,
+    "status": "completed"
+  },
+  {
+    "id": "p-104",
+    "name": "Zinc Alloy Reuse Study",
+    "metalType": "Zinc",
+    "processType": "Alloying",
+    "lastModified": "2025-10-02T09:30:00Z",
+    "circularityScore": 71.9,
+    "gwp": 1505.2,
+    "status": "active"
+  },
+  {
+    "id": "p-105",
+    "name": "Nickel Recovery Pilot",
+    "metalType": "Nickel",
+    "processType": "Recovery",
+    "lastModified": "2025-09-30T16:25:00Z",
+    "circularityScore": 58.3,
+    "gwp": 2300.9,
+    "status": "active"
+  }
+]

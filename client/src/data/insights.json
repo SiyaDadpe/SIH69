@@ -1,0 +1,53 @@
+[
+  {
+    "id": "i-001",
+    "type": "recommendation",
+    "title": "Increase scrap input for Aluminum",
+    "description": "Raising scrap content by 10% can improve circularity by ~4 points.",
+    "confidenceScore": 0.86,
+    "relatedProjectId": "p-101",
+    "action": { "type": "navigate", "target": "/projects/p-101", "label": "View Project" },
+    "priority": "high",
+    "createdAt": "2025-10-06T12:00:00Z"
+  },
+  {
+    "id": "i-002",
+    "type": "alert",
+    "title": "Steel smelting emissions spike",
+    "description": "GWP increased 12% week-over-week in project p-102.",
+    "confidenceScore": 0.74,
+    "relatedProjectId": "p-102",
+    "action": { "type": "navigate", "target": "/projects/p-102?tab=emissions", "label": "Investigate" },
+    "priority": "high",
+    "createdAt": "2025-10-07T09:00:00Z"
+  },
+  {
+    "id": "i-003",
+    "type": "achievement",
+    "title": "Top 25% in industry circularity",
+    "description": "You are now in the 75th percentile for circularity in the Copper sector.",
+    "action": { "type": "dismiss", "target": "i-003", "label": "Dismiss" },
+    "priority": "medium",
+    "createdAt": "2025-09-21T10:20:00Z"
+  },
+  {
+    "id": "i-004",
+    "type": "system",
+    "title": "New feature: Scenario Wizard",
+    "description": "Try the new step-by-step wizard to model process changes.",
+    "action": { "type": "navigate", "target": "/wizard", "label": "Try Wizard" },
+    "priority": "low",
+    "createdAt": "2025-10-01T07:30:00Z"
+  },
+  {
+    "id": "i-005",
+    "type": "recommendation",
+    "title": "Optimize energy mix for Zinc",
+    "description": "Switch 20% of grid electricity to renewables to save 180 kg CO2e/month.",
+    "confidenceScore": 0.67,
+    "relatedProjectId": "p-104",
+    "action": { "type": "apply", "target": "energy-optimizer", "label": "Apply Suggestion" },
+    "priority": "medium",
+    "createdAt": "2025-10-08T15:45:00Z"
+  }
+]
