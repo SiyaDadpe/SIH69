@@ -1,0 +1,87 @@
+[
+  {
+    "id": "u-001",
+    "email": "alex.fernandez@example.com",
+    "name": "Alex Fernandez",
+    "organization": "EcoMetals Inc",
+    "role": "engineer",
+    "subscription": "basic",
+    "createdAt": "2024-12-15T08:30:00Z",
+    "lastLogin": "2025-10-01T12:05:00Z",
+    "preferences": {
+      "theme": "light",
+      "language": "en-US",
+      "notifications": { "email": true, "push": true, "sms": false, "weeklySummary": true },
+      "dashboardLayout": "grid",
+      "metricsVisible": ["circularityScore", "gwp", "projectsThisMonth"]
+    }
+  },
+  {
+    "id": "u-002",
+    "email": "mira.patel@example.com",
+    "name": "Mira Patel",
+    "organization": "GreenFoundry Ltd",
+    "role": "manager",
+    "subscription": "pro",
+    "createdAt": "2023-08-22T14:10:00Z",
+    "lastLogin": "2025-10-07T09:40:00Z",
+    "preferences": {
+      "theme": "dark",
+      "language": "en-GB",
+      "notifications": { "email": true, "push": false, "sms": false, "weeklySummary": true },
+      "dashboardLayout": "standard",
+      "metricsVisible": ["circularityScore", "completedAssessments", "trendingScore"]
+    }
+  },
+  {
+    "id": "u-003",
+    "email": "sam.cho@example.com",
+    "name": "Sam Cho",
+    "organization": "Ministry of Industry",
+    "role": "policymaker",
+    "subscription": "enterprise",
+    "createdAt": "2022-02-01T10:00:00Z",
+    "lastLogin": "2025-09-29T16:20:00Z",
+    "preferences": {
+      "theme": "light",
+      "language": "en-US",
+      "notifications": { "email": true, "push": true, "sms": true, "weeklySummary": false },
+      "dashboardLayout": "list",
+      "metricsVisible": ["industryComparison", "projectsThisMonth", "gwp"]
+    }
+  },
+  {
+    "id": "u-004",
+    "email": "li.na@example.com",
+    "name": "Li Na",
+    "organization": "Materials Research Lab",
+    "role": "researcher",
+    "subscription": "pro",
+    "createdAt": "2024-04-09T07:45:00Z",
+    "lastLogin": "2025-10-06T11:15:00Z",
+    "preferences": {
+      "theme": "dark",
+      "language": "en-US",
+      "notifications": { "email": false, "push": true, "sms": false, "weeklySummary": true },
+      "dashboardLayout": "grid",
+      "metricsVisible": ["circularityScore", "gwp", "completedAssessments", "trendingScore"]
+    }
+  },
+  {
+    "id": "u-005",
+    "email": "diego.silva@example.com",
+    "name": "Diego Silva",
+    "organization": "Metallurgy Solutions",
+    "role": "engineer",
+    "subscription": "basic",
+    "createdAt": "2025-01-12T13:25:00Z",
+    "lastLogin": "2025-10-08T18:30:00Z",
+    "preferences": {
+      "theme": "light",
+      "language": "en-US",
+      "notifications": { "email": true, "push": false, "sms": false, "weeklySummary": false },
+      "dashboardLayout": "standard",
+      "metricsVisible": ["circularityScore", "projectsThisMonth"]
+    }
+  }
+]
