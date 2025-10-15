@@ -9,6 +9,7 @@ import Reports from './pages/Reports'
 import Projects from './pages/Projects'
 import Canvas from './pages/Canvas'
 import MainLayout from './layouts/MainLayout'
+import { SidebarProvider } from './contexts/SidebarContext'
 
 function App() {
   const router = createBrowserRouter([
@@ -56,9 +57,9 @@ function App() {
   ])
 
   return (
-    <>
+    <SidebarProvider>
       <RouterProvider router={router} />
-    </>
+    </SidebarProvider>
   )
 }
 

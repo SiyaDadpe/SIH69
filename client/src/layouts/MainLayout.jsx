@@ -1,11 +1,22 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import Header from '../components/header'
+import { useSidebar } from '../contexts/SidebarContext'
+import { cn } from '@/lib/utils'
 
 function MainLayout() {
+  const { sidebarOpen } = useSidebar()
+
   return (
     <div className="fixed inset-0">
       <Sidebar />
-      <main className="absolute inset-y-0 left-[260px] right-0 overflow-auto p-6 bg-[#efefe8]">
+      <Header />
+      <main 
+        className={cn(
+          "absolute right-0 bottom-0 overflow-auto bg-[#FFFFFF] transition-all duration-300 ease-out",
+          sidebarOpen ? "left-[260px] top-16" : "left-16 top-16"
+        )}
+      >
         <Outlet />
       </main>
     </div>
