@@ -31,23 +31,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSidebar } from '../contexts/SidebarContext';
-
-// Import mock data
-import users from "../data/users.json"
-import projects from '../data/projects.json';
-import insights from '../data/insights.json';
-import benchmarks from '../data/benchmarks.json';
-import dashboardSummaries from '../data/dashboardSummaries.json';
+import { dashboardService } from '../services/dashboardService';
 
 const Dashboard = () => {
   const { sidebarOpen } = useSidebar()
-  const [dashboardData, setDashboardData] = useState({
-    user: null,
-    summary: null,
-    projects: [],
-    insights: [],
-    benchmarks: null
-  });
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // State for sorting projects
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -57,25 +47,32 @@ const Dashboard = () => {
   const [animatedIndustryScore, setAnimatedIndustryScore] = useState(0);
 
   useEffect(() => {
-    // Simulate loading data
-    // In a real app, you'd fetch this from an API
-    const currentUser = users[0]; // Using first user as logged-in user
-    const currentSummary = dashboardSummaries[0]; // Using first summary
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await dashboardService.getDashboard();
+        console.log('Dashboard API Response:', response);
+        
+        if (response.success) {
+          setDashboardData(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard:', err);
+        setError(err.response?.data?.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setDashboardData({
-      user: currentUser,
-      summary: currentSummary,
-      projects: projects,
-      insights: insights,
-      benchmarks: benchmarks
-    });
+    fetchDashboardData();
   }, []);
 
   // Animate benchmark scores
   useEffect(() => {
-    if (dashboardData.summary && dashboardData.benchmarks) {
-      const userScore = dashboardData.summary?.averageCircularityScore || dashboardData.benchmarks?.userAverageCircularity || 0;
-      const industryScore = dashboardData.benchmarks?.industryMedianCircularity || 0;
+    if (dashboardData?.kpis) {
+      const userScore = dashboardData.kpis.averageCircularityScore || 0;
+      const industryScore = 65; // Default industry benchmark
       
       const duration = 1200;
       const steps = 60;
@@ -95,7 +92,7 @@ const Dashboard = () => {
 
       return () => clearInterval(timer);
     }
-  }, [dashboardData.summary, dashboardData.benchmarks]);
+  }, [dashboardData]);
 
   // Helper functions
   const formatDate = (dateString) => {
@@ -131,7 +128,8 @@ const Dashboard = () => {
   };
 
   const sortedProjects = React.useMemo(() => {
-    let sortableProjects = [...dashboardData.projects];
+    if (!dashboardData?.recentProjects) return [];
+    let sortableProjects = [...dashboardData.recentProjects];
     if (sortConfig.key) {
       sortableProjects.sort((a, b) => {
         const aVal = a[sortConfig.key];
@@ -143,7 +141,7 @@ const Dashboard = () => {
       });
     }
     return sortableProjects;
-  }, [dashboardData.projects, sortConfig]);
+  }, [dashboardData, sortConfig]);
 
   const handleEdit = (projectId) => {
     window.location.href = `/projects/${projectId}/edit`;
@@ -169,8 +167,8 @@ const Dashboard = () => {
   };
 
   const getPerformanceMessage = () => {
-    const userScore = dashboardData.summary?.averageCircularityScore || dashboardData.benchmarks?.userAverageCircularity || 0;
-    const industryScore = dashboardData.benchmarks?.industryMedianCircularity || 0;
+    const userScore = dashboardData?.kpis?.averageCircularityScore || 0;
+    const industryScore = 65; // Default benchmark
     const isOutperforming = userScore > industryScore;
     const scoreDifference = parseFloat(Math.abs(userScore - industryScore).toFixed(2));
 
@@ -184,13 +182,43 @@ const Dashboard = () => {
     return "Almost there!";
   };
 
-  if (!dashboardData.user) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#FFFFFF]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#BA7967] mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FFFFFF]">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Failed to Load Dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-[#BA7967] text-white rounded hover:bg-[#3d3635]"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FFFFFF]">
+        <p className="text-gray-600">No dashboard data available</p>
       </div>
     );
   }
@@ -232,8 +260,8 @@ const Dashboard = () => {
     {
       icon: FolderOpen,
       label: 'Total Projects',
-      value: dashboardData.summary?.totalProjects || 0,
-      trend: dashboardData.summary?.projectsThisMonth || 0,
+      value: dashboardData.kpis?.totalProjects || 0,
+      trend: dashboardData.kpis?.projectsThisMonth || 0,
       trendLabel: 'vs last month',
       color: 'bg-[#BA7967]/10',
       iconColor: 'text-[#BA7967]'
@@ -241,8 +269,8 @@ const Dashboard = () => {
     {
       icon: Recycle,
       label: 'Average Circularity',
-      value: `${dashboardData.summary?.averageCircularityScore || 0}%`,
-      trend: dashboardData.summary?.trendingScore || 0,
+      value: `${(dashboardData.kpis?.averageCircularityScore || 0).toFixed(1)}%`,
+      trend: dashboardData.kpis?.circularityTrend || 0,
       trendLabel: 'vs last month',
       color: 'bg-[#6b5b59]/10',
       iconColor: 'text-[#6b5b59]'
@@ -250,23 +278,21 @@ const Dashboard = () => {
     {
       icon: Leaf,
       label: 'Total CO₂ Saved',
-      value: `${(dashboardData.summary?.totalCO2Saved || 0).toLocaleString()} kg`,
-      trend: 20,
+      value: `${(dashboardData.kpis?.totalCO2Saved || 0).toLocaleString()} kg`,
+      trend: dashboardData.kpis?.gwpTrend || 0,
       trendLabel: 'vs last month',
       color: 'bg-[#BA7967]/10',
       iconColor: 'text-[#BA7967]'
     }
   ];
 
-  // AI Recommendations
-  const recommendations = dashboardData.insights.filter(
-    insight => insight.type === 'recommendation'
-  ).slice(0, 3);
+  // AI Recommendations from insights
+  const recommendations = dashboardData.insights || [];
 
-  // Benchmark data
-  const userScore = dashboardData.summary?.averageCircularityScore || dashboardData.benchmarks?.userAverageCircularity || 0;
-  const industryScore = dashboardData.benchmarks?.industryMedianCircularity || 0;
-  const percentile = dashboardData.benchmarks?.userPercentile || 0;
+  // Benchmark data from API
+  const userScore = dashboardData.benchmark?.userAverageCircularity || dashboardData.kpis?.averageCircularityScore || 0;
+  const industryScore = dashboardData.benchmark?.industryMedianCircularity || 65;
+  const percentile = dashboardData.benchmark?.userPercentile || 70;
   const isOutperforming = userScore > industryScore;
   const scoreDifference = parseFloat(Math.abs(userScore - industryScore).toFixed(2));
 
@@ -526,9 +552,9 @@ const Dashboard = () => {
             
             <div className="space-y-4">
               {recommendations.length > 0 ? (
-                recommendations.map((recommendation) => (
+                recommendations.map((recommendation, index) => (
                   <div
-                    key={recommendation.id}
+                    key={recommendation._id || recommendation.id || index}
                     className="bg-white rounded-lg p-4 border border-gray-200 hover:border-[#BA7967] hover:shadow-sm transition-all duration-200 cursor-pointer group"
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -555,14 +581,14 @@ const Dashboard = () => {
                             <div className="flex items-center gap-1">
                               <TrendingUp className="w-3 h-3 text-gray-500" />
                               <span className="text-xs text-gray-500">
-                                {Math.round(recommendation.confidenceScore * 100)}% confidence
+                                {recommendation.confidenceScore}% confidence
                               </span>
                             </div>
                           )}
                           
-                          {recommendation.impact && (
-                            <span className="text-xs text-gray-500">
-                              Impact: {recommendation.impact}
+                          {recommendation.type && (
+                            <span className="text-xs text-gray-500 capitalize">
+                              {recommendation.type.replace(/-/g, ' ')}
                             </span>
                           )}
                         </div>
