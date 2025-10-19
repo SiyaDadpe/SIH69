@@ -8,6 +8,7 @@
 const asyncHandler = require('express-async-handler');
 const { Project, Insight } = require('../models');
 const { getCache, setCache } = require('../utils/localCache');
+const { generateMockBenchmark, getIndustryInsights } = require('../utils/mockDataGenerator');
 
 // Cache TTL: 1 hour (in milliseconds for local cache)
 const DASHBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour in ms
@@ -15,19 +16,20 @@ const DASHBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour in ms
 /**
  * @desc    Get dashboard data with KPIs, recent projects, and insights
  * @route   GET /api/dashboard
- * @access  Private
+ * @access  Public (TEMPORARY - for testing)
  */
 const getDashboard = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  // TEMPORARY: For testing without auth, get data for all users or first user
+  const userId = req.user?._id || null;
   
-  console.log(`[Dashboard] Fetching data for user: ${userId}`);
+  console.log(`[Dashboard] Fetching data for user: ${userId || 'ALL USERS (no auth)'}`);
 
   // Check cache first (local cache - synchronous operation)
-  const cacheKey = `dashboard:${userId}`;
+  const cacheKey = userId ? `dashboard:${userId}` : 'dashboard:all';
   const cachedData = getCache(cacheKey);
   
   if (cachedData) {
-    console.log(`[Dashboard] Returning cached data for user: ${userId}`);
+    console.log(`[Dashboard] Returning cached data for user: ${userId || 'ALL'}`);
     return res.status(200).json({
       success: true,
       data: cachedData.data,
@@ -45,9 +47,10 @@ const getDashboard = asyncHandler(async (req, res) => {
   // --- KPI Calculations using Aggregation Pipelines ---
 
   // 1. Total Projects, Average Circularity, Total CO2 Saved, Projects This Month, Completed Assessments
+  const matchStage = userId ? { owner: userId } : {};
   const kpiAggregation = await Project.aggregate([
     {
-      $match: { owner: userId }
+      $match: matchStage
     },
     {
       $facet: {
@@ -148,26 +151,36 @@ const getDashboard = asyncHandler(async (req, res) => {
   };
 
   // --- Recent Projects (last 5, sorted by lastModified) ---
-  const recentProjects = await Project.find({ owner: userId })
+  const recentProjects = await Project.find(matchStage)
     .sort({ lastModified: -1 })
     .limit(5)
     .select('name metalType processType circularityScore gwp status lastModified createdAt')
     .lean();
 
-  // --- Latest Insights (top 3) ---
-  const insights = await Insight.find()
+  // --- Latest Insights ---
+  let insights = await Insight.find()
     .sort({ createdAt: -1 })
     .limit(3)
     .select('type title description confidenceScore priority createdAt')
     .lean();
 
+  // If no insights in database, use mock industry insights
+  if (insights.length === 0) {
+    insights = getIndustryInsights().slice(0, 3);
+  }
+
+  // --- Generate Mock Benchmark Data ---
+  const userCircularityScore = kpis.averageCircularityScore || 0;
+  const benchmarkData = generateMockBenchmark(userCircularityScore);
+
   // --- Response ---
-  console.log(`[Dashboard] Data retrieved successfully for user: ${userId}`);
+  console.log(`[Dashboard] Data retrieved successfully for user: ${userId || 'ALL'}`);
 
   const responseData = {
     kpis,
     recentProjects,
     insights,
+    benchmark: benchmarkData,
     meta: {
       currentMonth: startOfCurrentMonth.toISOString().slice(0, 7), // YYYY-MM format
       dataGeneratedAt: now.toISOString()
