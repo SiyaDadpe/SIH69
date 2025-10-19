@@ -156,11 +156,18 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
       >
   <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 1: Mining Process Details</CardTitle>
-            <CardDescription>
-              Enter the details of the mining process. Fields marked with * are
-              required.
-            </CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 1: Mining Process Details</CardTitle>
+                <CardDescription className="text-center">
+                  Enter the details of the mining process. Fields marked with * are
+                  required.
+                </CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -510,8 +517,15 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 2: Beneficiation</CardTitle>
-            <CardDescription>Provide beneficiation process details. Fields marked with * are required.</CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 2: Beneficiation</CardTitle>
+                <CardDescription className="text-center">Provide beneficiation process details. Fields marked with * are required.</CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -1046,8 +1060,15 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 3: Refining</CardTitle>
-            <CardDescription>Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required.</CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 3: Refining</CardTitle>
+                <CardDescription className="text-center">Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required.</CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -1311,8 +1332,15 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 4: Smelting</CardTitle>
-            <CardDescription>Select processes, variants, and enter required energy and emissions data. Fields marked with * are required.</CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 4: Smelting</CardTitle>
+                <CardDescription className="text-center">Select processes, variants, and enter required energy and emissions data. Fields marked with * are required.</CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -1602,8 +1630,15 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 5: Manufacturing</CardTitle>
-            <CardDescription>Select processes, then fill in required logistics and casting details as applicable.</CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 5: Manufacturing</CardTitle>
+                <CardDescription className="text-center">Select processes, then fill in required logistics and casting details as applicable.</CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -1927,8 +1962,15 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 6: Recycling</CardTitle>
-            <CardDescription>Define processes, variants, and core metrics for recycling.</CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 6: Recycling</CardTitle>
+                <CardDescription className="text-center">Define processes, variants, and core metrics for recycling.</CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -2302,8 +2344,15 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Card className="w-full bg-[#F3F2EC]">
           <CardHeader>
-            <CardTitle className={HEADING_TEXT}>Step 7: Valorization</CardTitle>
-            <CardDescription>Waste types, valorization methods, utilization metrics, risks, and viability.</CardDescription>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
+              <div className="col-start-2 text-center">
+                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 7: Valorization</CardTitle>
+                <CardDescription className="text-center">Waste types, valorization methods, utilization metrics, risks, and viability.</CardDescription>
+              </div>
+              <div className="col-start-3 justify-self-end sticky top-4">
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
