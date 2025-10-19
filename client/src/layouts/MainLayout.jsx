@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
-import Header from '../components/header'
+import Header from '../components/Header'
 import { useSidebar } from '../contexts/SidebarContext'
 import { cn } from '@/lib/utils'
 
