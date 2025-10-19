@@ -6,8 +6,8 @@ export default function Wizard() {
   const steps = useMemo(() => [
     { title: "Mining", description: "Extract raw materials from ore deposits", key: "mining" },
     { title: "Beneficiation", description: "Process and concentrate the ore", key: "beneficiation" },
-    { title: "Smelting", description: "Extract metal from concentrated ore", key: "smelting" },
     { title: "Refining", description: "Purify the metal to required standards", key: "refining" },
+    { title: "Smelting", description: "Extract metal from concentrated ore", key: "smelting" },
     { title: "Manufacturing", description: "Transform refined metal into products", key: "manufacturing" },
     { title: "Recycling", description: "Recover and reprocess metal waste", key: "recycling" },
     { title: "Valorization", description: "Create value from by-products and waste", key: "valorization" },

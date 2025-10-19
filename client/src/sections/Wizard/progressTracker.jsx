@@ -5,8 +5,8 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick })
   const defaultSteps = [
     { title: "Mining", description: "Extract raw materials from ore deposits" },
     { title: "Beneficiation", description: "Process and concentrate the ore" },
-    { title: "Smelting", description: "Extract metal from concentrated ore" },
     { title: "Refining", description: "Purify the metal to required standards" },
+    { title: "Smelting", description: "Extract metal from concentrated ore" },
     { title: "Manufacturing", description: "Transform refined metal into products" },
     { title: "Recycling", description: "Recover and reprocess metal waste" },
     { title: "Valorization", description: "Create value from by-products and waste" },
