@@ -1,0 +1,47 @@
+[
+  {
+    "id": "val-001",
+    "waste_types": "Red Mud",
+    "valorization_methods": "cement additive",
+    "waste_utilization_percentages": 35,
+    "valorization_recovery_efficiency_percent": 52,
+    "valorization_emission_reduction_kgCO2e_per_t_waste": 210,
+    "confidence": 0.92
+  },
+  {
+    "id": "val-002",
+    "waste_types": "SPL",
+    "valorization_methods": "encapsulation",
+    "waste_utilization_percentages": 22,
+    "valorization_recovery_efficiency_percent": 41,
+    "valorization_emission_reduction_kgCO2e_per_t_waste": 95,
+    "confidence": 0.89
+  },
+  {
+    "id": "val-003",
+    "waste_types": "Dross",
+    "valorization_methods": "metal recovery",
+    "waste_utilization_percentages": 68,
+    "valorization_recovery_efficiency_percent": 77,
+    "valorization_emission_reduction_kgCO2e_per_t_waste": 380,
+    "confidence": 0.94
+  },
+  {
+    "id": "val-004",
+    "waste_types": "Spent Anode",
+    "valorization_methods": "geopolymers",
+    "waste_utilization_percentages": 44,
+    "valorization_recovery_efficiency_percent": 58,
+    "valorization_emission_reduction_kgCO2e_per_t_waste": 260,
+    "confidence": 0.91
+  },
+  {
+    "id": "val-005",
+    "waste_types": "Other",
+    "valorization_methods": "encapsulation",
+    "waste_utilization_percentages": 18,
+    "valorization_recovery_efficiency_percent": 26,
+    "valorization_emission_reduction_kgCO2e_per_t_waste": 70,
+    "confidence": 0.87
+  }
+]

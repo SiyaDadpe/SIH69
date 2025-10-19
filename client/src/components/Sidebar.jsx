@@ -53,7 +53,7 @@ export default function Sidebar() {
           sidebarOpen ? "w-[260px] translate-x-0" : "w-16 translate-x-0"
         )}
         aria-label="Sidebar navigation"
-        style={{ paddingTop: HEADER_HEIGHT, backgroundColor: "#F7F7F4" }}
+  style={{ paddingTop: HEADER_HEIGHT, backgroundColor: "#F3F2EC" }}
       >
         <nav className="flex h-full flex-col">
           <div className={cn(

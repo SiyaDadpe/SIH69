@@ -1,0 +1,52 @@
+[
+  {
+    "id": "mfg-001",
+    "manufacturing_process_Casting": true,
+    "transport_distance": 120,
+    "scrap_rate": 7.5,
+    "manufacturing_energy_MJ_per_t_product": 980,
+    "manufacturing_recycled_content_percent": 24,
+    "manufacturing_transport_emissions_kgCO2e_per_t": 22.4,
+    "confidence": 0.93
+  },
+  {
+    "id": "mfg-002",
+    "manufacturing_process_Casting": false,
+    "transport_distance": 45,
+    "scrap_rate": 3.2,
+    "manufacturing_energy_MJ_per_t_product": 620,
+    "manufacturing_recycled_content_percent": 12,
+    "manufacturing_transport_emissions_kgCO2e_per_t": 8.7,
+    "confidence": 0.9
+  },
+  {
+    "id": "mfg-003",
+    "manufacturing_process_Casting": true,
+    "transport_distance": 280,
+    "scrap_rate": 10.1,
+    "manufacturing_energy_MJ_per_t_product": 1650,
+    "manufacturing_recycled_content_percent": 38,
+    "manufacturing_transport_emissions_kgCO2e_per_t": 65.3,
+    "confidence": 0.91
+  },
+  {
+    "id": "mfg-004",
+    "manufacturing_process_Casting": false,
+    "transport_distance": 90,
+    "scrap_rate": 5.0,
+    "manufacturing_energy_MJ_per_t_product": 840,
+    "manufacturing_recycled_content_percent": 22,
+    "manufacturing_transport_emissions_kgCO2e_per_t": 16.8,
+    "confidence": 0.92
+  },
+  {
+    "id": "mfg-005",
+    "manufacturing_process_Casting": true,
+    "transport_distance": 160,
+    "scrap_rate": 8.9,
+    "manufacturing_energy_MJ_per_t_product": 1120,
+    "manufacturing_recycled_content_percent": 44,
+    "manufacturing_transport_emissions_kgCO2e_per_t": 31.2,
+    "confidence": 0.95
+  }
+]

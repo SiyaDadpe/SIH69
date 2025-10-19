@@ -34,7 +34,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 
 // Import mock data
 import users from "../data/users.json"
-import projects from '../data/projects.json';
+import projects from '../data/projectSummaries.json';
 import insights from '../data/insights.json';
 import benchmarks from '../data/benchmarks.json';
 import dashboardSummaries from '../data/dashboardSummaries.json';

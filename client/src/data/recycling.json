@@ -1,0 +1,62 @@
+[
+  {
+    "id": "rcy-001",
+    "scrap_input_percentage": 62,
+    "collection_rate": 74,
+    "recycling_methods": "closed-loop",
+    "recycling_recovery_yield_percent": 94,
+    "recycling_energy_kWh_per_t_Al": 1100,
+    "recycling_emission_savings_kgCO2e_per_t_Al": 11800,
+    "recycling_closed_loop_percent": 80,
+    "recycling_open_loop_percent": 20,
+    "confidence": 0.95
+  },
+  {
+    "id": "rcy-002",
+    "scrap_input_percentage": 48,
+    "collection_rate": 58,
+    "recycling_methods": "open-loop",
+    "recycling_recovery_yield_percent": 88,
+    "recycling_energy_kWh_per_t_Al": 2200,
+    "recycling_emission_savings_kgCO2e_per_t_Al": 9200,
+    "recycling_closed_loop_percent": 35,
+    "recycling_open_loop_percent": 65,
+    "confidence": 0.9
+  },
+  {
+    "id": "rcy-003",
+    "scrap_input_percentage": 85,
+    "collection_rate": 92,
+    "recycling_methods": "closed-loop",
+    "recycling_recovery_yield_percent": 97,
+    "recycling_energy_kWh_per_t_Al": 900,
+    "recycling_emission_savings_kgCO2e_per_t_Al": 13400,
+    "recycling_closed_loop_percent": 90,
+    "recycling_open_loop_percent": 10,
+    "confidence": 0.97
+  },
+  {
+    "id": "rcy-004",
+    "scrap_input_percentage": 33,
+    "collection_rate": 46,
+    "recycling_methods": "open-loop",
+    "recycling_recovery_yield_percent": 86,
+    "recycling_energy_kWh_per_t_Al": 2600,
+    "recycling_emission_savings_kgCO2e_per_t_Al": 8100,
+    "recycling_closed_loop_percent": 28,
+    "recycling_open_loop_percent": 72,
+    "confidence": 0.88
+  },
+  {
+    "id": "rcy-005",
+    "scrap_input_percentage": 71,
+    "collection_rate": 83,
+    "recycling_methods": "closed-loop",
+    "recycling_recovery_yield_percent": 95,
+    "recycling_energy_kWh_per_t_Al": 1300,
+    "recycling_emission_savings_kgCO2e_per_t_Al": 12200,
+    "recycling_closed_loop_percent": 72,
+    "recycling_open_loop_percent": 28,
+    "confidence": 0.93
+  }
+]

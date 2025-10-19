@@ -1,0 +1,72 @@
+[
+  {
+    "id": "sml-001",
+    "electricity_demand": 14200,
+    "co2_emissions": 2050,
+    "cell_technology": "pre-baked",
+    "smelting_energy_kWh_per_t_al": 14950,
+    "smelting_co2_kg_per_t_al": 1980,
+    "smelting_pfc_kg_per_t_al": 0.8,
+    "smelting_so2_kg_per_t_al": 1.1,
+    "smelting_nox_kg_per_t_al": 1.6,
+    "smelting_fluoride_recovery_percent": 92,
+    "smelting_thermal_recovery_percent": 22,
+    "confidence": 0.94
+  },
+  {
+    "id": "sml-002",
+    "electricity_demand": 13150,
+    "co2_emissions": 1780,
+    "cell_technology": "Soderberg",
+    "smelting_energy_kWh_per_t_al": 13780,
+    "smelting_co2_kg_per_t_al": 1840,
+    "smelting_pfc_kg_per_t_al": 1.2,
+    "smelting_so2_kg_per_t_al": 2.3,
+    "smelting_nox_kg_per_t_al": 2.7,
+    "smelting_fluoride_recovery_percent": 78,
+    "smelting_thermal_recovery_percent": 14,
+    "confidence": 0.9
+  },
+  {
+    "id": "sml-003",
+    "electricity_demand": 15200,
+    "co2_emissions": 2120,
+    "cell_technology": "pre-baked",
+    "smelting_energy_kWh_per_t_al": 15500,
+    "smelting_co2_kg_per_t_al": 2210,
+    "smelting_pfc_kg_per_t_al": 0.6,
+    "smelting_so2_kg_per_t_al": 0.9,
+    "smelting_nox_kg_per_t_al": 1.3,
+    "smelting_fluoride_recovery_percent": 95,
+    "smelting_thermal_recovery_percent": 28,
+    "confidence": 0.92
+  },
+  {
+    "id": "sml-004",
+    "electricity_demand": 12800,
+    "co2_emissions": 1690,
+    "cell_technology": "inert (experimental)",
+    "smelting_energy_kWh_per_t_al": 13200,
+    "smelting_co2_kg_per_t_al": 1660,
+    "smelting_pfc_kg_per_t_al": 0.2,
+    "smelting_so2_kg_per_t_al": 0.4,
+    "smelting_nox_kg_per_t_al": 0.7,
+    "smelting_fluoride_recovery_percent": 97,
+    "smelting_thermal_recovery_percent": 34,
+    "confidence": 0.88
+  },
+  {
+    "id": "sml-005",
+    "electricity_demand": 14550,
+    "co2_emissions": 1900,
+    "cell_technology": "pre-baked",
+    "smelting_energy_kWh_per_t_al": 15080,
+    "smelting_co2_kg_per_t_al": 1930,
+    "smelting_pfc_kg_per_t_al": 0.9,
+    "smelting_so2_kg_per_t_al": 1.5,
+    "smelting_nox_kg_per_t_al": 2.2,
+    "smelting_fluoride_recovery_percent": 88,
+    "smelting_thermal_recovery_percent": 18,
+    "confidence": 0.91
+  }
+]
