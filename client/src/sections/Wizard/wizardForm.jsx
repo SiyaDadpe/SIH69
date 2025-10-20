@@ -154,7 +154,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-  <Card className="w-full bg-[#F3F2EC]">
+  <Card className="w-full bg-[#F3F2EC] gap-y-10">
           <CardHeader>
             <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
               <div className="col-start-2 text-center">
@@ -422,14 +422,33 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
               </form>
             </Form>
           </CardContent>
-          <CardFooter>
-            <Button
-              type="submit"
-              onClick={handleSubmit(onSubmit)}
-              disabled={!isValid}
-            >
-              Next
-            </Button>
+          <CardFooter className="flex justify-between">
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                >
+                  Calculate LCA Score
+                </Button>
+              </motion.div>
+              <Button
+                type="submit"
+                onClick={handleSubmit(onSubmit)}
+                disabled={!isValid}
+              >
+                Next
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
@@ -846,7 +865,26 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
-            <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                >
+                  Calculate LCA Score
+                </Button>
+              </motion.div>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
@@ -1260,7 +1298,26 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
-            <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                >
+                  Calculate LCA Score
+                </Button>
+              </motion.div>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
@@ -1530,7 +1587,26 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
-            <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                >
+                  Calculate LCA Score
+                </Button>
+              </motion.div>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
@@ -1878,7 +1954,26 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
-            <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                >
+                  Calculate LCA Score
+                </Button>
+              </motion.div>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
@@ -2236,7 +2331,26 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
-            <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Button
+                  type="button"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                >
+                  Calculate LCA Score
+                </Button>
+              </motion.div>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
@@ -2692,7 +2806,20 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
-            <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Submit</Button>
+            <div className="flex gap-x-3">
+              <motion.div
+                animate={{
+                  scale: [1, 1.01, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+              </motion.div>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Submit</Button>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>
