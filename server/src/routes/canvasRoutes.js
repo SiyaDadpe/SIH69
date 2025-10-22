@@ -18,6 +18,7 @@ const {
   updateOperationInWorkflow,
   calculateWorkflowImpact,
   generateWorkflowReport,
+  generateAndSaveReport,
   updateWorkflow,
   deleteWorkflow,
   cloneWorkflow
@@ -70,8 +71,11 @@ router.delete('/workflows/:id/operations/:stageId/:operationIndex', removeOperat
 // Calculate impact for workflow
 router.post('/workflows/:id/calculate', validateCalculationRequest, calculateWorkflowImpact);
 
-// Generate report for workflow
+// Generate report for workflow (preview only)
 router.get('/workflows/:id/report', generateWorkflowReport);
+
+// Generate and save full Report document from workflow
+router.post('/workflows/:id/generate-report', generateAndSaveReport);
 
 // Update workflow details
 router.put('/workflows/:id', validateWorkflowUpdate, updateWorkflow);

@@ -74,8 +74,8 @@ const projectSchema = new mongoose.Schema(
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Project owner is required'],
-      index: true
+      required: [true, 'Project owner is required']
+      // Index defined separately below
     },
 
     lastModified: {

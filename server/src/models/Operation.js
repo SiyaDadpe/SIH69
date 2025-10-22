@@ -32,8 +32,8 @@ const operationSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Operation name is required'],
       trim: true,
-      unique: true,
-      index: true
+      unique: true
+      // Index defined separately below
     },
 
     description: {
@@ -56,8 +56,8 @@ const operationSchema = new mongoose.Schema(
           'stage7-valorization'
         ],
         message: '{VALUE} is not a valid stage'
-      },
-      index: true
+      }
+      // Index defined separately below
     },
 
     metalTypes: {
@@ -110,8 +110,8 @@ const operationSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, 'Category is required'],
-      trim: true,
-      index: true
+      trim: true
+      // Index defined separately below
     },
 
     icon: {

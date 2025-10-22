@@ -42,8 +42,8 @@ const canvasWorkflowSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required'],
-      index: true
+      required: [true, 'User ID is required']
+      // Index defined separately below
     },
 
     metalType: {
@@ -52,8 +52,8 @@ const canvasWorkflowSchema = new mongoose.Schema(
       enum: {
         values: ['Aluminium', 'Copper', 'Steel', 'Titanium', 'Lithium', 'Nickel', 'Gold', 'Zinc'],
         message: '{VALUE} is not a valid metal type'
-      },
-      index: true
+      }
+      // Index defined separately below
     },
 
     // Array storing operations in each stage
@@ -162,8 +162,8 @@ const canvasWorkflowSchema = new mongoose.Schema(
 
     isPublic: {
       type: Boolean,
-      default: false,
-      index: true
+      default: false
+      // Index defined separately below
     },
 
     // Tags for searching

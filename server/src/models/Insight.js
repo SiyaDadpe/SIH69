@@ -69,8 +69,8 @@ const insightSchema = new mongoose.Schema(
     relatedProjectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',
-      required: [true, 'Related project ID is required'],
-      index: true
+      required: [true, 'Related project ID is required']
+      // Index defined separately below
     },
 
     action: {

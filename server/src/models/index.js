@@ -17,6 +17,8 @@ const Benchmark = require('./Benchmark');
 const SystemStatus = require('./SystemStatus');
 const Operation = require('./Operation');
 const CanvasWorkflow = require('./CanvasWorkflow');
+const Report = require('./Report');
+const WizardWorkflow = require('./WizardWorkflow');
 
 module.exports = {
   User,
@@ -25,5 +27,7 @@ module.exports = {
   Benchmark,
   SystemStatus,
   Operation,
-  CanvasWorkflow
+  CanvasWorkflow,
+  Report,
+  WizardWorkflow
 };
