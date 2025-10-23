@@ -43,22 +43,70 @@ const projectSchema = new mongoose.Schema(
 
     processType: {
       type: String,
-      required: [true, 'Process type is required'],
       trim: true,
       maxlength: [100, 'Process type cannot exceed 100 characters']
     },
 
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [1000, 'Description cannot exceed 1000 characters']
+    },
+
     circularityScore: {
       type: Number,
-      required: [true, 'Circularity score is required'],
       min: [0, 'Circularity score cannot be negative'],
-      max: [100, 'Circularity score cannot exceed 100']
+      max: [100, 'Circularity score cannot exceed 100'],
+      default: 0
     },
 
     gwp: {
       type: Number,
-      required: [true, 'Global Warming Potential (GWP) is required'],
-      min: [0, 'GWP cannot be negative']
+      min: [0, 'GWP cannot be negative'],
+      default: 0
+    },
+
+    gwpSaved: {
+      type: Number,
+      min: [0, 'GWP saved cannot be negative'],
+      default: 0
+    },
+
+    co2Emissions: {
+      type: Number,
+      min: [0, 'CO2 emissions cannot be negative'],
+      default: 0
+    },
+
+    energyConsumption: {
+      type: Number,
+      min: [0, 'Energy consumption cannot be negative'],
+      default: 0
+    },
+
+    waterUsage: {
+      type: Number,
+      min: [0, 'Water usage cannot be negative'],
+      default: 0
+    },
+
+    wasteGenerated: {
+      type: Number,
+      min: [0, 'Waste generated cannot be negative'],
+      default: 0
+    },
+
+    recyclingRate: {
+      type: Number,
+      min: [0, 'Recycling rate cannot be negative'],
+      max: [100, 'Recycling rate cannot exceed 100'],
+      default: 0
+    },
+
+    wizardWorkflowId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'WizardWorkflow',
+      index: true
     },
 
     status: {

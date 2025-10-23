@@ -1,10 +1,22 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
 import miningData from "@/data/mining.json";
 import beneficiationData from "@/data/beneficiation.json";
+import { 
+  updateMiningStep, 
+  updateBeneficiationStep, 
+  updateRefiningStep,
+  updateSmeltingStep,
+  updateManufacturingStep,
+  updateRecyclingStep,
+  updateValorizationStep,
+  completeStep,
+  saveAndCompleteStep,
+  submitWizardWorkflow
+} from "@/services/wizardService";
 // Removed other data imports to avoid pre-filling from dataset
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -894,9 +906,23 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
 
 
 // Main Wizard Form Component
-export default function WizardForm({ steps, activeStep, onStepChange }) {
+export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted }) {
   const [formValues, setFormValues] = useState({})
   const [completed, setCompleted] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  // Load existing workflow data into form values
+  React.useEffect(() => {
+    if (workflowData) {
+      const values = {}
+      steps.forEach(step => {
+        if (workflowData[step.key]) {
+          values[step.key] = workflowData[step.key]
+        }
+      })
+      setFormValues(values)
+    }
+  }, [workflowData, steps])
 
   const handleValueChange = (stepKey, field, value) => {
     setFormValues((prev) => ({
@@ -924,9 +950,55 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
   const stepKey = currentStep.key
   const stepValues = formValues[stepKey] || {}
 
-  // Removed preloaded defaults; forms will start empty unless the user has entered values in this session
-
-  // Removed mining options derived from dataset; StepForm will not use dataset-driven options
+  // Helper function to save step data to backend
+  const handleSaveStep = async (stepName, data) => {
+    if (!workflowId) {
+      console.error('No workflow ID available')
+      return
+    }
+    
+    setSaving(true)
+    try {
+      // Map step names to API functions
+      const stepFunctions = {
+        mining: updateMiningStep,
+        beneficiation: updateBeneficiationStep,
+        refining: updateRefiningStep,
+        smelting: updateSmeltingStep,
+        manufacturing: updateManufacturingStep,
+        recycling: updateRecyclingStep,
+        valorization: updateValorizationStep,
+      }
+      
+      const updateFn = stepFunctions[stepName]
+      if (updateFn) {
+        // Save the step data
+        const response = await updateFn(workflowId, data)
+        if (response.success && response.data?.workflow) {
+          onWorkflowUpdate?.(response.data.workflow)
+          
+          // Mark step as complete
+          try {
+            const completeResponse = await completeStep(workflowId, stepName)
+            if (completeResponse.success && completeResponse.data?.workflow) {
+              onWorkflowUpdate?.(completeResponse.data.workflow)
+              console.log(`✅ Step "${stepName}" completed successfully`)
+            }
+          } catch (completeError) {
+            console.error(`Error marking ${stepName} as complete:`, completeError)
+          }
+        }
+      }
+      
+      // Save to local state
+      setFormValues((p) => ({ ...p, [stepName]: data }))
+    } catch (error) {
+      console.error(`Error saving ${stepName} step:`, error)
+      throw error
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const renderStep = () => {
     switch(stepKey) {
@@ -934,7 +1006,7 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
         return (
           <MiningProcessDetails
             onNext={handleNext}
-            onSave={(data) => setFormValues((p) => ({ ...p, mining: data }))}
+            onSave={(data) => handleSaveStep('mining', data)}
             initialValues={formValues.mining}
           />
         );
@@ -943,7 +1015,7 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
           <BeneficiationDetails
             onNext={handleNext}
             onBack={handleBack}
-            onSave={(data) => setFormValues((p) => ({ ...p, beneficiation: data }))}
+            onSave={(data) => handleSaveStep('beneficiation', data)}
             initialValues={formValues.beneficiation}
           />
         );
@@ -952,7 +1024,7 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
           <RefiningDetails
             onNext={handleNext}
             onBack={handleBack}
-            onSave={(data) => setFormValues((p) => ({ ...p, refining: data }))}
+            onSave={(data) => handleSaveStep('refining', data)}
             initialValues={formValues.refining}
           />
         );
@@ -961,7 +1033,7 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
           <SmeltingDetails
             onNext={handleNext}
             onBack={handleBack}
-            onSave={(data) => setFormValues((p) => ({ ...p, smelting: data }))}
+            onSave={(data) => handleSaveStep('smelting', data)}
             initialValues={formValues.smelting}
           />
         );
@@ -970,7 +1042,7 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
           <ManufacturingDetails
             onNext={handleNext}
             onBack={handleBack}
-            onSave={(data) => setFormValues((p) => ({ ...p, manufacturing: data }))}
+            onSave={(data) => handleSaveStep('manufacturing', data)}
             initialValues={formValues.manufacturing}
           />
         );
@@ -979,7 +1051,7 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
           <RecyclingDetails
             onNext={handleNext}
             onBack={handleBack}
-            onSave={(data) => setFormValues((p) => ({ ...p, recycling: data }))}
+            onSave={(data) => handleSaveStep('recycling', data)}
             initialValues={formValues.recycling}
           />
         );
@@ -988,9 +1060,25 @@ export default function WizardForm({ steps, activeStep, onStepChange }) {
           <ValorizationDetails
             onNext={handleNext}
             onBack={handleBack}
-            onSave={(data) => setFormValues((p) => ({ ...p, valorization: data }))}
+            onSave={(data) => handleSaveStep('valorization', data)}
             initialValues={formValues.valorization}
-            onSubmitSuccess={() => setCompleted(true)}
+            onSubmitSuccess={async () => {
+              setCompleted(true)
+              // Auto-submit workflow after Step 7 completion
+              if (workflowId && onWorkflowSubmitted) {
+                try {
+                  console.log('🚀 Auto-submitting workflow...')
+                  const response = await submitWizardWorkflow(workflowId)
+                  if (response.success) {
+                    console.log('✅ Workflow submitted successfully')
+                    onWorkflowSubmitted(response.data)
+                  }
+                } catch (error) {
+                  console.error('❌ Failed to auto-submit workflow:', error)
+                }
+              }
+            }}
+            workflowId={workflowId}
           />
         );
       default:
@@ -2441,15 +2529,16 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
   const { control, handleSubmit, watch, formState: { isValid } } = form
   const selectedWaste = watch('wasteTypes')
   const selectedMethods = watch('valorizationMethods')
-  const onSubmit = (data) => {
-    onSave?.(data)
-    // Final submission after step 7
+  const onSubmit = async (data) => {
     try {
-      // Placeholder submit hook; replace with API call if needed
-      console.log('Submitting full payload', data)
+      // Save the valorization step data
+      await onSave?.(data)
+      console.log('✅ Valorization step saved successfully')
+      
+      // Trigger workflow submission callback
       onSubmitSuccess?.()
     } catch (e) {
-      console.error('Submission failed', e)
+      console.error('❌ Valorization submission failed:', e)
     }
   }
 

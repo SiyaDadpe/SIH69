@@ -6,8 +6,9 @@
  */
 
 const asyncHandler = require('express-async-handler');
-const { WizardWorkflow, User, Report } = require('../models');
+const { WizardWorkflow, User, Report, Project } = require('../models');
 const mongoose = require('mongoose');
+const { clearCache, clearAllCache } = require('../utils/localCache');
 
 /**
  * @desc    Create new wizard workflow
@@ -374,6 +375,54 @@ const submitWorkflow = asyncHandler(async (req, res) => {
   }
 
   await workflow.submit();
+
+  // Create a Project from the submitted wizard workflow
+  try {
+    const project = await Project.create({
+      name: workflow.name,
+      description: workflow.description || `LCA Project for ${workflow.metalType} created from wizard workflow`,
+      metalType: workflow.metalType,
+      owner: workflow.userId,
+      status: 'completed',
+      circularityScore: workflow.calculatedResults?.circularityScore || 0,
+      gwp: workflow.calculatedResults?.totalGWP || 0,
+      gwpSaved: workflow.calculatedResults?.gwpSaved || 0,
+      co2Emissions: workflow.calculatedResults?.co2Emissions || 0,
+      energyConsumption: workflow.calculatedResults?.energyConsumption || 0,
+      waterUsage: workflow.calculatedResults?.waterUsage || 0,
+      wasteGenerated: workflow.calculatedResults?.wasteGenerated || 0,
+      recyclingRate: workflow.calculatedResults?.recyclingRate || 0,
+      // Link to wizard workflow
+      wizardWorkflowId: workflow._id,
+      // Store detailed data from wizard steps
+      metadata: {
+        wizardData: {
+          mining: workflow.mining,
+          beneficiation: workflow.beneficiation,
+          refining: workflow.refining,
+          smelting: workflow.smelting,
+          manufacturing: workflow.manufacturing,
+          recycling: workflow.recycling,
+          valorization: workflow.valorization
+        }
+      }
+    });
+
+    console.log('[INFO] Project created from wizard workflow:', {
+      projectId: project._id,
+      workflowId: workflow._id,
+      userId: workflow.userId
+    });
+
+    // Clear dashboard cache so new project appears immediately
+    clearCache(`dashboard:${workflow.userId}`);
+    clearCache('dashboard:all');
+    console.log('[INFO] Dashboard cache cleared for user:', workflow.userId);
+
+  } catch (error) {
+    console.error('[ERROR] Failed to create project from wizard workflow:', error);
+    // Don't fail the submission if project creation fails
+  }
 
   console.log('[INFO] Wizard workflow submitted:', {
     workflowId: workflow._id,

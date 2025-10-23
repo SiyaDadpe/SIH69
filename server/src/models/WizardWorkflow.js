@@ -63,24 +63,26 @@ const wizardWorkflowSchema = new mongoose.Schema(
       oreGrade: Number, // Percentage
       overburdenRatio: Number,
       productionVolume: Number, // tonnes/year
-      equipmentType: {
+      typeOfEquipment: {
         type: String,
-        enum: ['Diesel', 'Electric', 'Hybrid']
+        enum: ['diesel', 'electric', 'hybrid']
       },
       fuelConsumption: Number, // liters or kWh per tonne
       waterSource: {
         type: String,
         enum: ['Surface water', 'Groundwater', 'Recycled water', 'Mixed sources']
       },
-      waterConsumption: Number, // m³ per tonne
+      waterUsage: Number, // m³ per tonne (matching frontend field name)
+      waterConsumption: Number, // m³ per tonne (kept for backward compatibility)
       blastingFrequency: {
         type: String,
         enum: ['Daily', 'Weekly', 'Bi-weekly', 'Monthly']
       },
       explosivesUsed: Number, // kg per blast
+      redMudGeneration: Number, // kg per tonne (frontend field)
       biodiversityImpact: {
         type: String,
-        enum: ['Minimal', 'Moderate', 'High', 'Severe']
+        enum: ['low', 'moderate', 'high', 'severe']
       },
       landReclamation: {
         type: String,
@@ -110,27 +112,41 @@ const wizardWorkflowSchema = new mongoose.Schema(
     beneficiation: {
       applicableProcesses: [{
         type: String,
-        enum: ['Crushing', 'Washing & Screening', 'Grinding', 'Magnetic Separation', 'Flotation Methods', 'Dry Separation', 'Others']
+        enum: ['crushing', 'washing_screening', 'grinding', 'magnetic_separation', 'flotation', 'dry_separation', 'gravity_separation', 'others']
+      }],
+      processes: [{
+        type: String,
+        enum: ['crushing', 'washing_screening', 'grinding', 'magnetic_separation', 'flotation', 'dry_separation', 'gravity_separation', 'others']
       }],
       others: String,
+      processOthers: String,
       location: String,
       feedRate: Number, // tonnes per hour
+      oreFeedRate: Number, // tonnes per hour (frontend field name)
       waterConsumption: Number, // m³ per tonne
       electricityUse: Number, // kWh per tonne
       beneficiationEfficiency: Number, // % recovery
       crushing: [{
         type: String,
-        enum: ['Primary Crushing', 'Secondary Crushing', 'Tertiary Crushing']
+        enum: ['primary', 'secondary', 'tertiary']
+      }],
+      crushingSelections: [{
+        type: String,
+        enum: ['primary', 'secondary', 'tertiary']
       }],
       chemicalAgents: [{
         type: String,
-        enum: ['Flocculants', 'Dispersants', 'Others']
+        enum: ['flocculants', 'dispersants', 'coagulants', 'none', 'others']
       }],
       chemicalOthers: String,
+      tailings: String, // frontend field for waste management selection
+      tailingsOthers: String,
+      noiseLevel: String, // Low, Moderate, High
+      dustLevel: String, // Low, Moderate, High
       wasteTailingsSlurry: {
         stored: {
           type: String,
-          enum: ['Stored in tailing ponds', 'Pipeline transport to disposal site']
+          enum: ['tailing_ponds', 'pipeline_transport', 'thickened_sludge', 'others']
         },
         volume: Number, // m³ per tonne
         toxicity: {
@@ -147,23 +163,37 @@ const wizardWorkflowSchema = new mongoose.Schema(
     refining: {
       applicableProcesses: [{
         type: String,
-        enum: ['Crushing', 'Digestion (caustic soda process)', 'Clarification (separating alumina liquor from red mud)', 'Precipitation (alumina hydrate recovery)', 'Calcination (removal of water to produce alumina powder)', 'Others']
+        enum: ['crushing', 'digestion', 'clarification', 'precipitation', 'calcination', 'others']
+      }],
+      processes: [{
+        type: String,
+        enum: ['crushing', 'digestion', 'clarification', 'precipitation', 'calcination', 'others']
       }],
       others: String,
+      processOthers: String,
+      variants: [String], // Added for enhancements
+      variantOthers: String,
       location: String,
       energyUse: Number, // kWh or MJ per tonne
       waterUse: Number, // m³ per tonne
-      redMudGeneration: Number, // kg per tonne
+      redMudGeneration: Number, // kg per tonne (original)
+      redMudGen: Number, // kg per tonne (frontend field name)
       causticSoda: Number, // kg/t
       limeOtherAdditives: Number, // kg/t
-      so2Emissions: Number, // kg per tonne
-      noxEmissions: Number, // kg per tonne
-      dustEmissions: Number, // kg per tonne
+      limeAdditives: Number, // kg/t (frontend field name)
+      so2Emissions: Number, // kg per tonne (original)
+      so2: Number, // kg per tonne (frontend field name)
+      noxEmissions: Number, // kg per tonne (original)
+      nox: Number, // kg per tonne (frontend field name)
+      dustEmissions: Number, // kg per tonne (original)
+      dust: Number, // kg per tonne (frontend field name)
       redMudToxicityLevel: {
         type: String,
         enum: ['Low', 'Moderate', 'High', 'Others']
       },
+      toxicity: String, // frontend field name
       redMudToxicityOthers: String,
+      toxicityOthers: String,
       wasteTailingsManagement: {
         type: String,
         enum: ['Stored in tailing ponds', 'Pipeline transport to disposal site']
@@ -176,21 +206,38 @@ const wizardWorkflowSchema = new mongoose.Schema(
     smelting: {
       applicableProcesses: [{
         type: String,
-        enum: ['Pre-baking anodes (heat treatment)', 'Anode effect control (stability maintenance)', 'Electrolysis (cell operation)', 'Bath chemistry management (fluoride & alumina concentration)', 'Off-gas treatment (scrubber systems)', 'Others']
+        enum: ['pre_baking_anodes', 'anode_effect_control', 'electrolysis', 'bath_chemistry', 'off_gas_treatment', 'others']
+      }],
+      processes: [{
+        type: String,
+        enum: ['pre_baking_anodes', 'anode_effect_control', 'electrolysis', 'bath_chemistry', 'off_gas_treatment', 'others']
       }],
       others: String,
+      processOthers: String,
       variants: [{
         type: String,
-        enum: ['Pre-baked anode cells (standard technology)', 'Soderberg cells (more polluting)', 'Low-carbon inert anodes (experimental, reduce CO₂ footprint)', 'Dynamic load management (shift operations to clean energy periods)', 'Renewable-powered smelters (intermittent optimization possible)', 'Others']
+        enum: ['pre_baked_cells', 'soderberg_cells', 'inert_anodes_low_carbon', 'dynamic_load', 'renewable_powered', 'others']
       }],
       variantsOthers: String,
+      variantOthers: String,
       energySource: {
         type: String,
         enum: ['Coal-based', 'Natural gas', 'Hydropower', 'Renewable (solar/wind)', 'Mixed sources']
       },
-      energyDemand: Number, // kWh per tonne
-      fluorideRecoveryEfficiency: Number, // %
-      thermalEnergyRecoveryPotential: Number // % of total energy
+      energyDemand: Number, // kWh per tonne (original)
+      electricityDemand: Number, // kWh per tonne (frontend field name)
+      co2Emissions: Number, // kg per tonne (frontend field)
+      cellTechnology: {
+        type: String,
+        enum: ['Pre-baked', 'Soderberg', 'Inert Anode']
+      },
+      pfcEmissions: Number, // kg per tonne (frontend field)
+      so2: Number, // kg per tonne (frontend field)
+      nox: Number, // kg per tonne (frontend field)
+      fluorideRecoveryEfficiency: Number, // % (original)
+      fluorideRecovery: Number, // % (frontend field name)
+      thermalEnergyRecoveryPotential: Number, // % of total energy (original)
+      thermalRecovery: Number // % of total energy (frontend field name)
     },
 
     // ============================================================================
@@ -199,12 +246,21 @@ const wizardWorkflowSchema = new mongoose.Schema(
     manufacturing: {
       applicableProcesses: [{
         type: String,
-        enum: ['Casting (ingots, billets – high-temperature energy)', 'Rolling (sheet metal – mechanical deformation)', 'Extrusion (tubes, profiles – efficient shaping)', 'Forging (metal strengthening, scrap generation)', 'Surface Treatment (anodizing, coating – chemical & energy use)', 'Joining Processes (welding, mechanical fastening – emissions, waste)', 'Design for Recycling (optimized alloys, less contamination)', 'Others']
+        enum: ['casting', 'rolling', 'extrusion', 'forging', 'surface_treatment', 'joining', 'design_recycling', 'others']
+      }],
+      processes: [{
+        type: String,
+        enum: ['casting', 'rolling', 'extrusion', 'forging', 'surface_treatment', 'joining', 'design_recycling', 'others']
       }],
       others: String,
+      processOthers: String,
       casting: [{
         type: String,
-        enum: ['Ingot Casting', 'Billet Casting', 'Continuous Casting']
+        enum: ['ingot', 'billet', 'continuous']
+      }],
+      castingProcesses: [{
+        type: String,
+        enum: ['ingot', 'billet', 'continuous']
       }],
       transportDistance: Number, // km
       scrapRate: Number, // % of material lost
@@ -214,19 +270,31 @@ const wizardWorkflowSchema = new mongoose.Schema(
         enum: ['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']
       },
       transportModeOthers: String,
-      transportEmissions: Number, // kg CO₂e per tonne-km
-      energyUsePerProcessStep: Number, // MJ/t or kWh/t
-      emissionsFromFabrication: Number, // kg CO₂e per tonne
+      transportEmissions: Number, // kg CO₂e per tonne-km (original)
+      transportEmissionsPerTkm: Number, // kg CO₂e per tonne-km (frontend field name)
+      energyUsePerProcessStep: Number, // MJ/t or kWh/t (original)
+      energyUsePerStep: Number, // MJ/t or kWh/t (frontend field name)
+      emissionsFromFabrication: Number, // kg CO₂e per tonne (original)
+      fabricationEmissions: Number, // kg CO₂e per tonne (frontend field name)
       lightweighting: [{
         type: String,
-        enum: ['Automotive', 'Aerospace', 'Construction', 'Packaging', 'Others']
+        enum: ['automotive', 'aerospace', 'construction', 'packaging', 'others']
+      }],
+      lightweightingSectors: [{
+        type: String,
+        enum: ['automotive', 'aerospace', 'construction', 'packaging', 'others']
       }],
       lightweightingOthers: String,
       corrosionBehaviorImpact: {
         type: String,
-        enum: ['Minimal (long lifespan, low maintenance)', 'Moderate (occasional maintenance)', 'Severe (frequent maintenance, repairs)', 'Others']
+        enum: ['minimal', 'moderate', 'severe', 'others']
       },
-      corrosionBehaviorOthers: String
+      corrosionImpact: {
+        type: String,
+        enum: ['minimal', 'moderate', 'severe', 'others']
+      },
+      corrosionBehaviorOthers: String,
+      corrosionOthers: String
     },
 
     // ============================================================================
@@ -235,30 +303,46 @@ const wizardWorkflowSchema = new mongoose.Schema(
     recycling: {
       applicableProcesses: [{
         type: String,
-        enum: ['Collection (scrap gathering – manual or automated)', 'Cleaning (removal of coatings, oils)', 'Sorting', 'Re-alloying (composition adjustment)', 'Remelting (furnace heating – energy intensive)', 'Casting into new products (e.g., cans, construction materials)', 'Others']
+        enum: ['collection', 'cleaning', 'sorting', 're_alloying', 'remelting', 'casting_new', 'others']
+      }],
+      processes: [{
+        type: String,
+        enum: ['collection', 'cleaning', 'sorting', 're_alloying', 'remelting', 'casting_new', 'others']
       }],
       others: String,
+      processOthers: String,
       variants: [{
         type: String,
-        enum: ['Closed-loop recycling (same product, high purity, lower emissions)', 'Open-loop recycling (different products, potential contamination)', 'Secondary aluminium production (5–10% of primary energy use)', 'Others']
+        enum: ['closed_loop', 'open_loop', 'secondary', 'others']
       }],
       variantsOthers: String,
-      scrapInputPercentage: Number, // % of total feedstock
-      collectionRate: Number, // % of available scrap collected
+      variantOthers: String,
+      scrapInputPercentage: Number, // % of total feedstock (original)
+      scrapInputPercent: Number, // % of total feedstock (frontend field name)
+      collectionRate: Number, // % of available scrap collected (original)
+      collectionRatePercent: Number, // % of available scrap collected (frontend field name)
       recyclingMethods: {
         type: String,
-        enum: ['Closed-loop', 'Open-loop', 'Mixed']
+        enum: ['Closed-loop', 'Open-loop', 'Mixed', 'closed-loop', 'open-loop', 'mixed']
       },
-      recoveryYield: Number, // % of aluminium recovered
+      recyclingMethod: {
+        type: String,
+        enum: ['Closed-loop', 'Open-loop', 'Mixed', 'closed-loop', 'open-loop', 'mixed']
+      },
+      recoveryYield: Number, // % of aluminium recovered (original)
+      recoveryYieldPercent: Number, // % of aluminium recovered (frontend field name)
+      recyclingEfficiencyPercent: Number, // % efficiency (frontend field)
+      closedLoopPercent: Number, // % closed-loop recycling (frontend field)
+      openLoopPercent: Number, // % open-loop recycling (frontend field)
       furnaceEnergyDemand: Number, // kWh or MJ per tonne recycled
-      emissionSavings: Number, // kg CO₂e avoided per tonne recycled
+      emissionSavings: Number, // kg CO₂e saved per tonne vs primary
       sortingMethods: [{
         type: String,
-        enum: ['Manual sorting (labor-intensive, prone to misclassification)', 'Optical sorting (computer vision + ML, accurate alloy separation)', 'Others']
+        enum: ['manual_sorting', 'optical_sorting', 'xrf_spectroscopy', 'sensor_based', 'eddy_current', 'others', 'manual', 'optical']
       }],
-      sortingMethodsOthers: String,
-      closedLoopRecyclingPercentage: Number, // % of recycled material reused in same product
-      openLoopRecyclingPercentage: Number // % of recycled material reused in other products
+      sortingOthers: String,
+      closedLoopRecyclingPercentage: Number, // %
+      openLoopRecyclingPercentage: Number // %
     },
 
     // ============================================================================
@@ -267,21 +351,28 @@ const wizardWorkflowSchema = new mongoose.Schema(
     valorization: {
       wasteTypes: [{
         type: String,
-        enum: ['Red Mud', 'SPL', 'Dross', 'Fluoride Gases', 'Slag', 'Others']
+        enum: ['Red Mud', 'SPL', 'Dross', 'Fluoride Gases', 'Slag', 'Others', 'red_mud', 'spl', 'dross', 'fluoride_gases', 'slag', 'others']
       }],
+      wasteTypeOthers: String,
       wasteTypesOthers: String,
       valorizationMethods: [{
         type: String,
-        enum: ['Cement additive', 'Soil stabilization', 'Iron extraction', 'Rare earth extraction', 'SPL encapsulation', 'Dross recovery', 'Fluoride capture', 'Others']
+        enum: ['Cement additive', 'Soil stabilization', 'Iron extraction', 'Rare earth extraction', 'SPL encapsulation', 'Dross recovery', 'Fluoride capture', 'Others', 'cement_additive', 'soil_stabilization', 'iron_extraction', 'rare_earth_extraction', 'spl_encapsulation', 'dross_recovery', 'fluoride_capture', 'others']
       }],
       valorizationMethodsOthers: String,
+      methodsOthers: String,
       wasteUtilizationPercentages: Number, // overall % of waste successfully utilized
-      redMudWasteUtilized: Number, // %
-      splWasteUtilized: Number, // %
-      drossWasteUtilized: Number, // %
+      wasteUtilizationOverallPercent: Number, // frontend field name
+      emissionReductions: Number, // kg CO₂e per tonne of waste used (original)
+      emissionReductionsPerTonne: Number, // kg CO₂e per tonne of waste used (frontend field name)
+      redMudWasteUtilized: Number, // % (original)
+      redMudUtilized: Number, // % (frontend field name)
+      splWasteUtilized: Number, // % (original)
+      splUtilized: Number, // % (frontend field name)
+      drossWasteUtilized: Number, // % (original)
+      drossUtilized: Number, // % (frontend field name)
       fluorideGasesWasteUtilized: Number, // %
       slagWasteUtilized: Number, // %
-      emissionReductions: Number, // kg CO₂e per tonne of waste used
       // Economic viability for each method
       ironExtractionEconomicViability: {
         type: String,
@@ -303,56 +394,9 @@ const wizardWorkflowSchema = new mongoose.Schema(
         type: String,
         enum: ['Low', 'Moderate', 'High']
       },
-      cementAdditiveEconomicViability: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High']
-      },
-      soilStabilizationEconomicViability: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High']
-      },
-      // Recovery efficiency for each waste type
-      splRecoveryEfficiency: Number, // %
+      // Recovery efficiencies
       drossRecoveryEfficiency: Number, // %
-      fluorideGasesRecoveryEfficiency: Number, // %
-      slagRecoveryEfficiency: Number, // %
-      // Groundwater risk assessment
-      redMudGroundwaterRisk: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      redMudGroundwaterRiskOthers: String,
-      splGroundwaterRisk: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      splGroundwaterRiskOthers: String,
-      drossGroundwaterRisk: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      drossGroundwaterRiskOthers: String,
-      fluorideGasesGroundwaterRisk: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      fluorideGasesGroundwaterRiskOthers: String,
-      // Toxicity levels
-      redMudToxicityLevel: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      redMudToxicityLevelOthers: String,
-      splToxicityLevel: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      splToxicityLevelOthers: String,
-      drossToxicityLevel: {
-        type: String,
-        enum: ['Low', 'Moderate', 'High', 'Others']
-      },
-      drossToxicityLevelOthers: String
+      fluorideGasesRecoveryEfficiency: Number // %
     },
 
     // ============================================================================
