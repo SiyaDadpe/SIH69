@@ -139,12 +139,18 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const insightRoutes = require('./routes/insightRoutes');
 const benchmarkRoutes = require('./routes/benchmarkRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes');
+const canvasRoutes = require('./routes/canvasRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const wizardRoutes = require('./routes/wizardRoutes');
 
 app.use('/api/projects', projectRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/insights', insightRoutes);
 app.use('/api/benchmarks', benchmarkRoutes);
 app.use('/api/system-status', systemStatusRoutes);
+app.use('/api/canvas', canvasRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/wizard', wizardRoutes);
 
 // Serve uploaded files (mounted at root level for /uploads/:filename route)
 app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));

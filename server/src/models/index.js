@@ -15,11 +15,19 @@ const Project = require('./Project');
 const Insight = require('./Insight');
 const Benchmark = require('./Benchmark');
 const SystemStatus = require('./SystemStatus');
+const Operation = require('./Operation');
+const CanvasWorkflow = require('./CanvasWorkflow');
+const Report = require('./Report');
+const WizardWorkflow = require('./WizardWorkflow');
 
 module.exports = {
   User,
   Project,
   Insight,
   Benchmark,
-  SystemStatus
+  SystemStatus,
+  Operation,
+  CanvasWorkflow,
+  Report,
+  WizardWorkflow
 };

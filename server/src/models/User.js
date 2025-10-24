@@ -43,6 +43,7 @@ const userSchema = new mongoose.Schema(
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         'Please provide a valid email address'
       ]
+      // Index defined separately below
     },
 
     organization: {
@@ -99,8 +100,7 @@ const userSchema = new mongoose.Schema(
  * Indexes
  */
 
-// Compound index on email for faster lookups
-userSchema.index({ email: 1 });
+// Email index is automatically created by unique: true, no need to define separately
 
 // Index for filtering by role and subscription
 userSchema.index({ role: 1, subscription: 1 });

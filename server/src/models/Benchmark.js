@@ -62,8 +62,8 @@ const benchmarkSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required'],
-      index: true
+      required: [true, 'User ID is required']
+      // Index defined separately below
     },
 
     period: {
