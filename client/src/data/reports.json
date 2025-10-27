@@ -1,0 +1,3048 @@
+[
+  {
+    "id": "report-001",
+    "projectId": "proj-001",
+    "name": "Circularity Assessment Q1 2025",
+    "description": "Quarterly report analyzing feedstock mix and emissions for Odisha operations.",
+    "createdAt": "2025-01-12T08:30:00Z",
+    "updatedAt": "2025-02-05T11:10:00Z",
+    "generatedBy": "system",
+    "version": "1.2",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "aluminum",
+      "feedstock",
+      "quarterly"
+    ],
+    "summary": {
+      "circularityScore": 78,
+      "gwp": 4.2,
+      "energyDemand": 820,
+      "waterConsumption": 118,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 1250000,
+        "perUnit": 5600
+      },
+      "keyFindings": [
+        "Scrap utilization improved by 12% compared to previous quarter.",
+        "Scope 2 emissions dropped after renewable PPA activation."
+      ],
+      "recommendations": [
+        "Expand scrap sourcing contracts with regional aggregators.",
+        "Deploy heat recovery at smelting stage to cut energy intensity."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-001",
+        "title": "Feedstock Mix",
+        "content": "Breakdown of scrap versus primary input for the reporting period.",
+        "metrics": {
+          "scrapShare": 0.42,
+          "primaryShare": 0.58
+        }
+      },
+      {
+        "id": "sec-002",
+        "title": "Emissions Profile",
+        "content": "GHG emissions segmented by production stage with year-over-year comparison.",
+        "metrics": {
+          "scope1": 1.8,
+          "scope2": 2.1
+        }
+      },
+      {
+        "id": "sec-003",
+        "title": "Cost Summary",
+        "content": "Operational expenditure and projected savings from circular interventions.",
+        "metrics": {
+          "opex": 950000,
+          "savings": 145000
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-001",
+        "type": "line",
+        "title": "Energy Demand Trend",
+        "dataKey": "energyDemandTrend",
+        "description": "Monthly energy demand intensity across the quarter."
+      },
+      {
+        "id": "viz-002",
+        "type": "bar",
+        "title": "Emissions by Stage",
+        "dataKey": "emissionsByStage",
+        "description": "Stage-wise emissions contribution."
+      }
+    ],
+    "rawData": {
+      "energyDemandTrend": [
+        { "month": "Jan", "value": 835 },
+        { "month": "Feb", "value": 812 },
+        { "month": "Mar", "value": 811 }
+      ],
+      "emissionsByStage": [
+        { "stage": "Mining", "value": 0.6 },
+        { "stage": "Refining", "value": 1.1 },
+        { "stage": "Smelting", "value": 2.4 },
+        { "stage": "Fabrication", "value": 0.9 }
+      ],
+      "materialFlow": {
+        "scrap": 420,
+        "primary": 580
+      }
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-02-05T10:45:00Z",
+        "generatedBy": "analyst",
+        "location": "/reports/report-001/v1.2/report-001.pdf"
+      },
+      "xlsx": {
+        "lastGenerated": "2025-02-05T10:50:00Z",
+        "generatedBy": "analyst",
+        "location": "/reports/report-001/v1.2/report-001.xlsx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-001",
+      "u-002",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-002",
+    "projectId": "proj-001",
+    "name": "Circularity Improvement Roadmap Draft",
+    "description": "Scenario modeling for FY2026 circularity acceleration roadmap.",
+    "createdAt": "2025-03-18T09:00:00Z",
+    "updatedAt": "2025-03-20T16:25:00Z",
+    "generatedBy": "u-002",
+    "version": "0.9-draft",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "roadmap",
+      "scenario",
+      "aluminum"
+    ],
+    "summary": {
+      "circularityScore": 71,
+      "gwp": 4.8,
+      "energyDemand": 860,
+      "waterConsumption": 130,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 980000,
+        "perUnit": 5320,
+        "notes": "Includes projected investments in scrap sorting."
+      },
+      "keyFindings": [
+        "Baseline scrap availability constrains short-term improvements.",
+        "Automation upgrades could deliver 9% energy savings."
+      ],
+      "recommendations": [
+        "Pilot AI-driven scrap classification at smelter intake.",
+        "Launch supplier engagement program for higher grade returns."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-004",
+        "title": "Scenario Overview",
+        "content": "Compares conservative, base, and stretch circularity scenarios.",
+        "metrics": {
+          "baseScenarioScore": 74,
+          "stretchScenarioScore": 81
+        }
+      },
+      {
+        "id": "sec-005",
+        "title": "Risk Matrix",
+        "content": "Highlights risk probability and impact across supply, operations, and compliance.",
+        "metrics": {
+          "supplyRisk": 0.4,
+          "operationsRisk": 0.25,
+          "complianceRisk": 0.15
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-003",
+        "type": "radar",
+        "title": "Scenario Comparison",
+        "dataKey": "scenarioScores",
+        "description": "Circularity dimension scores across scenarios."
+      },
+      {
+        "id": "viz-004",
+        "type": "waterfall",
+        "title": "Energy Savings Stack",
+        "dataKey": "energySavingsStack",
+        "description": "Contribution of each intervention to energy savings."
+      }
+    ],
+    "rawData": {
+      "scenarioScores": [
+        { "dimension": "Circularity", "baseline": 68, "base": 74, "stretch": 81 },
+        { "dimension": "Emissions", "baseline": 5.1, "base": 4.6, "stretch": 4.2 },
+        { "dimension": "Cost", "baseline": 1.0, "base": 0.96, "stretch": 0.93 }
+      ],
+      "energySavingsStack": [
+        { "intervention": "Automation", "value": 3.2 },
+        { "intervention": "Heat Recovery", "value": 2.5 },
+        { "intervention": "Logistics Optimization", "value": 1.8 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      },
+      "pptx": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-002",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-003",
+    "projectId": "proj-002",
+    "name": "Smelting Energy Benchmark 2025",
+    "description": "Benchmarking energy intensity and emissions for Western Corridor smelting lines.",
+    "createdAt": "2025-02-10T06:45:00Z",
+    "updatedAt": "2025-04-02T13:05:00Z",
+    "generatedBy": "system",
+    "version": "2.4",
+    "status": "published",
+    "category": "completed",
+    "tags": [
+      "smelting",
+      "energy",
+      "benchmark"
+    ],
+    "summary": {
+      "circularityScore": 69,
+      "gwp": 5.3,
+      "energyDemand": 910,
+      "waterConsumption": 102,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 1520000,
+        "perUnit": 6100,
+        "sensitivity": {
+          "energy": 0.07,
+          "carbon": 0.12
+        }
+      },
+      "keyFindings": [
+        "Line 3 underperforms peers due to refractory heat losses.",
+        "Demand response program shaved peak loads by 6%."
+      ],
+      "recommendations": [
+        "Prioritize refractory relining during May outage.",
+        "Expand participation in demand response across all lines."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-006",
+        "title": "Energy Intensity",
+        "content": "Comparison of specific energy consumption across smelting lines.",
+        "metrics": {
+          "bestLine": 860,
+          "worstLine": 980
+        }
+      },
+      {
+        "id": "sec-007",
+        "title": "Emission Hotspots",
+        "content": "Identifies process steps contributing most to total GHG emissions.",
+        "metrics": {
+          "electrolysisShare": 0.58,
+          "anodeBakingShare": 0.22
+        }
+      },
+      {
+        "id": "sec-008",
+        "title": "Operational Actions",
+        "content": "List of operational improvements completed this quarter.",
+        "metrics": {
+          "actionsClosed": 7,
+          "actionsOpen": 3
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-005",
+        "type": "heatmap",
+        "title": "Line Energy Intensity",
+        "dataKey": "lineEnergyIntensity",
+        "description": "Energy intensity variations across smelting lines."
+      },
+      {
+        "id": "viz-006",
+        "type": "stackedBar",
+        "title": "Emission Breakdown",
+        "dataKey": "emissionBreakdown",
+        "description": "Scope 1 and scope 2 contributions by stage."
+      }
+    ],
+    "rawData": {
+      "lineEnergyIntensity": [
+        { "line": "Line 1", "value": 870 },
+        { "line": "Line 2", "value": 890 },
+        { "line": "Line 3", "value": 980 },
+        { "line": "Line 4", "value": 865 }
+      ],
+      "emissionBreakdown": [
+        { "stage": "Electrolysis", "scope1": 2.8, "scope2": 1.5 },
+        { "stage": "Casting", "scope1": 0.6, "scope2": 0.4 },
+        { "stage": "Anode Baking", "scope1": 0.9, "scope2": 0.6 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-04-02T12:40:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-003/v2.4/report-003.pdf"
+      },
+      "json": {
+        "lastGenerated": "2025-04-02T12:45:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-003/v2.4/report-003.json"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-003"
+    ]
+  },
+  {
+    "id": "report-004",
+    "projectId": "proj-002",
+    "name": "Legacy Waste Stream Closeout",
+    "description": "Final archived report covering remediation of legacy waste streams.",
+    "createdAt": "2024-09-21T07:20:00Z",
+    "updatedAt": "2025-01-15T09:30:00Z",
+    "generatedBy": "u-004",
+    "version": "3.1",
+    "status": "archived",
+    "category": "archived",
+    "tags": [
+      "compliance",
+      "waste",
+      "archive"
+    ],
+    "summary": {
+      "circularityScore": 63,
+      "gwp": 5.9,
+      "energyDemand": 940,
+      "waterConsumption": 140,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 880000,
+        "perUnit": 4900,
+        "notes": "Closeout activities funded via compliance budget."
+      },
+      "keyFindings": [
+        "All identified legacy waste stockpiles removed and certified.",
+        "Residual risk limited to monitoring wells 3 and 7."
+      ],
+      "recommendations": [
+        "Maintain quarterly groundwater monitoring.",
+        "Archive documentation for regulatory audits."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-009",
+        "title": "Remediation Activities",
+        "content": "Chronology of remediation tasks and verification milestones.",
+        "metrics": {
+          "sitesClosed": 5,
+          "documentsFiled": 18
+        }
+      },
+      {
+        "id": "sec-010",
+        "title": "Regulatory Status",
+        "content": "Compliance status with regional environmental board.",
+        "metrics": {
+          "permitsClosed": 4,
+          "outstandingItems": 0
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-007",
+        "type": "timeline",
+        "title": "Remediation Timeline",
+        "dataKey": "remediationTimeline",
+        "description": "Key milestones for remediation and verification."
+      }
+    ],
+    "rawData": {
+      "remediationTimeline": [
+        { "milestone": "Site Survey", "date": "2024-01-15" },
+        { "milestone": "Waste Removal", "date": "2024-06-30" },
+        { "milestone": "Verification", "date": "2024-10-20" },
+        { "milestone": "Regulatory Closure", "date": "2025-01-10" }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-01-15T09:00:00Z",
+        "generatedBy": "u-004",
+        "location": "/reports/report-004/v3.1/report-004.pdf"
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-005",
+    "projectId": "proj-003",
+    "name": "Green Casting Initiative Baseline",
+    "description": "Baseline assessment for the Green Casting Initiative prior to interventions.",
+    "createdAt": "2025-01-05T05:55:00Z",
+    "updatedAt": "2025-01-25T14:42:00Z",
+    "generatedBy": "u-001",
+    "version": "1.0",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "casting",
+      "baseline",
+      "materials"
+    ],
+    "summary": {
+      "circularityScore": 74,
+      "gwp": 3.9,
+      "energyDemand": 760,
+      "waterConsumption": 110,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 640000,
+        "perUnit": 4200
+      },
+      "keyFindings": [
+        "Sand reclaim system operating at 68% efficiency.",
+        "Binder recovery offers immediate cost savings."
+      ],
+      "recommendations": [
+        "Upgrade sand reclaimers to high-efficiency cyclones.",
+        "Introduce closed-loop binder dosing controls."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-011",
+        "title": "Material Efficiency",
+        "content": "Analysis of material yields and scrap generation in casting lines.",
+        "metrics": {
+          "yield": 0.87,
+          "scrapRate": 0.13
+        }
+      },
+      {
+        "id": "sec-012",
+        "title": "Energy Footprint",
+        "content": "Electric and thermal energy consumption per casting batch.",
+        "metrics": {
+          "electric": 420,
+          "thermal": 340
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-008",
+        "type": "bar",
+        "title": "Sand Reclaim Efficiency",
+        "dataKey": "sandReclaim",
+        "description": "Hourly efficiency of sand reclaimers over the baseline month."
+      },
+      {
+        "id": "viz-009",
+        "type": "line",
+        "title": "Energy Per Batch",
+        "dataKey": "energyPerBatch",
+        "description": "Energy consumption per casting batch."
+      }
+    ],
+    "rawData": {
+      "sandReclaim": [
+        { "shift": "A", "efficiency": 0.7 },
+        { "shift": "B", "efficiency": 0.66 },
+        { "shift": "C", "efficiency": 0.68 }
+      ],
+      "energyPerBatch": [
+        { "batch": 1, "energy": 780 },
+        { "batch": 2, "energy": 755 },
+        { "batch": 3, "energy": 748 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-01-25T14:00:00Z",
+        "generatedBy": "u-001",
+        "location": "/reports/report-005/v1.0/report-005.pdf"
+      },
+      "xlsx": {
+        "lastGenerated": "2025-01-25T14:05:00Z",
+        "generatedBy": "u-001",
+        "location": "/reports/report-005/v1.0/report-005.xlsx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-001",
+      "u-003",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-006",
+    "projectId": "proj-003",
+    "name": "Green Casting Midyear Update",
+    "description": "Midyear progress update highlighting efficiency gains and risk items.",
+    "createdAt": "2025-06-05T07:10:00Z",
+    "updatedAt": "2025-06-18T12:20:00Z",
+    "generatedBy": "system",
+    "version": "1.3",
+    "status": "published",
+    "category": "active",
+    "tags": [
+      "casting",
+      "progress",
+      "efficiency"
+    ],
+    "summary": {
+      "circularityScore": 81,
+      "gwp": 3.4,
+      "energyDemand": 720,
+      "waterConsumption": 98,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 520000,
+        "perUnit": 3900,
+        "notes": "Reflects savings from reclaimed sand and binder optimization."
+      },
+      "keyFindings": [
+        "Closed-loop binder system reduced consumption by 18%.",
+        "Zero liquid discharge trial achieved 95% reuse."
+      ],
+      "recommendations": [
+        "Scale zero liquid discharge to all casting lines.",
+        "Implement predictive maintenance for reclaimers."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-013",
+        "title": "Performance vs Baseline",
+        "content": "Compares current KPIs against baseline values and targets.",
+        "metrics": {
+          "energyReduction": 0.05,
+          "gwpReduction": 0.13
+        }
+      },
+      {
+        "id": "sec-014",
+        "title": "Risk Watchlist",
+        "content": "Tracks outstanding risks from supplier reliability and technology readiness.",
+        "metrics": {
+          "supplierRisk": 0.3,
+          "technologyRisk": 0.2
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-010",
+        "type": "combo",
+        "title": "Baseline vs Actual",
+        "dataKey": "baselineComparison",
+        "description": "Shows baseline vs actual circularity KPIs."
+      },
+      {
+        "id": "viz-011",
+        "type": "gauge",
+        "title": "Circularity Score Progress",
+        "dataKey": "circularityGauge",
+        "description": "Progress toward target circularity score."
+      }
+    ],
+    "rawData": {
+      "baselineComparison": [
+        { "metric": "Circularity", "baseline": 74, "actual": 81 },
+        { "metric": "GWP", "baseline": 3.9, "actual": 3.4 },
+        { "metric": "Energy", "baseline": 760, "actual": 720 }
+      ],
+      "circularityGauge": {
+        "target": 85,
+        "current": 81
+      }
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-06-18T12:00:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-006/v1.3/report-006.pdf"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-007",
+    "projectId": "proj-004",
+    "name": "Urban Scrap Program Feasibility",
+    "description": "Pre-implementation feasibility for the Urban Scrap Recovery Program.",
+    "createdAt": "2025-04-11T09:35:00Z",
+    "updatedAt": "2025-04-19T15:55:00Z",
+    "generatedBy": "u-003",
+    "version": "0.8",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "scrap",
+      "feasibility",
+      "urban"
+    ],
+    "summary": {
+      "circularityScore": 67,
+      "gwp": 4.7,
+      "energyDemand": 780,
+      "waterConsumption": 150,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 430000,
+        "perUnit": 3100,
+        "notes": "Excludes municipal collection incentives."
+      },
+      "keyFindings": [
+        "Municipal scrap availability exceeds processing capacity by 15%.",
+        "Logistics emissions dominate footprint for distant wards."
+      ],
+      "recommendations": [
+        "Negotiate decentralized drop-off points with city partners.",
+        "Model staggered pickup schedules to reduce empty hauls."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-015",
+        "title": "Supply Assessment",
+        "content": "Estimates available urban scrap by ward and composition.",
+        "metrics": {
+          "availableScrap": 18000,
+          "contaminationRate": 0.12
+        }
+      },
+      {
+        "id": "sec-016",
+        "title": "Logistics Plan",
+        "content": "Outlines proposed logistics routes and consolidation hubs.",
+        "metrics": {
+          "routes": 6,
+          "avgDistance": 38
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-012",
+        "type": "map",
+        "title": "Ward Collection Potential",
+        "dataKey": "wardPotential",
+        "description": "Estimated scrap potential by ward."
+      },
+      {
+        "id": "viz-013",
+        "type": "sankey",
+        "title": "Material Flow",
+        "dataKey": "scrapFlow",
+        "description": "Planned scrap flows from collection to processing."
+      }
+    ],
+    "rawData": {
+      "wardPotential": [
+        { "ward": "North", "tonnes": 4200 },
+        { "ward": "Central", "tonnes": 3800 },
+        { "ward": "South", "tonnes": 5200 }
+      ],
+      "scrapFlow": [
+        { "source": "Households", "target": "Collection Centers", "value": 9000 },
+        { "source": "Commercial", "target": "Collection Centers", "value": 4300 },
+        { "source": "Collection Centers", "target": "Processing Plant", "value": 11800 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-008",
+    "projectId": "proj-004",
+    "name": "Urban Scrap Program Launch Report",
+    "description": "Post-launch performance tracking for the Urban Scrap Recovery Program.",
+    "createdAt": "2025-07-02T08:05:00Z",
+    "updatedAt": "2025-08-15T17:15:00Z",
+    "generatedBy": "system",
+    "version": "1.1",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "scrap",
+      "performance",
+      "urban"
+    ],
+    "summary": {
+      "circularityScore": 83,
+      "gwp": 3.6,
+      "energyDemand": 690,
+      "waterConsumption": 120,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 510000,
+        "perUnit": 2900,
+        "notes": "Incorporates municipal incentive reimbursements."
+      },
+      "keyFindings": [
+        "Material recovery at hubs operating at 94% capacity.",
+        "Optimized routing cut logistics emissions by 21%."
+      ],
+      "recommendations": [
+        "Open additional aggregation point in South corridor.",
+        "Integrate citizen engagement app analytics into planning."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-017",
+        "title": "Collection Performance",
+        "content": "Collection volumes and quality metrics since launch.",
+        "metrics": {
+          "averageDailyCollection": 62,
+          "contaminationRate": 0.08
+        }
+      },
+      {
+        "id": "sec-018",
+        "title": "Impact Snapshot",
+        "content": "Highlights circularity, emissions, and social impact outcomes.",
+        "metrics": {
+          "jobsCreated": 128,
+          "communitiesEngaged": 22
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-014",
+        "type": "area",
+        "title": "Collection Volume Trend",
+        "dataKey": "collectionTrend",
+        "description": "Weekly collection volumes since launch."
+      },
+      {
+        "id": "viz-015",
+        "type": "pie",
+        "title": "Material Composition",
+        "dataKey": "materialMix",
+        "description": "Material composition of recovered scrap."
+      }
+    ],
+    "rawData": {
+      "collectionTrend": [
+        { "week": "W27", "tonnes": 58 },
+        { "week": "W28", "tonnes": 60 },
+        { "week": "W29", "tonnes": 63 },
+        { "week": "W30", "tonnes": 66 }
+      ],
+      "materialMix": [
+        { "material": "Aluminum", "share": 0.44 },
+        { "material": "Steel", "share": 0.32 },
+        { "material": "Copper", "share": 0.14 },
+        { "material": "Others", "share": 0.10 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-08-15T16:45:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-008/v1.1/report-008.pdf"
+      },
+      "xlsx": {
+        "lastGenerated": "2025-08-15T16:50:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-008/v1.1/report-008.xlsx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-002",
+      "u-003",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-009",
+    "projectId": "proj-005",
+    "name": "Tailings to Geopolymers Pilot Results",
+    "description": "Performance results for the Tailings to Geopolymers pilot line.",
+    "createdAt": "2025-05-09T07:25:00Z",
+    "updatedAt": "2025-05-28T18:05:00Z",
+    "generatedBy": "u-005",
+    "version": "2.0",
+    "status": "published",
+    "category": "completed",
+    "tags": [
+      "tailings",
+      "geopolymers",
+      "pilot"
+    ],
+    "summary": {
+      "circularityScore": 88,
+      "gwp": 2.9,
+      "energyDemand": 640,
+      "waterConsumption": 104,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 720000,
+        "perUnit": 3500,
+        "notes": "Includes cost of admixture optimization trials."
+      },
+      "keyFindings": [
+        "Compressive strength exceeded baseline by 18%.",
+        "Tailings utilization achieved 72% substitution."
+      ],
+      "recommendations": [
+        "Extend pilot to secondary curing line.",
+        "Engage regulatory bodies on alternate binder certification."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-019",
+        "title": "Mechanical Performance",
+        "content": "Mechanical test outcomes for geopolymer samples versus control.",
+        "metrics": {
+          "compressiveStrength": 54,
+          "flexuralStrength": 7.8
+        }
+      },
+      {
+        "id": "sec-020",
+        "title": "Material Substitution",
+        "content": "Share of tailings and additives used in the pilot batches.",
+        "metrics": {
+          "tailingsShare": 0.72,
+          "activatorRatio": 0.18
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-016",
+        "type": "column",
+        "title": "Strength Comparison",
+        "dataKey": "strengthComparison",
+        "description": "Strength performance against control samples."
+      },
+      {
+        "id": "viz-017",
+        "type": "bubble",
+        "title": "Batch Composition",
+        "dataKey": "batchComposition",
+        "description": "Composition of pilot batches by material share."
+      }
+    ],
+    "rawData": {
+      "strengthComparison": [
+        { "metric": "Compressive", "control": 46, "pilot": 54 },
+        { "metric": "Flexural", "control": 6.5, "pilot": 7.8 }
+      ],
+      "batchComposition": [
+        { "batch": "B1", "tailings": 0.7, "slag": 0.1, "activator": 0.2 },
+        { "batch": "B2", "tailings": 0.74, "slag": 0.08, "activator": 0.18 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-05-28T17:40:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-009/v2.0/report-009.pdf"
+      },
+      "pptx": {
+        "lastGenerated": "2025-05-28T17:45:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-009/v2.0/report-009.pptx"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-010",
+    "projectId": "proj-005",
+    "name": "Tailings Pilot Safety Review",
+    "description": "Archived safety review for the Tailings to Geopolymers pilot operations.",
+    "createdAt": "2024-12-12T10:55:00Z",
+    "updatedAt": "2025-02-02T07:35:00Z",
+    "generatedBy": "u-002",
+    "version": "1.5",
+    "status": "archived",
+    "category": "archived",
+    "tags": [
+      "tailings",
+      "safety",
+      "archive"
+    ],
+    "summary": {
+      "circularityScore": 70,
+      "gwp": 3.6,
+      "energyDemand": 710,
+      "waterConsumption": 132,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 310000,
+        "perUnit": 2850,
+        "notes": "Covers safety instrumentation upgrades."
+      },
+      "keyFindings": [
+        "No recordable incidents during pilot run.",
+        "Two corrective actions raised for tailings moisture control."
+      ],
+      "recommendations": [
+        "Maintain weekly safety walkthroughs during scale-up.",
+        "Update SOPs to include moisture threshold alarms."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-021",
+        "title": "Safety Observations",
+        "content": "Summary of safety observations and corrective actions.",
+        "metrics": {
+          "observations": 14,
+          "correctiveActions": 2
+        }
+      },
+      {
+        "id": "sec-022",
+        "title": "Compliance Checklist",
+        "content": "Audit checklist covering environmental and occupational compliance.",
+        "metrics": {
+          "itemsReviewed": 36,
+          "itemsClosed": 36
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-018",
+        "type": "bar",
+        "title": "Observation Categories",
+        "dataKey": "observationMix",
+        "description": "Distribution of safety observations by category."
+      }
+    ],
+    "rawData": {
+      "observationMix": [
+        { "category": "Equipment", "count": 6 },
+        { "category": "Procedure", "count": 5 },
+        { "category": "Housekeeping", "count": 3 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-02-02T07:10:00Z",
+        "generatedBy": "u-002",
+        "location": "/reports/report-010/v1.5/report-010.pdf"
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-002",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-011",
+    "projectId": "proj-001",
+    "name": "Circularity Forecast FY2026",
+    "description": "Forward-looking forecast of circularity KPIs and resource flows for FY2026.",
+    "createdAt": "2025-09-05T09:45:00Z",
+    "updatedAt": "2025-09-18T14:15:00Z",
+    "generatedBy": "u-002",
+    "version": "0.7-draft",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "forecast",
+      "scenario",
+      "aluminum"
+    ],
+    "summary": {
+      "circularityScore": 76,
+      "gwp": 4.4,
+      "energyDemand": 805,
+      "waterConsumption": 125,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 1180000,
+        "perUnit": 5480,
+        "notes": "Incorporates projected capital for scrap sorting line."
+      },
+      "keyFindings": [
+        "Circularity score expected to reach 82 under stretching plan.",
+        "Renewable procurement hedges 60% of forecast power demand."
+      ],
+      "recommendations": [
+        "Validate supplier commitments on certified scrap volumes.",
+        "Lock in renewable PPAs ahead of FY2026 tender cycle."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-023",
+        "title": "Scenario Inputs",
+        "content": "Detailed assumptions for feedstock, energy, and logistics scenarios.",
+        "metrics": {
+          "scenarios": 3,
+          "sensitivityRuns": 12
+        }
+      },
+      {
+        "id": "sec-024",
+        "title": "Resource Mix Outlook",
+        "content": "Forecast of scrap vs primary utilization per quarter in FY2026.",
+        "metrics": {
+          "q1ScrapShare": 0.45,
+          "q4ScrapShare": 0.52
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-019",
+        "type": "line",
+        "title": "Circularity Projection",
+        "dataKey": "forecastCircularity",
+        "description": "Quarterly circularity score projection with scenario bands."
+      },
+      {
+        "id": "viz-020",
+        "type": "stackedArea",
+        "title": "Resource Mix Forecast",
+        "dataKey": "resourceMix",
+        "description": "Projected scrap and primary shares across FY2026."
+      }
+    ],
+    "rawData": {
+      "forecastCircularity": [
+        { "quarter": "Q1", "baseline": 74, "base": 76, "stretch": 82 },
+        { "quarter": "Q2", "baseline": 75, "base": 78, "stretch": 83 },
+        { "quarter": "Q3", "baseline": 76, "base": 80, "stretch": 84 },
+        { "quarter": "Q4", "baseline": 77, "base": 81, "stretch": 85 }
+      ],
+      "resourceMix": [
+        { "quarter": "Q1", "scrap": 0.45, "primary": 0.55 },
+        { "quarter": "Q2", "scrap": 0.48, "primary": 0.52 },
+        { "quarter": "Q3", "scrap": 0.5, "primary": 0.5 },
+        { "quarter": "Q4", "scrap": 0.52, "primary": 0.48 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      },
+      "xlsx": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-001",
+      "u-002",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-012",
+    "projectId": "proj-002",
+    "name": "Smelting Heat Recovery Commissioning",
+    "description": "Commissioning dossier covering heat recovery system integration and results.",
+    "createdAt": "2025-07-14T06:20:00Z",
+    "updatedAt": "2025-07-28T11:55:00Z",
+    "generatedBy": "system",
+    "version": "1.0",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "smelting",
+      "heat recovery",
+      "commissioning"
+    ],
+    "summary": {
+      "circularityScore": 72,
+      "gwp": 4.8,
+      "energyDemand": 870,
+      "waterConsumption": 112,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 910000,
+        "perUnit": 5020,
+        "notes": "Includes waste-heat exchanger maintenance allocation."
+      },
+      "keyFindings": [
+        "Heat recovery delivered 18% reduction in thermal demand for Line 2.",
+        "Integration downtime limited to 36 hours across commissioning window."
+      ],
+      "recommendations": [
+        "Extend heat recovery retrofit to Line 4 during FY2026 outage.",
+        "Monitor exchanger fouling weekly for first 90 days."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-025",
+        "title": "Commissioning Checklist",
+        "content": "Status of commissioning tasks, permit-to-work, and validations.",
+        "metrics": {
+          "tasksCompleted": 28,
+          "tasksPending": 2
+        }
+      },
+      {
+        "id": "sec-026",
+        "title": "Thermal Performance",
+        "content": "Measured thermal recovery rates and baseline comparison.",
+        "metrics": {
+          "heatRecovered": 18.4,
+          "baselineDemand": 930
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-021",
+        "type": "area",
+        "title": "Heat Recovery Yield",
+        "dataKey": "heatRecoveryYield",
+        "description": "Weekly recovered energy compared with baseline demand."
+      },
+      {
+        "id": "viz-022",
+        "type": "timeline",
+        "title": "Commissioning Milestones",
+        "dataKey": "commissioningTimeline",
+        "description": "Sequence of commissioning activities and sign-offs."
+      }
+    ],
+    "rawData": {
+      "heatRecoveryYield": [
+        { "week": "W1", "recovered": 15.2, "baseline": 930 },
+        { "week": "W2", "recovered": 17.8, "baseline": 928 },
+        { "week": "W3", "recovered": 18.4, "baseline": 927 },
+        { "week": "W4", "recovered": 18.1, "baseline": 925 }
+      ],
+      "commissioningTimeline": [
+        { "date": "2025-07-14", "event": "Cold Loop Test" },
+        { "date": "2025-07-18", "event": "Hot Loop Test" },
+        { "date": "2025-07-22", "event": "Performance Validation" },
+        { "date": "2025-07-27", "event": "Handover" }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-07-28T11:40:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-012/v1.0/report-012.pdf"
+      },
+      "xlsx": {
+        "lastGenerated": "2025-07-28T11:45:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-012/v1.0/report-012.xlsx"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-002",
+      "u-003"
+    ]
+  },
+  {
+    "id": "report-013",
+    "projectId": "proj-003",
+    "name": "Casting Quality Benchmark 2025",
+    "description": "Published benchmark of casting quality KPIs across updated process lines.",
+    "createdAt": "2025-03-04T08:05:00Z",
+    "updatedAt": "2025-05-12T10:40:00Z",
+    "generatedBy": "u-001",
+    "version": "1.4",
+    "status": "published",
+    "category": "completed",
+    "tags": [
+      "casting",
+      "quality",
+      "benchmark"
+    ],
+    "summary": {
+      "circularityScore": 85,
+      "gwp": 3.1,
+      "energyDemand": 700,
+      "waterConsumption": 95,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 560000,
+        "perUnit": 3800
+      },
+      "keyFindings": [
+        "Dimensional capability improved with upgraded mold controls.",
+        "Scrap rate reduced 14% against prior benchmark year."
+      ],
+      "recommendations": [
+        "Maintain SPC monitoring on high-variance dimensions.",
+        "Scale operator cross-training for night shift stability."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-027",
+        "title": "Dimensional Accuracy",
+        "content": "Statistical capability analysis for priority casting dimensions.",
+        "metrics": {
+          "cpk": 1.7,
+          "scrapRate": 0.09
+        }
+      },
+      {
+        "id": "sec-028",
+        "title": "Throughput Stability",
+        "content": "Uptime and throughput variation across shifts and product families.",
+        "metrics": {
+          "uptime": 0.96,
+          "throughputVariance": 0.07
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-023",
+        "type": "boxplot",
+        "title": "Dimension Capability",
+        "dataKey": "dimensionAccuracy",
+        "description": "Capability distribution for monitored dimensions."
+      },
+      {
+        "id": "viz-024",
+        "type": "line",
+        "title": "Throughput Stability",
+        "dataKey": "throughputStability",
+        "description": "Shift-wise throughput rates across the study window."
+      }
+    ],
+    "rawData": {
+      "dimensionAccuracy": [
+        { "dimension": "D1", "mean": 10.02, "cpk": 1.6 },
+        { "dimension": "D2", "mean": 8.01, "cpk": 1.8 },
+        { "dimension": "D3", "mean": 5.98, "cpk": 1.7 }
+      ],
+      "throughputStability": [
+        { "week": "W10", "shiftA": 102, "shiftB": 99, "shiftC": 97 },
+        { "week": "W11", "shiftA": 104, "shiftB": 101, "shiftC": 99 },
+        { "week": "W12", "shiftA": 103, "shiftB": 100, "shiftC": 100 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-05-12T10:20:00Z",
+        "generatedBy": "u-001",
+        "location": "/reports/report-013/v1.4/report-013.pdf"
+      },
+      "html": {
+        "lastGenerated": "2025-05-12T10:25:00Z",
+        "generatedBy": "u-001",
+        "location": "/reports/report-013/v1.4/index.html"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-001",
+      "u-003",
+      "u-004",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-014",
+    "projectId": "proj-004",
+    "name": "Urban Scrap Compliance Audit",
+    "description": "Archived compliance audit covering first-year operations of the urban scrap program.",
+    "createdAt": "2024-05-18T07:30:00Z",
+    "updatedAt": "2025-02-22T15:20:00Z",
+    "generatedBy": "u-004",
+    "version": "2.2",
+    "status": "archived",
+    "category": "archived",
+    "tags": [
+      "audit",
+      "compliance",
+      "archive"
+    ],
+    "summary": {
+      "circularityScore": 61,
+      "gwp": 5.6,
+      "energyDemand": 950,
+      "waterConsumption": 138,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 460000,
+        "perUnit": 3200,
+        "notes": "Includes external audit and remediation spend."
+      },
+      "keyFindings": [
+        "Three major findings closed with corrective action evidences.",
+        "Community engagement protocols updated per regulator guidance."
+      ],
+      "recommendations": [
+        "Maintain quarterly compliance self-assessments.",
+        "Document stakeholder meetings in central repository."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-029",
+        "title": "Audit Findings",
+        "content": "Summary of major and minor findings with root-cause analysis.",
+        "metrics": {
+          "majorFindings": 3,
+          "minorFindings": 11
+        }
+      },
+      {
+        "id": "sec-030",
+        "title": "Corrective Actions",
+        "content": "Status of corrective and preventive actions raised by auditors.",
+        "metrics": {
+          "actionsClosed": 14,
+          "actionsOpen": 0
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-025",
+        "type": "timeline",
+        "title": "Audit Trail",
+        "dataKey": "auditTrail",
+        "description": "Timeline of audit events and corrective action closures."
+      },
+      {
+        "id": "viz-026",
+        "type": "bar",
+        "title": "Issue Closure Rate",
+        "dataKey": "issueClosure",
+        "description": "Closure status for findings by category."
+      }
+    ],
+    "rawData": {
+      "auditTrail": [
+        { "date": "2024-06-10", "event": "Audit Kick-off" },
+        { "date": "2024-07-15", "event": "Site Visits" },
+        { "date": "2024-08-05", "event": "Draft Findings" },
+        { "date": "2024-09-20", "event": "Final Report" }
+      ],
+      "issueClosure": [
+        { "category": "Environmental", "closed": 6, "open": 0 },
+        { "category": "Safety", "closed": 5, "open": 0 },
+        { "category": "Community", "closed": 3, "open": 0 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-02-22T15:00:00Z",
+        "generatedBy": "u-004",
+        "location": "/reports/report-014/v2.2/report-014.pdf"
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-015",
+    "projectId": "proj-005",
+    "name": "Geopolymer Scale-Up Plan Draft",
+    "description": "Draft roadmap for scaling the tailings-to-geopolymer pilot to full production.",
+    "createdAt": "2025-08-09T05:10:00Z",
+    "updatedAt": "2025-08-22T11:25:00Z",
+    "generatedBy": "u-005",
+    "version": "0.6-draft",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "geopolymer",
+      "scale-up",
+      "plan"
+    ],
+    "summary": {
+      "circularityScore": 86,
+      "gwp": 3.0,
+      "energyDemand": 660,
+      "waterConsumption": 108,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 1350000,
+        "perUnit": 3720,
+        "notes": "Capital allocation for kiln modification included."
+      },
+      "keyFindings": [
+        "Phase 1 scale-up can leverage existing curing infrastructure.",
+        "Logistics costs dominate incremental unit economics."
+      ],
+      "recommendations": [
+        "Engage logistics partners for dedicated shuttle operations.",
+        "Validate kiln retrofit design before procurement."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-031",
+        "title": "Capacity Expansion",
+        "content": "Phased capacity build-out plan with associated milestones.",
+        "metrics": {
+          "targetTonnage": 22000,
+          "phasedStages": 3
+        }
+      },
+      {
+        "id": "sec-032",
+        "title": "Risk Register",
+        "content": "High-level risk register for technology, supply, and market uncertainties.",
+        "metrics": {
+          "highRisk": 2,
+          "mediumRisk": 5
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-027",
+        "type": "gantt",
+        "title": "Expansion Phases",
+        "dataKey": "expansionPhases",
+        "description": "Timeline for scale-up phases and critical path tasks."
+      },
+      {
+        "id": "viz-028",
+        "type": "bubble",
+        "title": "Risk Matrix",
+        "dataKey": "riskMatrix",
+        "description": "Risk probability versus impact visualization."
+      }
+    ],
+    "rawData": {
+      "expansionPhases": [
+        { "phase": "Phase 1", "start": "2025-09-01", "end": "2026-01-31" },
+        { "phase": "Phase 2", "start": "2026-02-01", "end": "2026-06-30" },
+        { "phase": "Phase 3", "start": "2026-07-01", "end": "2026-11-30" }
+      ],
+      "riskMatrix": [
+        { "risk": "Kiln Retrofit", "probability": 0.3, "impact": 0.8 },
+        { "risk": "Binder Supply", "probability": 0.4, "impact": 0.6 },
+        { "risk": "Market Adoption", "probability": 0.25, "impact": 0.7 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-005",
+      "u-002"
+    ]
+  },
+  {
+    "id": "report-016",
+    "projectId": "proj-001",
+    "name": "Circular Finance Impact Report",
+    "description": "Financial and environmental co-benefits from circularity investments in FY2025.",
+    "createdAt": "2025-02-14T06:55:00Z",
+    "updatedAt": "2025-03-01T09:35:00Z",
+    "generatedBy": "system",
+    "version": "1.1",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "finance",
+      "impact",
+      "circularity"
+    ],
+    "summary": {
+      "circularityScore": 79,
+      "gwp": 4.1,
+      "energyDemand": 815,
+      "waterConsumption": 121,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 980000,
+        "perUnit": 5400,
+        "notes": "ROI calculation aligned with finance-approved hurdle rates."
+      },
+      "keyFindings": [
+        "Circular projects delivered blended ROI of 14.6%.",
+        "Carbon liability reduced by 11% versus BAU case."
+      ],
+      "recommendations": [
+        "Integrate shadow carbon pricing into project selection.",
+        "Expand green finance instruments for recycling upgrades."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-033",
+        "title": "Investment Portfolio",
+        "content": "Breakdown of capital deployed across circular initiatives.",
+        "metrics": {
+          "projectsFunded": 8,
+          "averagePayback": 3.4
+        }
+      },
+      {
+        "id": "sec-034",
+        "title": "Impact Metrics",
+        "content": "Environmental and financial impact scorecards for the portfolio.",
+        "metrics": {
+          "emissionsAvoided": 4.5,
+          "costSavings": 210000
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-029",
+        "type": "waterfall",
+        "title": "Value Bridge",
+        "dataKey": "valueBridge",
+        "description": "Contribution of key initiatives to net financial impact."
+      },
+      {
+        "id": "viz-030",
+        "type": "donut",
+        "title": "Investment Mix",
+        "dataKey": "investmentMix",
+        "description": "Allocation of capital across circularity themes."
+      }
+    ],
+    "rawData": {
+      "valueBridge": [
+        { "stage": "Baseline", "value": 0 },
+        { "stage": "Energy Savings", "value": 320000 },
+        { "stage": "Material Savings", "value": 210000 },
+        { "stage": "Carbon Credits", "value": 90000 },
+        { "stage": "Opex Increase", "value": -70000 },
+        { "stage": "Net Impact", "value": 550000 }
+      ],
+      "investmentMix": [
+        { "theme": "Energy", "share": 0.38 },
+        { "theme": "Materials", "share": 0.33 },
+        { "theme": "Logistics", "share": 0.19 },
+        { "theme": "Digital", "share": 0.10 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-03-01T09:10:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-016/v1.1/report-016.pdf"
+      },
+      "pptx": {
+        "lastGenerated": "2025-03-01T09:15:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-016/v1.1/report-016.pptx"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-002",
+      "u-003",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-017",
+    "projectId": "proj-002",
+    "name": "Smelter Predictive Maintenance Update",
+    "description": "Update on predictive maintenance deployment and reliability gains at the smelter.",
+    "createdAt": "2025-04-08T07:05:00Z",
+    "updatedAt": "2025-04-26T12:30:00Z",
+    "generatedBy": "u-002",
+    "version": "1.2",
+    "status": "published",
+    "category": "active",
+    "tags": [
+      "smelting",
+      "maintenance",
+      "digital"
+    ],
+    "summary": {
+      "circularityScore": 73,
+      "gwp": 4.9,
+      "energyDemand": 890,
+      "waterConsumption": 118,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 640000,
+        "perUnit": 4700,
+        "notes": "Includes SaaS subscription for predictive analytics platform."
+      },
+      "keyFindings": [
+        "Unplanned downtime reduced by 22% since system go-live.",
+        "Anode changeover forecasting improved resource scheduling."
+      ],
+      "recommendations": [
+        "Integrate vibration data streams for potline 3.",
+        "Expand anomaly detection thresholds to include thermal drift."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-035",
+        "title": "Reliability Metrics",
+        "content": "Reliability and availability KPIs post predictive maintenance rollout.",
+        "metrics": {
+          "downtimeReduction": 0.22,
+          "mtbf": 480
+        }
+      },
+      {
+        "id": "sec-036",
+        "title": "Analytics Coverage",
+        "content": "Coverage of assets and sensors engaged in predictive analytics.",
+        "metrics": {
+          "assetsModeled": 146,
+          "sensorStreams": 312
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-031",
+        "type": "line",
+        "title": "Downtime Trend",
+        "dataKey": "downtimeTrend",
+        "description": "Weekly downtime hours before and after predictive maintenance."
+      },
+      {
+        "id": "viz-032",
+        "type": "heatmap",
+        "title": "Sensor Coverage",
+        "dataKey": "sensorCoverage",
+        "description": "Coverage matrix of sensors across smelting assets."
+      }
+    ],
+    "rawData": {
+      "downtimeTrend": [
+        { "week": "W06", "baseline": 38, "actual": 31 },
+        { "week": "W07", "baseline": 36, "actual": 28 },
+        { "week": "W08", "baseline": 35, "actual": 26 },
+        { "week": "W09", "baseline": 34, "actual": 24 }
+      ],
+      "sensorCoverage": [
+        { "asset": "Potline 1", "sensors": 68 },
+        { "asset": "Potline 2", "sensors": 74 },
+        { "asset": "Potline 3", "sensors": 52 },
+        { "asset": "Anode Bake", "sensors": 46 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-04-26T12:10:00Z",
+        "generatedBy": "u-002",
+        "location": "/reports/report-017/v1.2/report-017.pdf"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-002",
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-018",
+    "projectId": "proj-003",
+    "name": "Casting Wastewater Optimization",
+    "description": "Final report detailing wastewater recycling enhancements in casting operations.",
+    "createdAt": "2025-05-21T08:40:00Z",
+    "updatedAt": "2025-06-09T13:50:00Z",
+    "generatedBy": "system",
+    "version": "1.0",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "casting",
+      "water",
+      "optimization"
+    ],
+    "summary": {
+      "circularityScore": 82,
+      "gwp": 3.3,
+      "energyDemand": 710,
+      "waterConsumption": 88,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 480000,
+        "perUnit": 3600,
+        "notes": "Includes membrane module replacement fund."
+      },
+      "keyFindings": [
+        "Water reuse rate increased to 78% after membrane upgrades.",
+        "Chemical dosing optimized using inline conductivity control."
+      ],
+      "recommendations": [
+        "Install redundancy for high-pressure pumps.",
+        "Integrate digital twin for predictive fouling alerts."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-037",
+        "title": "Process Enhancements",
+        "content": "Summary of hardware and control changes implemented.",
+        "metrics": {
+          "reuseRate": 0.78,
+          "chemicalReduction": 0.21
+        }
+      },
+      {
+        "id": "sec-038",
+        "title": "Quality Monitoring",
+        "content": "Water quality results and compliance status post-optimization.",
+        "metrics": {
+          "cod": 48,
+          "tss": 7
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-033",
+        "type": "line",
+        "title": "Reuse Rate Trend",
+        "dataKey": "reuseTrend",
+        "description": "Weekly water reuse rate following optimization activities."
+      },
+      {
+        "id": "viz-034",
+        "type": "bar",
+        "title": "Quality Compliance",
+        "dataKey": "qualityCompliance",
+        "description": "Monthly water quality metrics versus permit limits."
+      }
+    ],
+    "rawData": {
+      "reuseTrend": [
+        { "week": "W20", "rate": 0.69 },
+        { "week": "W21", "rate": 0.74 },
+        { "week": "W22", "rate": 0.77 },
+        { "week": "W23", "rate": 0.78 }
+      ],
+      "qualityCompliance": [
+        { "month": "Jun", "cod": 48, "permit": 60 },
+        { "month": "Jul", "cod": 47, "permit": 60 },
+        { "month": "Aug", "cod": 46, "permit": 60 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-06-09T13:20:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-018/v1.0/report-018.pdf"
+      },
+      "xlsx": {
+        "lastGenerated": "2025-06-09T13:25:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-018/v1.0/report-018.xlsx"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-003"
+    ]
+  },
+  {
+    "id": "report-019",
+    "projectId": "proj-004",
+    "name": "Urban Scrap Logistics Pilot",
+    "description": "Draft evaluation of micro-hub logistics pilot for the urban scrap program.",
+    "createdAt": "2025-09-12T10:05:00Z",
+    "updatedAt": "2025-09-24T15:55:00Z",
+    "generatedBy": "u-003",
+    "version": "0.9-draft",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "logistics",
+      "scrap",
+      "pilot"
+    ],
+    "summary": {
+      "circularityScore": 75,
+      "gwp": 4.3,
+      "energyDemand": 760,
+      "waterConsumption": 132,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 540000,
+        "perUnit": 3050,
+        "notes": "Includes micro-hub leasing cost assumptions."
+      },
+      "keyFindings": [
+        "Micro-hubs reduced average haul distance by 18%.",
+        "Digital routing minimized idle time by 12% over baseline."
+      ],
+      "recommendations": [
+        "Negotiate long-term leases for top-performing hubs.",
+        "Expand driver analytics for route compliance."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-039",
+        "title": "Operational Performance",
+        "content": "KPIs for collection efficiency, distance, and service level.",
+        "metrics": {
+          "avgDistance": 24,
+          "onTimeRate": 0.91
+        }
+      },
+      {
+        "id": "sec-040",
+        "title": "Hub Utilization",
+        "content": "Throughput and utilization metrics for pilot micro-hubs.",
+        "metrics": {
+          "topHubUtilization": 0.87,
+          "averageUtilization": 0.74
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-035",
+        "type": "area",
+        "title": "Distance Reduction",
+        "dataKey": "distanceTrend",
+        "description": "Average collection distance before and after pilot."
+      },
+      {
+        "id": "viz-036",
+        "type": "column",
+        "title": "Hub Throughput",
+        "dataKey": "hubThroughput",
+        "description": "Weekly tonnes handled per micro-hub."
+      }
+    ],
+    "rawData": {
+      "distanceTrend": [
+        { "week": "Baseline", "distance": 29 },
+        { "week": "Pilot-W1", "distance": 25 },
+        { "week": "Pilot-W2", "distance": 24 },
+        { "week": "Pilot-W3", "distance": 23 }
+      ],
+      "hubThroughput": [
+        { "hub": "North", "tonnes": 18 },
+        { "hub": "Central", "tonnes": 22 },
+        { "hub": "South", "tonnes": 24 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-020",
+    "projectId": "proj-005",
+    "name": "Tailings Pilot Lifecycle Assessment",
+    "description": "Archived lifecycle assessment comparing tailings-based geopolymer to OPC baseline.",
+    "createdAt": "2024-11-02T06:45:00Z",
+    "updatedAt": "2025-03-15T10:05:00Z",
+    "generatedBy": "u-005",
+    "version": "1.3",
+    "status": "archived",
+    "category": "archived",
+    "tags": [
+      "lca",
+      "tailings",
+      "archive"
+    ],
+    "summary": {
+      "circularityScore": 69,
+      "gwp": 3.5,
+      "energyDemand": 690,
+      "waterConsumption": 116,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 380000,
+        "perUnit": 2980,
+        "notes": "Includes consultant review for ISO compliance."
+      },
+      "keyFindings": [
+        "Geopolymer route cuts GWP by 42% relative to OPC reference.",
+        "Primary energy use declines 18% after transport optimization."
+      ],
+      "recommendations": [
+        "Maintain lifecycle inventory updates annually.",
+        "Engage third-party verifier ahead of market launch."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-041",
+        "title": "Impact Summary",
+        "content": "Key environmental indicators comparing pilot and reference systems.",
+        "metrics": {
+          "gwpReduction": 0.42,
+          "energyReduction": 0.18
+        }
+      },
+      {
+        "id": "sec-042",
+        "title": "Data Quality",
+        "content": "Assessment of data quality scores across lifecycle stages.",
+        "metrics": {
+          "dataQualityScore": 0.83,
+          "reviewFindings": 2
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-037",
+        "type": "stackedBar",
+        "title": "Impact Comparison",
+        "dataKey": "impactComparison",
+        "description": "Environmental impact comparison between pilot and baseline."
+      },
+      {
+        "id": "viz-038",
+        "type": "radar",
+        "title": "Data Quality Scores",
+        "dataKey": "dataQuality",
+        "description": "Data quality ratings for lifecycle phases."
+      }
+    ],
+    "rawData": {
+      "impactComparison": [
+        { "indicator": "GWP", "pilot": 2.9, "baseline": 5.0 },
+        { "indicator": "Energy", "pilot": 640, "baseline": 780 },
+        { "indicator": "Water", "pilot": 104, "baseline": 132 }
+      ],
+      "dataQuality": [
+        { "phase": "Mining", "score": 0.8 },
+        { "phase": "Processing", "score": 0.85 },
+        { "phase": "Transport", "score": 0.82 },
+        { "phase": "Use", "score": 0.86 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-03-15T09:40:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-020/v1.3/report-020.pdf"
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-002",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-021",
+    "projectId": "proj-001",
+    "name": "Circular Supplier Engagement Report",
+    "description": "Published report summarizing supplier engagement outcomes and commitments.",
+    "createdAt": "2025-04-17T09:15:00Z",
+    "updatedAt": "2025-05-02T16:05:00Z",
+    "generatedBy": "u-001",
+    "version": "1.0",
+    "status": "published",
+    "category": "completed",
+    "tags": [
+      "supplier",
+      "engagement",
+      "circularity"
+    ],
+    "summary": {
+      "circularityScore": 80,
+      "gwp": 4.0,
+      "energyDemand": 790,
+      "waterConsumption": 120,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 420000,
+        "perUnit": 3300,
+        "notes": "Covers supplier audits and traceability platform onboarding."
+      },
+      "keyFindings": [
+        "26 suppliers achieved circular certification status in FY2025.",
+        "Traceability coverage expanded to 72% of inbound materials."
+      ],
+      "recommendations": [
+        "Launch supplier innovation grants for recycled content pilots.",
+        "Embed circular clauses in long-term sourcing contracts."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-043",
+        "title": "Supplier Coverage",
+        "content": "Overview of supplier engagement tiers and certification outcomes.",
+        "metrics": {
+          "suppliersEngaged": 42,
+          "certifiedSuppliers": 26
+        }
+      },
+      {
+        "id": "sec-044",
+        "title": "Material Traceability",
+        "content": "Material traceability coverage and digital passport adoption.",
+        "metrics": {
+          "traceabilityCoverage": 0.72,
+          "digitalPassports": 31
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-039",
+        "type": "bar",
+        "title": "Supplier Scorecard",
+        "dataKey": "supplierScorecard",
+        "description": "Performance distribution across supplier engagement tiers."
+      },
+      {
+        "id": "viz-040",
+        "type": "timeline",
+        "title": "Engagement Timeline",
+        "dataKey": "engagementTimeline",
+        "description": "Key supplier engagement milestones across FY2025."
+      }
+    ],
+    "rawData": {
+      "supplierScorecard": [
+        { "tier": "Strategic", "count": 12, "averageScore": 86 },
+        { "tier": "Preferred", "count": 18, "averageScore": 79 },
+        { "tier": "Approved", "count": 12, "averageScore": 71 }
+      ],
+      "engagementTimeline": [
+        { "date": "2025-01-15", "event": "Kick-off" },
+        { "date": "2025-02-28", "event": "Traceability Pilot" },
+        { "date": "2025-04-05", "event": "Supplier Summit" },
+        { "date": "2025-04-28", "event": "Certification Awards" }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-05-02T15:40:00Z",
+        "generatedBy": "u-001",
+        "location": "/reports/report-021/v1.0/report-021.pdf"
+      },
+      "csv": {
+        "lastGenerated": "2025-05-02T15:45:00Z",
+        "generatedBy": "u-001",
+        "location": "/reports/report-021/v1.0/report-021.csv"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-001",
+      "u-002",
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-022",
+    "projectId": "proj-002",
+    "name": "Smelter Carbon Abatement Plan",
+    "description": "Finalized abatement plan detailing initiatives to deliver 27% emission reduction by 2030.",
+    "createdAt": "2025-01-19T08:25:00Z",
+    "updatedAt": "2025-02-11T10:50:00Z",
+    "generatedBy": "system",
+    "version": "1.3",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "carbon",
+      "abatement",
+      "plan"
+    ],
+    "summary": {
+      "circularityScore": 74,
+      "gwp": 4.5,
+      "energyDemand": 880,
+      "waterConsumption": 118,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 1500000,
+        "perUnit": 6200,
+        "notes": "Capital aligned with approved sustainability-linked loan."
+      },
+      "keyFindings": [
+        "Potline retrofit and hydrogen-ready burners deliver 60% of targeted abatement.",
+        "Residual emissions require offset portfolio beyond FY2028."
+      ],
+      "recommendations": [
+        "Secure long-lead equipment orders in FY2025 budget cycle.",
+        "Negotiate offtake agreements for green hydrogen supply."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-045",
+        "title": "Abatement Portfolio",
+        "content": "Portfolio of abatement initiatives with reduction potential and timelines.",
+        "metrics": {
+          "initiatives": 9,
+          "expectedReduction": 0.27
+        }
+      },
+      {
+        "id": "sec-046",
+        "title": "Capital Plan",
+        "content": "Capital expenditure, financing, and payback for abatement projects.",
+        "metrics": {
+          "capex": 1120000,
+          "payback": 4.1
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-041",
+        "type": "curve",
+        "title": "Abatement Curve",
+        "dataKey": "abatementCurve",
+        "description": "Marginal abatement cost curve for proposed initiatives."
+      },
+      {
+        "id": "viz-042",
+        "type": "gantt",
+        "title": "Capital Timeline",
+        "dataKey": "capitalTimeline",
+        "description": "Capital deployment timeline across planning horizon."
+      }
+    ],
+    "rawData": {
+      "abatementCurve": [
+        { "initiative": "Potline Retrofit", "cost": 68, "reduction": 0.12 },
+        { "initiative": "Heat Recovery", "cost": 42, "reduction": 0.05 },
+        { "initiative": "Carbon Capture", "cost": 95, "reduction": 0.07 },
+        { "initiative": "Renewable PPA", "cost": 28, "reduction": 0.03 }
+      ],
+      "capitalTimeline": [
+        { "phase": "Design", "start": "2025-03-01", "end": "2025-08-31" },
+        { "phase": "Procurement", "start": "2025-09-01", "end": "2026-03-31" },
+        { "phase": "Construction", "start": "2026-04-01", "end": "2027-06-30" }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-02-11T10:20:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-022/v1.3/report-022.pdf"
+      },
+      "pptx": {
+        "lastGenerated": "2025-02-11T10:25:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-022/v1.3/report-022.pptx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-002",
+      "u-003",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-023",
+    "projectId": "proj-003",
+    "name": "Casting Digital Twin Concept",
+    "description": "Draft concept outlining the digital twin architecture for casting operations.",
+    "createdAt": "2025-10-05T06:50:00Z",
+    "updatedAt": "2025-10-18T11:45:00Z",
+    "generatedBy": "u-004",
+    "version": "0.4-draft",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "digital",
+      "twin",
+      "casting"
+    ],
+    "summary": {
+      "circularityScore": 78,
+      "gwp": 3.5,
+      "energyDemand": 740,
+      "waterConsumption": 102,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 860000,
+        "perUnit": 4100,
+        "notes": "Includes proof-of-concept software licensing."
+      },
+      "keyFindings": [
+        "Five high-impact use cases identified for early twin deployment.",
+        "Data completeness at 82% across critical casting assets."
+      ],
+      "recommendations": [
+        "Complete data gap remediation by Q1 FY2026.",
+        "Align stakeholder governance for twin lifecycle management."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-047",
+        "title": "Model Architecture",
+        "content": "Target architecture including data lake, analytics, and visualization layers.",
+        "metrics": {
+          "models": 5,
+          "dataSources": 14
+        }
+      },
+      {
+        "id": "sec-048",
+        "title": "Use Cases",
+        "content": "Prioritized use cases with expected savings and readiness levels.",
+        "metrics": {
+          "useCasesPrioritized": 4,
+          "expectedSavings": 0.08
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-043",
+        "type": "network",
+        "title": "Twin Architecture",
+        "dataKey": "twinArchitecture",
+        "description": "Relationship map of systems in the proposed digital twin."
+      },
+      {
+        "id": "viz-044",
+        "type": "radar",
+        "title": "Use Case Impact",
+        "dataKey": "useCaseImpact",
+        "description": "Impact and readiness assessment for prioritized use cases."
+      }
+    ],
+    "rawData": {
+      "twinArchitecture": [
+        { "system": "MES", "connections": 6 },
+        { "system": "SCADA", "connections": 5 },
+        { "system": "Quality", "connections": 4 },
+        { "system": "Maintenance", "connections": 3 }
+      ],
+      "useCaseImpact": [
+        { "useCase": "Predictive Quality", "impact": 0.85, "readiness": 0.7 },
+        { "useCase": "Energy Optimization", "impact": 0.72, "readiness": 0.6 },
+        { "useCase": "Asset Health", "impact": 0.68, "readiness": 0.55 },
+        { "useCase": "Cycle Time", "impact": 0.64, "readiness": 0.5 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-001",
+      "u-004",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-024",
+    "projectId": "proj-004",
+    "name": "Urban Scrap Social Impact Report",
+    "description": "Published report highlighting social and inclusion metrics from urban scrap operations.",
+    "createdAt": "2025-06-11T07:20:00Z",
+    "updatedAt": "2025-07-03T12:55:00Z",
+    "generatedBy": "system",
+    "version": "1.1",
+    "status": "published",
+    "category": "completed",
+    "tags": [
+      "social",
+      "impact",
+      "scrap"
+    ],
+    "summary": {
+      "circularityScore": 84,
+      "gwp": 3.2,
+      "energyDemand": 680,
+      "waterConsumption": 115,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 360000,
+        "perUnit": 2900,
+        "notes": "Community investment spend accounted under ESG budget."
+      },
+      "keyFindings": [
+        "Program supported 164 jobs with 46% women participation.",
+        "MSME partner network expanded to 38 active cooperatives."
+      ],
+      "recommendations": [
+        "Scale women-led collection clusters with targeted training.",
+        "Publish quarterly social dashboards to stakeholders."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-049",
+        "title": "Community Metrics",
+        "content": "Employment, training, and livelihood metrics generated by the program.",
+        "metrics": {
+          "jobsCreated": 164,
+          "trainingHours": 980
+        }
+      },
+      {
+        "id": "sec-050",
+        "title": "Inclusion Outcomes",
+        "content": "Inclusion indicators covering gender balance and MSME participation.",
+        "metrics": {
+          "womenParticipants": 0.46,
+          "msmePartners": 38
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-045",
+        "type": "area",
+        "title": "Employment Trend",
+        "dataKey": "employmentTrend",
+        "description": "Quarterly employment growth across the program."
+      },
+      {
+        "id": "viz-046",
+        "type": "pie",
+        "title": "Participant Mix",
+        "dataKey": "participantMix",
+        "description": "Participation mix by stakeholder segment."
+      }
+    ],
+    "rawData": {
+      "employmentTrend": [
+        { "quarter": "Q1", "jobs": 94 },
+        { "quarter": "Q2", "jobs": 118 },
+        { "quarter": "Q3", "jobs": 146 },
+        { "quarter": "Q4", "jobs": 164 }
+      ],
+      "participantMix": [
+        { "segment": "Women", "share": 0.46 },
+        { "segment": "Youth", "share": 0.32 },
+        { "segment": "MSME", "share": 0.22 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-07-03T12:30:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-024/v1.1/report-024.pdf"
+      },
+      "html": {
+        "lastGenerated": "2025-07-03T12:35:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-024/v1.1/index.html"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-025",
+    "projectId": "proj-005",
+    "name": "Geopolymer Market Readiness",
+    "description": "Final report on regulatory, customer, and supply readiness for geopolymer launch.",
+    "createdAt": "2025-04-03T05:40:00Z",
+    "updatedAt": "2025-04-20T09:25:00Z",
+    "generatedBy": "u-005",
+    "version": "1.0",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "market",
+      "readiness",
+      "geopolymer"
+    ],
+    "summary": {
+      "circularityScore": 87,
+      "gwp": 3.0,
+      "energyDemand": 650,
+      "waterConsumption": 110,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 780000,
+        "perUnit": 3400,
+        "notes": "Includes customer pilots and certification testing."
+      },
+      "keyFindings": [
+        "Regulatory approvals secured across five target states.",
+        "Four anchor customers signed conditional pilot agreements."
+      ],
+      "recommendations": [
+        "Launch joint marketing campaign with anchor customers.",
+        "Finalize pricing strategy aligned with sustainability premium."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-051",
+        "title": "Regulatory Readiness",
+        "content": "Status of regulatory filings, certifications, and audit outcomes.",
+        "metrics": {
+          "approvalsSecured": 5,
+          "pendingApprovals": 1
+        }
+      },
+      {
+        "id": "sec-052",
+        "title": "Customer Pipeline",
+        "content": "Breakdown of customer engagement pipeline and pilot commitments.",
+        "metrics": {
+          "qualifiedLeads": 12,
+          "pilotAgreements": 4
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-047",
+        "type": "timeline",
+        "title": "Approval Timeline",
+        "dataKey": "approvalTimeline",
+        "description": "Timeline of regulatory approvals and milestones."
+      },
+      {
+        "id": "viz-048",
+        "type": "funnel",
+        "title": "Sales Funnel",
+        "dataKey": "salesFunnel",
+        "description": "Sales funnel from leads to signed pilots."
+      }
+    ],
+    "rawData": {
+      "approvalTimeline": [
+        { "state": "Odisha", "approvalDate": "2025-02-10" },
+        { "state": "Gujarat", "approvalDate": "2025-02-24" },
+        { "state": "Maharashtra", "approvalDate": "2025-03-12" },
+        { "state": "Tamil Nadu", "approvalDate": "2025-03-28" },
+        { "state": "Karnataka", "approvalDate": "2025-04-14" }
+      ],
+      "salesFunnel": [
+        { "stage": "Leads", "count": 28 },
+        { "stage": "Qualified", "count": 12 },
+        { "stage": "Pilots", "count": 4 },
+        { "stage": "Contracts", "count": 2 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-04-20T09:05:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-025/v1.0/report-025.pdf"
+      },
+      "pptx": {
+        "lastGenerated": "2025-04-20T09:10:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-025/v1.0/report-025.pptx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-005",
+      "u-001",
+      "u-002"
+    ]
+  },
+  {
+    "id": "report-026",
+    "projectId": "proj-001",
+    "name": "Historical Circularity Archive 2023",
+    "description": "Archived compendium of circularity performance metrics for FY2023.",
+    "createdAt": "2023-12-01T08:00:00Z",
+    "updatedAt": "2024-02-10T10:10:00Z",
+    "generatedBy": "system",
+    "version": "3.0",
+    "status": "archived",
+    "category": "archived",
+    "tags": [
+      "archive",
+      "historical",
+      "circularity"
+    ],
+    "summary": {
+      "circularityScore": 68,
+      "gwp": 5.2,
+      "energyDemand": 860,
+      "waterConsumption": 130,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 300000,
+        "perUnit": 2700,
+        "notes": "Covers archival digitization and storage."
+      },
+      "keyFindings": [
+        "Baseline recycling rate stood at 38% before program acceleration.",
+        "Water intensity reductions lagged targets by 4 percentage points."
+      ],
+      "recommendations": [
+        "Reference archive when setting FY2026 baseline metrics.",
+        "Maintain data retention policy for minimum seven years."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-053",
+        "title": "Annual Highlights",
+        "content": "Summary of key circularity achievements and gaps in FY2023.",
+        "metrics": {
+          "projectsReviewed": 14,
+          "improvementsRecorded": 36
+        }
+      },
+      {
+        "id": "sec-054",
+        "title": "Data Retention",
+        "content": "Details of datasets archived and retention policies.",
+        "metrics": {
+          "datasetsArchived": 58,
+          "retentionYears": 7
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-049",
+        "type": "line",
+        "title": "Yearly Trend",
+        "dataKey": "yearlyTrend",
+        "description": "Year-on-year circularity score trend."
+      },
+      {
+        "id": "viz-050",
+        "type": "bar",
+        "title": "Data Coverage",
+        "dataKey": "dataCoverage",
+        "description": "Archived dataset coverage by process stage."
+      }
+    ],
+    "rawData": {
+      "yearlyTrend": [
+        { "year": 2021, "score": 62 },
+        { "year": 2022, "score": 65 },
+        { "year": 2023, "score": 68 }
+      ],
+      "dataCoverage": [
+        { "stage": "Mining", "datasets": 12 },
+        { "stage": "Refining", "datasets": 14 },
+        { "stage": "Smelting", "datasets": 16 },
+        { "stage": "Fabrication", "datasets": 16 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2024-02-10T09:45:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-026/v3.0/report-026.pdf"
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-001"
+    ]
+  },
+  {
+    "id": "report-027",
+    "projectId": "proj-002",
+    "name": "Smelter Workforce Transition Report",
+    "description": "Published update on workforce transition and re-skilling for decarbonized smelting.",
+    "createdAt": "2025-08-01T07:35:00Z",
+    "updatedAt": "2025-08-18T14:05:00Z",
+    "generatedBy": "u-003",
+    "version": "0.9",
+    "status": "published",
+    "category": "active",
+    "tags": [
+      "workforce",
+      "training",
+      "smelting"
+    ],
+    "summary": {
+      "circularityScore": 70,
+      "gwp": 4.7,
+      "energyDemand": 900,
+      "waterConsumption": 120,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 520000,
+        "perUnit": 4100,
+        "notes": "Training budget co-funded by skilling grants."
+      },
+      "keyFindings": [
+        "112 roles mapped with transition pathways and multi-skilling plans.",
+        "Training completion rate at 82% across first wave cohorts."
+      ],
+      "recommendations": [
+        "Introduce mentorship program for newly redeployed roles.",
+        "Align HR policies with flexible job architectures."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-055",
+        "title": "Skill Mapping",
+        "content": "Role mapping outcomes highlighting at-risk and redeployable roles.",
+        "metrics": {
+          "rolesMapped": 112,
+          "rolesAtRisk": 18
+        }
+      },
+      {
+        "id": "sec-056",
+        "title": "Training Uptake",
+        "content": "Participation and completion metrics for transition training programs.",
+        "metrics": {
+          "participants": 86,
+          "completionRate": 0.82
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-051",
+        "type": "bar",
+        "title": "Skill Matrix",
+        "dataKey": "skillMatrix",
+        "description": "Skill gap closure by role family."
+      },
+      {
+        "id": "viz-052",
+        "type": "line",
+        "title": "Training Progress",
+        "dataKey": "trainingProgress",
+        "description": "Weekly training completion trend."
+      }
+    ],
+    "rawData": {
+      "skillMatrix": [
+        { "role": "Operator", "gapClosed": 0.62 },
+        { "role": "Technician", "gapClosed": 0.54 },
+        { "role": "Supervisor", "gapClosed": 0.48 }
+      ],
+      "trainingProgress": [
+        { "week": "W30", "completion": 0.55 },
+        { "week": "W31", "completion": 0.64 },
+        { "week": "W32", "completion": 0.76 },
+        { "week": "W33", "completion": 0.82 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-08-18T13:40:00Z",
+        "generatedBy": "u-003",
+        "location": "/reports/report-027/v0.9/report-027.pdf"
+      },
+      "xlsx": {
+        "lastGenerated": "2025-08-18T13:45:00Z",
+        "generatedBy": "u-003",
+        "location": "/reports/report-027/v0.9/report-027.xlsx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-002",
+      "u-003",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-028",
+    "projectId": "proj-003",
+    "name": "Casting Additive Manufacturing Study",
+    "description": "Draft study exploring additive manufacturing for complex casting geometries.",
+    "createdAt": "2025-09-27T09:05:00Z",
+    "updatedAt": "2025-10-10T13:55:00Z",
+    "generatedBy": "u-001",
+    "version": "0.5-draft",
+    "status": "draft",
+    "category": "active",
+    "tags": [
+      "additive",
+      "casting",
+      "study"
+    ],
+    "summary": {
+      "circularityScore": 79,
+      "gwp": 3.6,
+      "energyDemand": 720,
+      "waterConsumption": 105,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 760000,
+        "perUnit": 3550,
+        "notes": "Prototype builds and simulation licenses accounted."
+      },
+      "keyFindings": [
+        "21 geometries identified for additive substitution with positive ROI.",
+        "Powder recycling achievable up to 84% with current setup."
+      ],
+      "recommendations": [
+        "Qualify high-thermal alloys for additive route.",
+        "Establish closed-loop powder handling SOPs."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-057",
+        "title": "Geometry Library",
+        "content": "Inventory of casting geometries assessed for additive readiness.",
+        "metrics": {
+          "geometriesScanned": 68,
+          "qualifiedForAM": 21
+        }
+      },
+      {
+        "id": "sec-058",
+        "title": "Material Trials",
+        "content": "Results from additive material trials and build quality assessments.",
+        "metrics": {
+          "alloyVariants": 5,
+          "successfulBuilds": 12
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-053",
+        "type": "scatter",
+        "title": "Geometry Complexity",
+        "dataKey": "geometryComplexity",
+        "description": "Complexity vs ROI mapping for evaluated geometries."
+      },
+      {
+        "id": "viz-054",
+        "type": "column",
+        "title": "Trial Outcomes",
+        "dataKey": "trialOutcomes",
+        "description": "Outcome of additive trials across alloy variants."
+      }
+    ],
+    "rawData": {
+      "geometryComplexity": [
+        { "geometry": "Bracket-A", "complexity": 0.78, "roi": 0.32 },
+        { "geometry": "Housing-B", "complexity": 0.66, "roi": 0.27 },
+        { "geometry": "Manifold-C", "complexity": 0.84, "roi": 0.41 }
+      ],
+      "trialOutcomes": [
+        { "alloy": "AlSi10Mg", "builds": 5, "passes": 4 },
+        { "alloy": "AlSi7", "builds": 4, "passes": 3 },
+        { "alloy": "AlCu", "builds": 3, "passes": 2 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": null,
+        "generatedBy": null,
+        "location": null
+      }
+    },
+    "visibility": "private",
+    "sharedWith": [
+      "u-001",
+      "u-004"
+    ]
+  },
+  {
+    "id": "report-029",
+    "projectId": "proj-004",
+    "name": "Urban Scrap Circular Economy Dashboard",
+    "description": "Final report documenting the analytics dashboard for circular economy metrics.",
+    "createdAt": "2025-03-09T06:25:00Z",
+    "updatedAt": "2025-04-01T11:45:00Z",
+    "generatedBy": "system",
+    "version": "1.0",
+    "status": "final",
+    "category": "completed",
+    "tags": [
+      "dashboard",
+      "analytics",
+      "scrap"
+    ],
+    "summary": {
+      "circularityScore": 82,
+      "gwp": 3.4,
+      "energyDemand": 700,
+      "waterConsumption": 118,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 410000,
+        "perUnit": 3000,
+        "notes": "Dashboard build funded via digital innovation program."
+      },
+      "keyFindings": [
+        "Six dashboard modules deployed covering collection, processing, and outreach.",
+        "Weekly active users increased 28% post launch."
+      ],
+      "recommendations": [
+        "Enable open data APIs for municipal partners.",
+        "Integrate citizen feedback loop in next release."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-059",
+        "title": "Dashboard Modules",
+        "content": "Overview of released modules and data coverage.",
+        "metrics": {
+          "modulesReleased": 6,
+          "dataSources": 9
+        }
+      },
+      {
+        "id": "sec-060",
+        "title": "User Adoption",
+        "content": "Adoption metrics and user engagement insights.",
+        "metrics": {
+          "activeUsers": 140,
+          "weeklyUsage": 0.64
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-055",
+        "type": "treemap",
+        "title": "Module Usage",
+        "dataKey": "moduleUsage",
+        "description": "Usage distribution across dashboard modules."
+      },
+      {
+        "id": "viz-056",
+        "type": "line",
+        "title": "Adoption Trend",
+        "dataKey": "adoptionTrend",
+        "description": "Weekly active user trend post dashboard launch."
+      }
+    ],
+    "rawData": {
+      "moduleUsage": [
+        { "module": "Collection", "usage": 0.28 },
+        { "module": "Processing", "usage": 0.24 },
+        { "module": "Recycling", "usage": 0.2 },
+        { "module": "Community", "usage": 0.18 },
+        { "module": "Finance", "usage": 0.1 }
+      ],
+      "adoptionTrend": [
+        { "week": "Launch", "wau": 92 },
+        { "week": "W1", "wau": 108 },
+        { "week": "W2", "wau": 118 },
+        { "week": "W3", "wau": 140 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-04-01T11:20:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-029/v1.0/report-029.pdf"
+      },
+      "html": {
+        "lastGenerated": "2025-04-01T11:25:00Z",
+        "generatedBy": "system",
+        "location": "/reports/report-029/v1.0/index.html"
+      }
+    },
+    "visibility": "public",
+    "sharedWith": [
+      "u-003",
+      "u-004",
+      "u-005"
+    ]
+  },
+  {
+    "id": "report-030",
+    "projectId": "proj-005",
+    "name": "Geopolymer Sustainability Index",
+    "description": "Published index evaluating sustainability performance across geopolymer facilities.",
+    "createdAt": "2025-07-18T08:10:00Z",
+    "updatedAt": "2025-09-02T10:55:00Z",
+    "generatedBy": "u-005",
+    "version": "1.2",
+    "status": "published",
+    "category": "completed",
+    "tags": [
+      "sustainability",
+      "index",
+      "geopolymer"
+    ],
+    "summary": {
+      "circularityScore": 89,
+      "gwp": 2.8,
+      "energyDemand": 630,
+      "waterConsumption": 100,
+      "costAnalysis": {
+        "currency": "INR",
+        "total": 690000,
+        "perUnit": 3200,
+        "notes": "Index development co-funded with industry consortium."
+      },
+      "keyFindings": [
+        "Top quartile plants achieved index scores above 88.",
+        "Industry average sustainability score improved by 6 points year-on-year."
+      ],
+      "recommendations": [
+        "Share best practices across consortium members quarterly.",
+        "Integrate social metrics into next index revision."
+      ]
+    },
+    "sections": [
+      {
+        "id": "sec-061",
+        "title": "Index Methodology",
+        "content": "Methodology, indicator weighting, and assurance approach.",
+        "metrics": {
+          "indicators": 18,
+          "weightingScore": 0.92
+        }
+      },
+      {
+        "id": "sec-062",
+        "title": "Benchmark Results",
+        "content": "Results across plants and comparison with industry benchmarks.",
+        "metrics": {
+          "topPerformerScore": 88,
+          "industryAverage": 71
+        }
+      }
+    ],
+    "visualizations": [
+      {
+        "id": "viz-057",
+        "type": "radar",
+        "title": "Index Dimensions",
+        "dataKey": "indexDimensions",
+        "description": "Performance across sustainability dimensions for top plants."
+      },
+      {
+        "id": "viz-058",
+        "type": "bar",
+        "title": "Benchmark Results",
+        "dataKey": "benchmarkResults",
+        "description": "Index scores compared across facilities."
+      }
+    ],
+    "rawData": {
+      "indexDimensions": [
+        { "dimension": "Energy", "score": 86 },
+        { "dimension": "Carbon", "score": 88 },
+        { "dimension": "Water", "score": 82 },
+        { "dimension": "Circularity", "score": 90 },
+        { "dimension": "Social", "score": 75 }
+      ],
+      "benchmarkResults": [
+        { "facility": "Plant A", "score": 88 },
+        { "facility": "Plant B", "score": 83 },
+        { "facility": "Plant C", "score": 79 },
+        { "facility": "Industry Avg", "score": 71 }
+      ]
+    },
+    "exports": {
+      "pdf": {
+        "lastGenerated": "2025-09-02T10:30:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-030/v1.2/report-030.pdf"
+      },
+      "pptx": {
+        "lastGenerated": "2025-09-02T10:35:00Z",
+        "generatedBy": "u-005",
+        "location": "/reports/report-030/v1.2/report-030.pptx"
+      }
+    },
+    "visibility": "restricted",
+    "sharedWith": [
+      "u-001",
+      "u-005"
+    ]
+  }
+]

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2, ChevronLeft, ChevronRight } from "lucide-react"
+import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2, ChevronLeft, ChevronRight, BrainCircuitIcon } from "lucide-react"
 import users from "@/data/users.json"
 import { useSidebar } from "@/contexts/SidebarContext"
 
@@ -15,7 +15,12 @@ export default function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const isActive = (path) => location.pathname === path
+  // Consider a link active when the current location starts with its path (for nested routes)
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
+
+  // Styling helpers for sidebar items
+  const baseItemClass = "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted"
+  const activeItemClass = "bg-muted font-semibold"
 
   const currentUser = users?.[0]
   const initials = (currentUser?.name || "User")
@@ -67,75 +72,125 @@ export default function Sidebar() {
             )}
             <ul className="space-y-1">
               <li>
-                <Link
+                <NavLink
                   to="/dashboard"
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-secondary/50 group",
-                    isActive("/dashboard") && "bg-secondary/30",
-                    !sidebarOpen && "justify-center"
-                  )}
-                  aria-current={isActive("/dashboard") ? "page" : undefined}
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/dashboard")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
                   title={!sidebarOpen ? "Dashboard" : undefined}
+                  end
                 >
-                  <LayoutDashboard className="size-4 text-secondary-foreground flex-shrink-0" />
-                  {sidebarOpen && <span className="font-medium">Dashboard</span>}
-                </Link>
+                  {({ isActive: active }) => (
+                    <>
+                      <LayoutDashboard className={cn("size-4 flex-shrink-0", active || isActive("/dashboard") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Dashboard</span>}
+                    </>
+                  )}
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   to="/projects"
-                  className={cn(
-                    "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted",
-                    isActive("/projects") && "bg-secondary/30",
-                    !sidebarOpen && "justify-center"
-                  )}
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/projects")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
                   title={!sidebarOpen ? "Projects" : undefined}
                 >
-                  <Folder className="size-4 opacity-80 group-hover:opacity-100 flex-shrink-0" />
-                  {sidebarOpen && <span>Projects</span>}
-                </Link>
+                  {({ isActive: active }) => (
+                    <>
+                      <Folder className={cn("size-4 flex-shrink-0", active || isActive("/projects") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Projects</span>}
+                    </>
+                  )}
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   to="/canvas"
-                  className={cn(
-                    "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted",
-                    isActive("/canvas") && "bg-secondary/30",
-                    !sidebarOpen && "justify-center"
-                  )}
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/canvas")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
                   title={!sidebarOpen ? "Canvas" : undefined}
                 >
-                  <Paintbrush className="size-4 opacity-80 group-hover:opacity-100 flex-shrink-0" />
-                  {sidebarOpen && <span>Canvas</span>}
-                </Link>
+                  {({ isActive: active }) => (
+                    <>
+                      <Paintbrush className={cn("size-4 flex-shrink-0", active || isActive("/canvas") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Canvas</span>}
+                    </>
+                  )}
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   to="/wizard"
-                  className={cn(
-                    "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted",
-                    isActive("/wizard") && "bg-secondary/30",
-                    !sidebarOpen && "justify-center"
-                  )}
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/wizard")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
                   title={!sidebarOpen ? "Wizard" : undefined}
                 >
-                  <Wand2 className="size-4 opacity-80 group-hover:opacity-100 flex-shrink-0" />
-                  {sidebarOpen && <span>Wizard</span>}
-                </Link>
+                  {({ isActive: active }) => (
+                    <>
+                      <Wand2 className={cn("size-4 flex-shrink-0", active || isActive("/wizard") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Wizard</span>}
+                    </>
+                  )}
+                </NavLink>
+                </li>
+                <li>
+                <NavLink
+                  to="/analytics"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/analytics")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Analytics" : undefined}
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <BrainCircuitIcon className={cn("size-4 flex-shrink-0", active || isActive("/analytics") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Analytics</span>}
+                    </>
+                  )}
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   to="/reports"
-                  className={cn(
-                    "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted",
-                    isActive("/reports") && "bg-secondary/30",
-                    !sidebarOpen && "justify-center"
-                  )}
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/reports")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
                   title={!sidebarOpen ? "Reports" : undefined}
                 >
-                  <FileBarChart className="size-4 opacity-80 group-hover:opacity-100 flex-shrink-0" />
-                  {sidebarOpen && <span>Reports</span>}
-                </Link>
+                  {({ isActive: active }) => (
+                    <>
+                      <FileBarChart className={cn("size-4 flex-shrink-0", active || isActive("/reports") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Reports</span>}
+                    </>
+                  )}
+                </NavLink>
               </li>
             </ul>
           </div>

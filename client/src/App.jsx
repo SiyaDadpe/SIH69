@@ -1,15 +1,17 @@
-import './App.css'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Landing from './pages/Landing'
-import Wizard from './pages/Wizard'
-import Reports from './pages/Reports'
-import Projects from './pages/Projects'
-import Canvas from './pages/Canvas'
-import MainLayout from './layouts/MainLayout'
-import { SidebarProvider } from './contexts/SidebarContext'
+import './App.css';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Landing from './pages/Landing';
+import Wizard from './pages/Wizard';
+import Reports from './pages/Reports';
+import Projects from './pages/Projects';
+import Canvas from './pages/Canvas';
+import Analytics from './pages/Analytics';
+import MainLayout from './layouts/MainLayout';
+import { SidebarProvider } from './contexts/SidebarContext';
+import { Toaster } from '@/components/ui/sonner';
 
 function App() {
   const router = createBrowserRouter([
@@ -51,6 +53,10 @@ function App() {
         {
           path: "canvas",
           element: <Canvas />
+        },
+        {
+          path: "analytics",
+          element: <Analytics/>
         }
       ]
     }
@@ -59,8 +65,9 @@ function App() {
   return (
     <SidebarProvider>
       <RouterProvider router={router} />
+      <Toaster position="top-right" richColors closeButton />
     </SidebarProvider>
-  )
+  );
 }
 
-export default App
+export default App;
