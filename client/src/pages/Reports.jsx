@@ -1169,76 +1169,14 @@ const Reports = () => {
                 </div>
             </div>
 
-            {hasSelection && (
-                <BulkActions
-                    selectedCount={selectedReports.length}
-                    totalCount={totalFilteredCount}
-                    onSelectAll={handleSelectAll}
-                    onClearSelection={clearSelection}
-                    onBulkExport={handleBulkExport}
-                    activeJob={activeJob}
-                />
-            )}
-
-            <div className="space-y-4 rounded-2xl border border-[#E6E1D7] bg-white p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-[#6b5b59]">
-                        Showing page {currentPage} of {totalPages}
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
-                            onClick={handlePrevPage}
-                            disabled={currentPage === 1}
-                        >
-                            Previous
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
-                            onClick={handleNextPage}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="rounded-xl border border-dashed border-[#BA7967]/30 bg-[#F8F6F2] p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium text-[#3d3635]">
-                        <Download className="h-4 w-4 text-[#BA7967]" />
-                        <span>Export Queue</span>
-                        <span className="text-xs text-[#6b5b59]">
-                            {exportJobs.length === 0
-                                ? 'Idle'
-                                : `${exportJobs.length} active task${exportJobs.length === 1 ? '' : 's'}`}
-                        </span>
-                    </div>
-                    <div className="mt-3 space-y-3">
-                        {exportJobs.length === 0 ? (
-                            <p className="text-xs text-[#6b5b59]">
-                                Start a bulk export or trigger individual report exports to track progress here.
-                            </p>
-                        ) : (
-                            exportJobs.map((job) => (
-                                <div key={job.id} className="rounded-lg bg-white p-3 shadow-sm">
-                                    <div className="flex items-center justify-between text-sm text-[#3d3635]">
-                                        <span>{job.label}</span>
-                                        <span>{Math.round(job.progress)}%</span>
-                                    </div>
-                                    <Progress value={job.progress} className="mt-2 h-2" />
-                                    <p className="mt-2 text-xs text-[#6b5b59]">
-                                        {job.status === 'completed'
-                                            ? 'Ready to download — check notifications for the link.'
-                                            : `Processing ${job.count} report${job.count === 1 ? '' : 's'} in background…`}
-                                    </p>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </div>
+            <BulkActions
+                selectedCount={selectedReports.length}
+                totalCount={totalFilteredCount}
+                onSelectAll={handleSelectAll}
+                onClearSelection={clearSelection}
+                onBulkExport={handleBulkExport}
+                activeJob={activeJob}
+            />
 
             <ExportModal
                 open={showExportModal}

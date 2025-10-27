@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -177,7 +177,9 @@ const FiltersPanel = ({
 
     const circularityRange = React.useMemo(() => {
         if (Array.isArray(filters.circularity) && filters.circularity.length === 2) {
-            return filters.circularity;
+            const a = Number(filters.circularity[0]) ?? 0;
+            const b = Number(filters.circularity[1]) ?? 0;
+            return [Math.min(a, b), Math.max(a, b)];
         }
         return [0, 100];
     }, [filters.circularity]);
@@ -301,6 +303,39 @@ const FiltersPanel = ({
         }
     }, [shareContext]);
 
+    // Refs and local visibility state for animated Advanced panel
+    const advBtnRef = useRef(null);
+    const panelRef = useRef(null);
+    const [panelMounted, setPanelMounted] = useState(showAdvanced);
+    const [panelVisible, setPanelVisible] = useState(showAdvanced);
+    const [transformOrigin, setTransformOrigin] = useState('center top');
+    const PANEL_ANIM_MS = 400;
+
+    useEffect(() => {
+        let t;
+        if (showAdvanced) {
+            setPanelMounted(true);
+            // compute origin after mount/layout
+            requestAnimationFrame(() => {
+                const btn = advBtnRef.current;
+                const panel = panelRef.current;
+                if (btn && panel) {
+                    const btnRect = btn.getBoundingClientRect();
+                    const panelRect = panel.getBoundingClientRect();
+                    const x = btnRect.left + btnRect.width / 2 - panelRect.left;
+                    setTransformOrigin(`${Math.max(8, Math.round(x))}px top`);
+                }
+                // slight delay then show (allow layout)
+                t = setTimeout(() => setPanelVisible(true), 20);
+            });
+        } else {
+            setPanelVisible(false);
+            // allow exit animation to complete before unmount
+            t = setTimeout(() => setPanelMounted(false), PANEL_ANIM_MS + 20);
+        }
+        return () => clearTimeout(t);
+    }, [showAdvanced]);
+
     return (
         <div className="space-y-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
@@ -315,6 +350,7 @@ const FiltersPanel = ({
                 </div>
                 <div className="flex items-center gap-2 self-start md:self-auto">
                     <Button
+                        ref={advBtnRef}
                         variant="outline"
                         className={cn(
                             'h-11 rounded-xl border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]',
@@ -335,8 +371,19 @@ const FiltersPanel = ({
                 </div>
             </div>
 
-            {showAdvanced && (
-                <div className="rounded-xl border border-dashed border-[#BA7967]/40 bg-[#F8F6F2] p-4 text-sm text-[#6b5b59]">
+            {panelMounted && (
+                <div
+                    ref={panelRef}
+                    style={{ transformOrigin: transformOrigin }}
+                    aria-hidden={!panelVisible}
+                    className={cn(
+                        'rounded-xl border border-[#BA7967]/40 bg-[#F8F6F2] p-4 text-sm text-[#6b5b59] transform',
+                        panelVisible
+                            ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+                            : 'opacity-0 scale-95 translate-y-1 pointer-events-none',
+                        `transition-all duration-[${PANEL_ANIM_MS}ms] ease-out`
+                    )}
+                >
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label className="block text-xs font-medium uppercase tracking-wide text-[#6b5b59]">
@@ -418,7 +465,12 @@ const FiltersPanel = ({
                                     min={0}
                                     max={100}
                                     step={1}
-                                    onValueChange={(value) => update({ circularity: value })}
+                                    onValueChange={(value) => {
+                                        // normalize order so low <= high
+                                        const low = Math.min(value[0], value[1]);
+                                        const high = Math.max(value[0], value[1]);
+                                        update({ circularity: [low, high] });
+                                    }}
                                 />
                                 <div className="flex items-center justify-between text-xs font-medium text-[#3d3635]">
                                     <span>{circularityRange[0]}%</span>

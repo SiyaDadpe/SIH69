@@ -245,9 +245,15 @@ const ReportCard = ({ report, selected, onToggleSelect, onExport, viewMode = 'gr
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 rounded-2xl border border-[#E6E1D7] bg-white p-4 sm:p-5 shadow-sm transition-shadow hover:shadow-md',
+        'flex flex-col gap-4 rounded-2xl border p-4 sm:p-5 transition-shadow',
+        // when selected, emphasize with themed border/background and stronger shadow
+        selected
+          ? 'border-[#BA7967] bg-[#FFF8F6] shadow-md'
+          : 'border-[#E6E1D7] bg-white shadow-sm hover:shadow-md',
         viewMode === 'list' && 'md:flex-row md:items-start md:gap-6'
       )}
+      role="group"
+      aria-checked={selected}
     >
       <div className="flex flex-1 flex-col gap-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
