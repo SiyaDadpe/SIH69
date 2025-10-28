@@ -245,7 +245,7 @@ const ReportCard = ({ report, selected, onToggleSelect, onExport, viewMode = 'gr
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 rounded-2xl border p-4 sm:p-5 transition-shadow',
+        'flex flex-col rounded-2xl border p-5 transition-all duration-200',
         // when selected, emphasize with themed border/background and stronger shadow
         selected
           ? 'border-[#BA7967] bg-[#FFF8F6] shadow-md'
@@ -255,191 +255,182 @@ const ReportCard = ({ report, selected, onToggleSelect, onExport, viewMode = 'gr
       role="group"
       aria-checked={selected}
     >
-      <div className="flex flex-1 flex-col gap-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              checked={selected}
-              onCheckedChange={() => onToggleSelect()}
-              aria-label={selected ? 'Deselect report' : 'Select report'}
-              className="mt-1"
-            />
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    'rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide',
-                    statusConfig.className
-                  )}
-                >
-                  {statusConfig.label}
-                </span>
-                <Badge variant="outline" className="border-[#BA7967]/40 text-[#6b5b59]">
-                  {toTitleCase(report.category || 'Uncategorised')}
-                </Badge>
-                {report.version && (
-                  <Badge variant="outline" className="border-[#BA7967]/40 text-[#6b5b59]">
-                    v{report.version}
-                  </Badge>
-                )}
-              </div>
-              <h3 className="line-clamp-2 text-lg font-semibold text-[#181814] md:text-xl">
-                {report.name}
-              </h3>
-              {report.description && (
-                <p className="line-clamp-2 text-sm text-[#6b5b59]">
-                  {report.description}
-                </p>
+      {/* Header: Checkbox + Status + Title */}
+      <div className="flex items-start gap-3 mb-4">
+        <Checkbox
+          checked={selected}
+          onCheckedChange={() => onToggleSelect()}
+          aria-label={selected ? 'Deselect report' : 'Select report'}
+          className="mt-1.5 flex-shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-2.5">
+            <span
+              className={cn(
+                'rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide',
+                statusConfig.className
               )}
+            >
+              {statusConfig.label}
+            </span>
+            <Badge variant="outline" className="border-[#BA7967]/30 text-[#6b5b59] text-xs">
+              {toTitleCase(report.category || 'Uncategorised')}
+            </Badge>
+            {report.version && (
+              <Badge variant="outline" className="border-[#BA7967]/30 text-[#6b5b59] text-xs">
+                v{report.version}
+              </Badge>
+            )}
+          </div>
+          <h3 className="line-clamp-2 text-base font-semibold text-[#181814] leading-snug mb-1.5">
+            {report.name}
+          </h3>
+          {report.description && (
+            <p className="line-clamp-2 text-xs text-[#6b5b59] leading-relaxed">
+              {report.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Metrics - compact grid */}
+      <div className="grid grid-cols-2 gap-2 mb-4 pb-4 border-b border-[#E6E1D7]">
+        {metrics.map((metric) => (
+          <div
+            key={metric.key}
+            className="flex items-center gap-1.5 rounded-lg bg-[#F8F6F2] px-2.5 py-2"
+          >
+            <metric.icon className="h-3.5 w-3.5 text-[#BA7967] flex-shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-[#3d3635] truncate">{metric.value}</span>
+              <span className="text-[10px] text-[#6b5b59] uppercase tracking-wide">{metric.label}</span>
             </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          {metrics.map((metric) => (
-            <Badge
-              key={metric.key}
-              variant="outline"
-              className="flex items-center gap-1 border-[#BA7967]/30 bg-[#F8F6F2] text-[#3d3635]"
-            >
-              <metric.icon className="h-3.5 w-3.5 text-[#BA7967]" />
-              <span className="font-medium">{metric.value}</span>
-              <span className="text-xs text-[#6b5b59]">{metric.label}</span>
-            </Badge>
-          ))}
+      {/* Metadata - cleaner two-column layout */}
+      <div className="space-y-2 mb-4 text-xs">
+        <div className="flex items-center gap-2 text-[#6b5b59]">
+          <Layers className="h-3.5 w-3.5 text-[#BA7967] flex-shrink-0" />
+          <span className="font-medium text-[#3d3635]">Metal:</span>
+          <span className="truncate">{metalInfo.label}</span>
         </div>
-
-        <div className="grid gap-3 text-sm text-[#6b5b59] sm:grid-cols-2">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-[#BA7967]" />
-            <span className="font-medium text-[#3d3635]">Metal:</span>
-            <span>{metalInfo.label}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Factory className="h-4 w-4 text-[#BA7967]" />
-            <span className="font-medium text-[#3d3635]">Process:</span>
-            <span>{processLabel}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-[#BA7967]" />
-            <span className="font-medium text-[#3d3635]">Created:</span>
+        <div className="flex items-center gap-2 text-[#6b5b59]">
+          <Factory className="h-3.5 w-3.5 text-[#BA7967] flex-shrink-0" />
+          <span className="font-medium text-[#3d3635]">Process:</span>
+          <span className="truncate">{processLabel}</span>
+        </div>
+        <div className="flex items-center gap-2 text-[#6b5b59]">
+          <UserRound className="h-3.5 w-3.5 text-[#BA7967] flex-shrink-0" />
+          <span className="font-medium text-[#3d3635]">By:</span>
+          <span className="truncate">{formatAuthor(report.generatedBy)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3 pt-1 border-t border-[#E6E1D7]/50">
+          <div className="flex items-center gap-1.5 text-[#6b5b59]">
+            <Calendar className="h-3 w-3 text-[#BA7967]" />
             <span>{formatDate(report.createdAt)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock3 className="h-4 w-4 text-[#BA7967]" />
-            <span className="font-medium text-[#3d3635]">Updated:</span>
+          <div className="flex items-center gap-1.5 text-[#6b5b59]">
+            <Clock3 className="h-3 w-3 text-[#BA7967]" />
             <span>{formatDate(report.updatedAt)}</span>
-          </div>
-          <div className="flex items-center gap-2 sm:col-span-2">
-            <UserRound className="h-4 w-4 text-[#BA7967]" />
-            <span className="font-medium text-[#3d3635]">Author:</span>
-            <span>{formatAuthor(report.generatedBy)}</span>
           </div>
         </div>
       </div>
 
-      <div
-        className={cn(
-          'flex flex-col gap-2',
-          viewMode === 'list' ? 'md:w-[220px]' : 'md:w-full'
-        )}
-      >
-        <div className="flex flex-wrap gap-2">
+      {/* Actions - consolidated and cleaner */}
+      <div className="flex flex-col gap-2 pt-3 border-t border-[#E6E1D7]">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 min-w-[120px] border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
+            className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] text-xs h-8"
             onClick={() => handleQuickAction('View report')}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5 mr-1.5" />
             View
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 min-w-[120px] border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => triggerExport('pdf')}
-            disabled={!resolvedPolicy.canExport}
-            title={!resolvedPolicy.canExport ? `Exports are disabled for ${statusConfig.label} reports.` : undefined}
-          >
-            <FileDown className="h-4 w-4" />
-            PDF
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] text-xs h-8"
+                disabled={!resolvedPolicy.canExport}
+                title={!resolvedPolicy.canExport ? `Exports are disabled for ${statusConfig.label} reports.` : undefined}
+              >
+                <FileDown className="h-3.5 w-3.5 mr-1.5" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onSelect={() => triggerExport('pdf')}>
+                <FileDown className="h-3.5 w-3.5" />
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => triggerExport('excel')}>
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => triggerExport('bundle')}>
+                <Package className="h-3.5 w-3.5" />
+                Data Bundle
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 min-w-[120px] border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => triggerExport('excel')}
-            disabled={!resolvedPolicy.canExport}
-            title={!resolvedPolicy.canExport ? `Exports are disabled for ${statusConfig.label} reports.` : undefined}
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Excel
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 min-w-[120px] border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => triggerExport('bundle')}
-            disabled={!resolvedPolicy.canExport}
-            title={!resolvedPolicy.canExport ? `Exports are disabled for ${statusConfig.label} reports.` : undefined}
-          >
-            <Package className="h-4 w-4" />
-            Data
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 min-w-[120px] border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] disabled:cursor-not-allowed disabled:opacity-60 text-xs h-8"
             onClick={() => handleQuickAction('Compare reports', 'canCompare')}
             disabled={!resolvedPolicy.canCompare}
             title={!resolvedPolicy.canCompare ? `Compare is unavailable while this report is ${statusConfig.label.toLowerCase()}.` : undefined}
           >
-            <GitCompare className="h-4 w-4" />
+            <GitCompare className="h-3.5 w-3.5 mr-1.5" />
             Compare
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] text-xs h-8"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5 mr-1.5" />
+                More
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onSelect={() => handleMenuAction('edit')} disabled={!resolvedPolicy.canEdit}>
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleMenuAction('duplicate')} disabled={!resolvedPolicy.canDuplicate}>
+                <Copy className="h-3.5 w-3.5" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleMenuAction('share')} disabled={!resolvedPolicy.canShare}>
+                <Share2 className="h-3.5 w-3.5" />
+                Share
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleMenuAction('archive')} disabled={!resolvedPolicy.canArchive}>
+                <Archive className="h-3.5 w-3.5" />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => handleMenuAction('delete')}
+                disabled={!resolvedPolicy.canDelete}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="justify-between border border-dashed border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
-            >
-              <span>More actions</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Manage report</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => handleMenuAction('edit')} disabled={!resolvedPolicy.canEdit}>
-              <Pencil className="h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleMenuAction('duplicate')} disabled={!resolvedPolicy.canDuplicate}>
-              <Copy className="h-4 w-4" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleMenuAction('share')} disabled={!resolvedPolicy.canShare}>
-              <Share2 className="h-4 w-4" />
-              Share
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleMenuAction('archive')} disabled={!resolvedPolicy.canArchive}>
-              <Archive className="h-4 w-4" />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={() => handleMenuAction('delete')}
-              disabled={!resolvedPolicy.canDelete}
-              className="text-red-600 focus:text-red-600"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
   );
