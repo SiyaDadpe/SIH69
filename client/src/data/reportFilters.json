@@ -1,0 +1,242 @@
+[
+  {
+    "search": "Q1 2025",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-01-01", "end": "2025-03-31" },
+    "circularityScore": [70, 100],
+    "status": "final",
+    "tags": ["quarterly", "feedstock"]
+  },
+  {
+    "search": "smelting energy",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-02-01", "end": "2025-04-30" },
+    "circularityScore": [60, 85],
+    "status": "published",
+    "tags": ["energy", "benchmark"]
+  },
+  {
+    "search": "roadmap",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-03-01", "end": "2025-12-31" },
+    "circularityScore": [65, 90],
+    "status": "draft",
+    "tags": ["scenario"]
+  },
+  {
+    "search": "waste",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2024-01-01", "end": "2025-01-31" },
+    "circularityScore": [50, 80],
+    "status": "archived",
+    "tags": ["compliance", "waste"]
+  },
+  {
+    "search": "casting baseline",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-01-01", "end": "2025-01-31" },
+    "circularityScore": [70, 90],
+    "status": "final",
+    "tags": ["casting", "baseline"]
+  },
+  {
+    "search": "casting update",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-06-01", "end": "2025-06-30" },
+    "circularityScore": [75, 100],
+    "status": "published",
+    "tags": ["progress", "efficiency"]
+  },
+  {
+    "search": "urban scrap",
+    "metalType": "Mixed",
+    "dateRange": { "start": "2025-04-01", "end": "2025-08-31" },
+    "circularityScore": [60, 85],
+    "status": "draft",
+    "tags": ["scrap", "urban"]
+  },
+  {
+    "search": "urban performance",
+    "metalType": "Mixed",
+    "dateRange": { "start": "2025-07-01", "end": "2025-08-31" },
+    "circularityScore": [70, 95],
+    "status": "final",
+    "tags": ["performance", "urban"]
+  },
+  {
+    "search": "tailings pilot",
+    "metalType": "Residuals",
+    "dateRange": { "start": "2025-05-01", "end": "2025-05-31" },
+    "circularityScore": [80, 100],
+    "status": "published",
+    "tags": ["tailings", "geopolymers"]
+  },
+  {
+    "search": "tailings safety",
+    "metalType": "Residuals",
+    "dateRange": { "start": "2024-12-01", "end": "2025-02-28" },
+    "circularityScore": [60, 85],
+    "status": "archived",
+    "tags": ["safety", "tailings"]
+  },
+  {
+    "search": "supplier engagement",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-04-01", "end": "2025-05-31" },
+    "circularityScore": [70, 90],
+    "status": "published",
+    "tags": ["supplier", "engagement"]
+  },
+  {
+    "search": "carbon abatement",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-01-01", "end": "2025-12-31" },
+    "circularityScore": [65, 85],
+    "status": "final",
+    "tags": ["carbon", "plan"]
+  },
+  {
+    "search": "digital twin",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-10-01", "end": "2025-12-31" },
+    "circularityScore": [70, 90],
+    "status": "draft",
+    "tags": ["digital", "twin"]
+  },
+  {
+    "search": "social impact",
+    "metalType": "Mixed",
+    "dateRange": { "start": "2025-06-01", "end": "2025-09-30" },
+    "circularityScore": [75, 95],
+    "status": "published",
+    "tags": ["social", "impact"]
+  },
+  {
+    "search": "market readiness",
+    "metalType": "Residuals",
+    "dateRange": { "start": "2025-04-01", "end": "2025-04-30" },
+    "circularityScore": [80, 100],
+    "status": "final",
+    "tags": ["market", "geopolymer"]
+  },
+  {
+    "search": "archive 2023",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2023-01-01", "end": "2023-12-31" },
+    "circularityScore": [50, 75],
+    "status": "archived",
+    "tags": ["archive", "historical"]
+  },
+  {
+    "search": "workforce transition",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-08-01", "end": "2025-09-30" },
+    "circularityScore": [60, 85],
+    "status": "published",
+    "tags": ["workforce", "training"]
+  },
+  {
+    "search": "additive manufacturing",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-09-01", "end": "2025-11-30" },
+    "circularityScore": [70, 90],
+    "status": "draft",
+    "tags": ["additive", "study"]
+  },
+  {
+    "search": "circular dashboard",
+    "metalType": "Mixed",
+    "dateRange": { "start": "2025-03-01", "end": "2025-06-30" },
+    "circularityScore": [75, 95],
+    "status": "final",
+    "tags": ["dashboard", "analytics"]
+  },
+  {
+    "search": "sustainability index",
+    "metalType": "Residuals",
+    "dateRange": { "start": "2025-07-01", "end": "2025-09-30" },
+    "circularityScore": [80, 100],
+    "status": "published",
+    "tags": ["sustainability", "index"]
+  },
+  {
+    "search": "finance impact",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-02-01", "end": "2025-03-31" },
+    "circularityScore": [70, 90],
+    "status": "final",
+    "tags": ["finance", "impact"]
+  },
+  {
+    "search": "heat recovery",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-07-01", "end": "2025-07-31" },
+    "circularityScore": [65, 85],
+    "status": "final",
+    "tags": ["heat recovery", "commissioning"]
+  },
+  {
+    "search": "predictive maintenance",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-04-01", "end": "2025-05-31" },
+    "circularityScore": [65, 85],
+    "status": "published",
+    "tags": ["maintenance", "digital"]
+  },
+  {
+    "search": "wastewater optimization",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-05-01", "end": "2025-06-30" },
+    "circularityScore": [75, 95],
+    "status": "final",
+    "tags": ["water", "optimization"]
+  },
+  {
+    "search": "logistics pilot",
+    "metalType": "Mixed",
+    "dateRange": { "start": "2025-09-01", "end": "2025-10-15" },
+    "circularityScore": [60, 85],
+    "status": "draft",
+    "tags": ["logistics", "pilot"]
+  },
+  {
+    "search": "lifecycle assessment",
+    "metalType": "Residuals",
+    "dateRange": { "start": "2024-11-01", "end": "2025-03-31" },
+    "circularityScore": [60, 85],
+    "status": "archived",
+    "tags": ["lca", "tailings"]
+  },
+  {
+    "search": "forecast fy2026",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2025-09-01", "end": "2026-03-31" },
+    "circularityScore": [70, 90],
+    "status": "draft",
+    "tags": ["forecast", "scenario"]
+  },
+  {
+    "search": "scale-up plan",
+    "metalType": "Residuals",
+    "dateRange": { "start": "2025-08-01", "end": "2025-10-31" },
+    "circularityScore": [75, 100],
+    "status": "draft",
+    "tags": ["scale-up", "geopolymer"]
+  },
+  {
+    "search": "supplier audit",
+    "metalType": "Aluminum",
+    "dateRange": { "start": "2024-05-01", "end": "2025-02-28" },
+    "circularityScore": [55, 80],
+    "status": "archived",
+    "tags": ["audit", "compliance"]
+  },
+  {
+    "search": "social dashboard",
+    "metalType": "Mixed",
+    "dateRange": { "start": "2025-06-01", "end": "2025-09-30" },
+    "circularityScore": [70, 95],
+    "status": "published",
+    "tags": ["social", "dashboard"]
+  }
+]
