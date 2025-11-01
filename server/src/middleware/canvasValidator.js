@@ -4,26 +4,8 @@
  * Validates canvas workflow operations and ensures data integrity
  */
 
-const { query, body, validationResult } = require('express-validator');
-
-/**
- * Middleware to handle validation errors
- */
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg,
-        value: err.value
-      }))
-    });
-  }
-  next();
-};
+const { query, body } = require('express-validator');
+const { handleValidationErrors } = require('./validators/commonValidators');
 
 /**
  * Validate workflow creation
@@ -162,7 +144,6 @@ const validateCloneRequest = [
 ];
 
 module.exports = {
-  handleValidationErrors,
   validateWorkflowCreation,
   validateOperationAddition,
   validateWorkflowUpdate,

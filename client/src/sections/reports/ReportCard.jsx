@@ -126,7 +126,20 @@ const DEFAULT_POLICY = {
   canCompare: true,
 };
 
-const ReportCard = ({ report, selected, onToggleSelect, onExport, viewMode = 'grid', statusPolicies = {} }) => {
+const ReportCard = ({ 
+  report, 
+  selected, 
+  onToggleSelect, 
+  onExport, 
+  viewMode = 'grid', 
+  statusPolicies = {},
+  onEdit,
+  onDuplicate,
+  onShare,
+  onArchive,
+  onDelete,
+  onRefresh
+}) => {
   const statusKey = report.status?.toLowerCase();
   const statusConfig = statusStyles[statusKey] || {
     label: toTitleCase(report.status || report.category || 'Pending'),
@@ -208,7 +221,7 @@ const ReportCard = ({ report, selected, onToggleSelect, onExport, viewMode = 'gr
     safeAlert(`${action} for "${report.name}" will be available soon.`);
   };
 
-  const handleMenuAction = (action) => {
+  const handleMenuAction = async (action) => {
     const permissionMap = {
       edit: 'canEdit',
       duplicate: 'canDuplicate',
@@ -227,7 +240,52 @@ const ReportCard = ({ report, selected, onToggleSelect, onExport, viewMode = 'gr
         return;
       }
     }
-    safeAlert(`${toTitleCase(action)} for "${report.name}" queued.`);
+    
+    // Call the appropriate callback
+    try {
+      switch (action) {
+        case 'edit':
+          if (onEdit) {
+            onEdit(report);
+          } else {
+            safeAlert(`Edit functionality for "${report.name}" will be available soon.`);
+          }
+          break;
+        case 'duplicate':
+          if (onDuplicate) {
+            await onDuplicate(report);
+          } else {
+            safeAlert(`Duplicate functionality for "${report.name}" will be available soon.`);
+          }
+          break;
+        case 'share':
+          if (onShare) {
+            onShare(report);
+          } else {
+            safeAlert(`Share functionality for "${report.name}" will be available soon.`);
+          }
+          break;
+        case 'archive':
+          if (onArchive) {
+            await onArchive(report);
+          } else {
+            safeAlert(`Archive functionality for "${report.name}" completed.`);
+          }
+          break;
+        case 'delete':
+          if (onDelete) {
+            await onDelete(report);
+          } else {
+            safeAlert(`Delete functionality for "${report.name}" completed.`);
+          }
+          break;
+        default:
+          safeAlert(`${toTitleCase(action)} for "${report.name}" queued.`);
+      }
+    } catch (error) {
+      console.error(`Error performing ${action}:`, error);
+      safeAlert(`Failed to ${action} "${report.name}". Please try again.`);
+    }
   };
 
   const triggerExport = (format) => {

@@ -170,24 +170,7 @@ const validateQueryParams = [
 /**
  * Validation error handler middleware
  */
-const handleValidationErrors = (req, res, next) => {
-  const { validationResult } = require('express-validator');
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array().map(err => ({
-        field: err.path || err.param,
-        message: err.msg,
-        value: err.value
-      }))
-    });
-  }
-
-  next();
-};
+const { handleValidationErrors } = require('../middleware/validators/commonValidators');
 
 // ============================================================================
 // ROUTES

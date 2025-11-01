@@ -540,6 +540,8 @@ const generateAndSaveReport = asyncHandler(async (req, res) => {
     status: workflow.status === 'complete' ? 'final' : 'draft',
     visibility: workflow.isPublic ? 'public' : 'private',
     sections: sections,
+    circularityScore: parseFloat(lcaReport.circularityScore.toFixed(2)),
+    co2Savings: parseFloat((lcaReport.impacts.totalGWP * 0.15).toFixed(2)), // Estimated CO2 savings
     tags: [
       'lca',
       'canvas-generated',

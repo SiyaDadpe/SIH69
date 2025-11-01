@@ -33,12 +33,21 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import reportsData from '@/data/reports.json';
+// import reportsData from '@/data/reports.json';
+import { 
+  fetchReports, 
+  bulkExportReports,
+  updateReport,
+  duplicateReport,
+  archiveReport,
+  deleteReport,
+  shareReport
+} from '@/services/reportService';
 import reportFiltersData from '@/data/reportFilters.json';
 import ReportCard from '@/sections/reports/ReportCard';
 import FiltersPanel from '@/sections/reports/FiltersPanel';
 import BulkActions from '@/sections/reports/BulkActions';
-import ExportModal from '@/sections/reports/ExportModal';
+import ExportReportDialog from '@/components/ExportReportDialog';
 import { toast } from 'sonner';
 import AnalyticsDashboard from '@/sections/reports/AnalyticsDashboard';
 
@@ -110,11 +119,90 @@ const cloneFilters = (input) => {
 };
 
 const Reports = () => {
-    const reports = useMemo(() => (Array.isArray(reportsData) ? reportsData : []), []);
+    // Declare all state at the top, before any useEffect/useMemo
+    const [activeTab, setActiveTab] = useState(tabs[0]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState(() => cloneFilters(BASE_FILTERS));
+    const [currentPage, setCurrentPage] = useState(1);
+    const [sortOption, setSortOption] = useState('default');
+    const [reports, setReports] = useState([]);
+    const [loadingReports, setLoadingReports] = useState(true);
+    const [totalReports, setTotalReports] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const availableFilters = useMemo(
         () => (Array.isArray(reportFiltersData) ? reportFiltersData.length : 0),
         []
     );
+
+    useEffect(() => {
+        setLoadingReports(true);
+        // Build backend query params
+        const params = {};
+        // Tab status
+        const normalizedTab = activeTab.toLowerCase();
+        const allowedStatuses = TAB_STATUS_MAP[normalizedTab] || null;
+        if (allowedStatuses && allowedStatuses.length === 1) {
+            params.status = allowedStatuses[0];
+        }
+        // Search
+        if (searchTerm.trim()) {
+            params.search = searchTerm.trim();
+        }
+        // Filters
+        if (filters.status && filters.status !== 'any') {
+            params.status = filters.status;
+        }
+        if (filters.author && filters.author !== 'any') {
+            params['author'] = filters.author;
+        }
+        if (filters.tags && filters.tags.length > 0) {
+            params.tags = filters.tags.join(',');
+        }
+        if (filters.metalTypes && filters.metalTypes.length > 0) {
+            params.tags = (params.tags ? params.tags + ',' : '') + filters.metalTypes.join(',');
+        }
+        if (filters.processes && filters.processes.length > 0) {
+            params.tags = (params.tags ? params.tags + ',' : '') + filters.processes.join(',');
+        }
+        // Date range
+        if (filters.dateRange?.from) {
+            params.from = filters.dateRange.from;
+        }
+        if (filters.dateRange?.to) {
+            params.to = filters.dateRange.to;
+        }
+        // Circularity (handled client-side for now)
+        // Pagination
+        params.page = currentPage;
+        params.limit = PAGE_SIZE;
+        // Sorting
+        if (sortOption === 'name-asc') {
+            params.sort = 'name';
+        } else if (sortOption === 'score-desc') {
+            params.sort = '-summary.circularityScore';
+        } else {
+            params.sort = '-updatedAt';
+        }
+        fetchReports(params)
+            .then((data) => {
+                setReports(Array.isArray(data.reports) ? data.reports : data);
+                setTotalReports(data.pagination?.totalReports || 0);
+                setTotalPages(data.pagination?.totalPages || 1);
+            })
+            .catch((err) => {
+                setReports([]);
+                setTotalReports(0);
+                setTotalPages(1);
+                toast.error('Failed to load reports from server');
+            })
+            .finally(() => setLoadingReports(false));
+    }, [activeTab, searchTerm, filters, currentPage, sortOption, refreshTrigger]);
+
+    // Function to refresh the reports list
+    const loadReports = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
 
     const metadataOptions = useMemo(() => {
         const metalKeywords = new Set(['aluminum', 'aluminium', 'copper', 'steel', 'tailings', 'residuals', 'mixed', 'iron', 'nickel']);
@@ -152,9 +240,7 @@ const Reports = () => {
         };
     }, [reports]);
 
-    const [activeTab, setActiveTab] = useState(tabs[0]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filters, setFilters] = useState(() => cloneFilters(BASE_FILTERS));
+    // (already declared above)
     const [savedFilters, setSavedFilters] = useState(() => {
         if (typeof window === 'undefined') {
             return [];
@@ -337,8 +423,8 @@ const Reports = () => {
     }, [defaultFilter, setSearchTerm, setFilters, setActiveSharedFilterId]);
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState('grid');
-    const [sortOption, setSortOption] = useState(sortOptions[0].value);
-    const [currentPage, setCurrentPage] = useState(1);
+    // (already declared above)
+    // (already declared above)
     const [selectedReports, setSelectedReports] = useState([]);
     const [exportJobs, setExportJobs] = useState([]);
     const jobTimersRef = useRef({});
@@ -364,6 +450,63 @@ const Reports = () => {
         setExportFormat('pdf');
     }, []);
 
+    // Handler: Edit Report
+    const handleEdit = useCallback((report) => {
+        console.log('Edit report:', report);
+        toast.info(`Editing "${report.name || report.title}" - Feature coming soon!`);
+        // TODO: Navigate to edit page or open edit modal
+        // navigate(`/reports/${report._id}/edit`);
+    }, []);
+
+    // Handler: Duplicate Report
+    const handleDuplicate = useCallback(async (report) => {
+        try {
+            toast.loading('Duplicating report...');
+            const duplicated = await duplicateReport(report._id);
+            toast.success(`Successfully duplicated "${report.name || report.title}"`);
+            // Refresh the reports list
+            loadReports();
+        } catch (error) {
+            console.error('Failed to duplicate report:', error);
+            toast.error('Failed to duplicate report. Please try again.');
+        }
+    }, []);
+
+    // Handler: Share Report
+    const handleShare = useCallback((report) => {
+        console.log('Share report:', report);
+        toast.info(`Sharing "${report.name || report.title}" - Feature coming soon!`);
+        // TODO: Open share dialog with visibility options
+    }, []);
+
+    // Handler: Archive Report
+    const handleArchive = useCallback(async (report) => {
+        try {
+            toast.loading('Archiving report...');
+            await archiveReport(report._id);
+            toast.success(`"${report.name || report.title}" has been archived`);
+            // Refresh the reports list
+            loadReports();
+        } catch (error) {
+            console.error('Failed to archive report:', error);
+            toast.error('Failed to archive report. Please try again.');
+        }
+    }, []);
+
+    // Handler: Delete Report
+    const handleDelete = useCallback(async (report) => {
+        try {
+            toast.loading('Deleting report...');
+            await deleteReport(report._id);
+            toast.success(`"${report.name || report.title}" has been deleted`);
+            // Refresh the reports list
+            loadReports();
+        } catch (error) {
+            console.error('Failed to delete report:', error);
+            toast.error('Failed to delete report. Please try again.');
+        }
+    }, []);
+
     const clearAllJobTimers = useCallback(() => {
         if (typeof window === 'undefined') {
             return;
@@ -375,6 +518,7 @@ const Reports = () => {
         });
     }, [jobTimersRef]);
 
+    // Optionally, fetch stats from backend if available, else fallback to local calculation
     const stats = useMemo(() => {
         const counts = { active: 0, completed: 0, archived: 0 };
         reports.forEach((report) => {
@@ -390,146 +534,11 @@ const Reports = () => {
         return counts;
     }, [reports]);
 
-    const filteredReports = useMemo(() => {
-        const normalizedTab = activeTab.toLowerCase();
-        const allowedStatuses = TAB_STATUS_MAP[normalizedTab] || null;
-        const normalizedSearch = searchTerm.trim().toLowerCase();
+    // All filtering, sorting, and pagination is now backend-driven
+    const filteredReports = reports;
 
-        return reports.filter((report) => {
-            const reportStatus = (report.status || 'draft').toLowerCase();
-            const matchesTab = !allowedStatuses ? true : allowedStatuses.includes(reportStatus);
-
-            if (!matchesTab) {
-                return false;
-            }
-
-            if (normalizedSearch) {
-                const sectionsText = (report.sections || [])
-                    .map((section) => `${section.title || ''} ${section.content || ''}`)
-                    .join(' ');
-                const haystack = [report.name, report.description, report.projectId, sectionsText, ...(report.tags || [])]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLowerCase();
-
-                if (!haystack.includes(normalizedSearch)) {
-                    return false;
-                }
-            }
-
-            const normalizedTags = (report.tags || []).map((tag) => String(tag).toLowerCase());
-
-            if (filters.metalTypes.length > 0) {
-                const hasMetalMatch = filters.metalTypes.some((metal) =>
-                    normalizedTags.includes(String(metal).toLowerCase())
-                );
-                if (!hasMetalMatch) {
-                    return false;
-                }
-            }
-
-            if (filters.processes.length > 0) {
-                const hasProcessMatch = filters.processes.some((process) =>
-                    normalizedTags.includes(String(process).toLowerCase())
-                );
-                if (!hasProcessMatch) {
-                    return false;
-                }
-            }
-
-            if (filters.tags.length > 0) {
-                const tagChecklist = filters.tags.map((tag) => String(tag).toLowerCase());
-                const hasAllTags = tagChecklist.every((tag) => normalizedTags.includes(tag));
-                if (!hasAllTags) {
-                    return false;
-                }
-            }
-
-            if (filters.author && filters.author !== 'any') {
-                if ((report.generatedBy || '') !== filters.author) {
-                    return false;
-                }
-            }
-
-            if (filters.status && filters.status !== 'any') {
-                if ((report.status || '').toLowerCase() !== filters.status.toLowerCase()) {
-                    return false;
-                }
-            }
-
-            const [minCircularity, maxCircularity] = filters.circularity || [0, 100];
-            const hasCircularityFilter =
-                Number.isFinite(minCircularity) && Number.isFinite(maxCircularity) &&
-                (minCircularity > 0 || maxCircularity < 100);
-            if (hasCircularityFilter) {
-                const score = report.summary?.circularityScore;
-                if (!Number.isFinite(score)) {
-                    return false;
-                }
-                if (score < minCircularity || score > maxCircularity) {
-                    return false;
-                }
-            }
-
-            if (filters.dateRange?.from) {
-                const fromDate =
-                    filters.dateRange.from instanceof Date
-                        ? filters.dateRange.from
-                        : new Date(filters.dateRange.from);
-                const reportDate = new Date(report.updatedAt || report.createdAt || 0);
-                const rangeStart = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
-                if (isFinite(fromDate.getTime()) && reportDate < rangeStart) {
-                    return false;
-                }
-            }
-
-            if (filters.dateRange?.to) {
-                const toDate =
-                    filters.dateRange.to instanceof Date
-                        ? filters.dateRange.to
-                        : new Date(filters.dateRange.to);
-                const reportDate = new Date(report.updatedAt || report.createdAt || 0);
-                const rangeEnd = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999);
-                if (isFinite(toDate.getTime()) && reportDate > rangeEnd) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-    }, [reports, activeTab, searchTerm, filters]);
-
-    const sortedReports = useMemo(() => {
-        const next = [...filteredReports];
-
-        switch (sortOption) {
-            case 'name-asc':
-                next.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-            case 'score-desc':
-                next.sort((a, b) => {
-                    const aScore = a.summary?.circularityScore ?? -Infinity;
-                    const bScore = b.summary?.circularityScore ?? -Infinity;
-                    return bScore - aScore;
-                });
-                break;
-            default:
-                next.sort((a, b) => {
-                    const aDate = new Date(a.updatedAt || a.createdAt || 0).getTime();
-                    const bDate = new Date(b.updatedAt || b.createdAt || 0).getTime();
-                    return bDate - aDate;
-                });
-                break;
-        }
-
-        return next;
-    }, [filteredReports, sortOption]);
-
-    const totalPages = useMemo(
-        () => Math.max(1, Math.ceil(sortedReports.length / PAGE_SIZE)),
-        [sortedReports.length]
-    );
-
+    const sortedReports = filteredReports;
+    // totalPages is now backend-driven
     const appliedFilterChips = useMemo(() => {
         const chips = [];
         const toTitle = (value) =>
@@ -723,13 +732,12 @@ const Reports = () => {
     }, []);
 
     const handleBulkExport = useCallback(
-        (format) => {
+        async (format) => {
             try {
                 if (selectedReports.length === 0) {
                     toast.info('Select at least one report to export.');
                     return;
                 }
-
                 const count = selectedReports.length;
                 const jobId =
                     typeof window !== 'undefined' && window.crypto?.randomUUID
@@ -741,7 +749,6 @@ const Reports = () => {
                         ? `Generating Excel workbook for ${count} report${count === 1 ? '' : 's'}…`
                         : `Compiling PDF bundle for ${count} report${count === 1 ? '' : 's'}…`;
                 const toastId = toast.loading(loadingMessage);
-
                 setExportJobs((prev) => [
                     ...prev,
                     {
@@ -754,52 +761,45 @@ const Reports = () => {
                         createdAt: Date.now(),
                     },
                 ]);
-
-                if (typeof window === 'undefined') {
-                    return;
-                }
-
-                const interval = window.setInterval(() => {
-                    let completedThisTick = false;
-
-                    setExportJobs((prev) =>
-                        prev.map((job) => {
-                            if (job.id !== jobId) {
-                                return job;
-                            }
-                            if (job.status === 'completed') {
-                                return job;
-                            }
-                            const increment = Math.random() * 18 + 12;
-                            const nextProgress = Math.min(job.progress + increment, 100);
-                            const status = nextProgress >= 100 ? 'completed' : 'running';
-                            if (status === 'completed') {
-                                completedThisTick = true;
-                            }
-                            return {
-                                ...job,
-                                progress: nextProgress,
-                                status,
-                            };
-                        })
-                    );
-
-                    if (completedThisTick) {
-                        window.clearInterval(jobTimersRef.current[jobId]);
-                        delete jobTimersRef.current[jobId];
-
-                        toast.success(`${label} ready`, {
-                            id: toastId,
-                            description: `${count} report${count === 1 ? '' : 's'} exported successfully.`,
-                        });
-
-                        window.setTimeout(() => {
-                            setExportJobs((prev) => prev.filter((job) => job.id !== jobId));
-                        }, 8000);
-                    }
-                }, 900);
-
-                jobTimersRef.current[jobId] = interval;
+                // Call backend bulk export endpoint
+                const backendFormat = format === 'excel-multi' ? 'excel' : 'pdf';
+                const response = await bulkExportReports({
+                    reportIds: selectedReports,
+                    format: backendFormat,
+                });
+                // Download file
+                const blob = new Blob([response.data], {
+                    type:
+                        backendFormat === 'excel'
+                            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            : 'application/pdf',
+                });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download =
+                    backendFormat === 'excel'
+                        ? 'reports-bundle.xlsx'
+                        : 'reports-bundle.pdf';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                // Mark job as completed
+                setExportJobs((prev) =>
+                    prev.map((job) =>
+                        job.id === jobId
+                            ? { ...job, progress: 100, status: 'completed' }
+                            : job
+                    )
+                );
+                toast.success(`${label} ready`, {
+                    id: toastId,
+                    description: `${count} report${count === 1 ? '' : 's'} exported successfully.`,
+                });
+                setTimeout(() => {
+                    setExportJobs((prev) => prev.filter((job) => job.id !== jobId));
+                }, 8000);
             } catch (error) {
                 console.error('Failed to queue bulk export', error);
                 toast.error('Failed to queue export. Please retry.');
@@ -1079,6 +1079,12 @@ const Reports = () => {
                                                 selected={selectedReports.includes(report.id)}
                                                 onToggleSelect={() => toggleSelection(report.id)}
                                                 onExport={handleOpenExport}
+                                                onEdit={handleEdit}
+                                                onDuplicate={handleDuplicate}
+                                                onShare={handleShare}
+                                                onArchive={handleArchive}
+                                                onDelete={handleDelete}
+                                                onRefresh={loadReports}
                                                 statusPolicies={STATUS_POLICIES}
                                                 viewMode={viewMode}
                                             />
@@ -1178,11 +1184,16 @@ const Reports = () => {
                 activeJob={activeJob}
             />
 
-            <ExportModal
+            <ExportReportDialog
                 open={showExportModal}
                 report={exportTarget}
-                initialFormat={exportFormat}
-                onClose={handleCloseExport}
+                onOpenChange={(open) => {
+                    setShowExportModal(open);
+                    if (!open) {
+                        setExportTarget(null);
+                        setExportFormat('pdf');
+                    }
+                }}
             />
         </div>
     );
