@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import './App.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -12,51 +13,79 @@ import Analytics from './pages/Analytics';
 import MainLayout from './layouts/MainLayout';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
+=======
+import './App.css'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Landing from './pages/Landing'
+import Wizard from './pages/Wizard'
+import Reports from './pages/Reports'
+import Projects from './pages/Projects'
+import Canvas from './pages/Canvas'
+import MainLayout from './layouts/MainLayout'
+import RouteError from './components/RouteError'
+import { SidebarProvider } from './contexts/SidebarContext'
+>>>>>>> 84c8630 (Updated canvas section)
 
 function App() {
   const router = createBrowserRouter([
     // Routes without sidebar
     {
       path: "/",
-      element: <Landing />
+      element: <Landing />,
+      errorElement: <RouteError />
     },
     {
       path: "/login",
-      element: <Login />
+      element: <Login />,
+      errorElement: <RouteError />
     },
     {
       path: "/signup",
-      element: <Signup />
+      element: <Signup />,
+      errorElement: <RouteError />
     },
     
     // Routes with sidebar - wrapped in MainLayout
     {
       path: "/",
       element: <MainLayout />,
+      errorElement: <RouteError />,
       children: [
         {
           path: "dashboard",
-          element: <Dashboard />
+          element: <Dashboard />,
+          errorElement: <RouteError />
         },
         {
           path: "projects",
-          element: <Projects />
+          element: <Projects />,
+          errorElement: <RouteError />
         },
         {
           path: "wizard",
-          element: <Wizard />
+          element: <Wizard />,
+          errorElement: <RouteError />
         },
         {
           path: "reports",
-          element: <Reports />
+          element: <Reports />,
+          errorElement: <RouteError />
         },
         {
           path: "canvas",
+<<<<<<< HEAD
           element: <Canvas />
         },
         {
           path: "analytics",
           element: <Analytics/>
+=======
+          element: <Canvas />,
+          errorElement: <RouteError />
+>>>>>>> 84c8630 (Updated canvas section)
         }
       ]
     }
