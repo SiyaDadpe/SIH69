@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import './App.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -11,23 +10,9 @@ import Projects from './pages/Projects';
 import Canvas from './pages/Canvas';
 import Analytics from './pages/Analytics';
 import MainLayout from './layouts/MainLayout';
+import RouteError from './components/RouteError';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
-=======
-import './App.css'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Landing from './pages/Landing'
-import Wizard from './pages/Wizard'
-import Reports from './pages/Reports'
-import Projects from './pages/Projects'
-import Canvas from './pages/Canvas'
-import MainLayout from './layouts/MainLayout'
-import RouteError from './components/RouteError'
-import { SidebarProvider } from './contexts/SidebarContext'
->>>>>>> 84c8630 (Updated canvas section)
 
 function App() {
   const router = createBrowserRouter([
@@ -76,16 +61,13 @@ function App() {
         },
         {
           path: "canvas",
-<<<<<<< HEAD
-          element: <Canvas />
+          element: <Canvas />,
+          errorElement: <RouteError />
         },
         {
           path: "analytics",
-          element: <Analytics/>
-=======
-          element: <Canvas />,
+          element: <Analytics />,
           errorElement: <RouteError />
->>>>>>> 84c8630 (Updated canvas section)
         }
       ]
     }
