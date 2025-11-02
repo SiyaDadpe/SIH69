@@ -20,7 +20,7 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
   const isStepCompleted = (idx) => completedSteps.includes(idx)
 
   return (
-    <aside className="hidden md:block fixed inset-y-0 right-0 z-30 w-80 border-l bg-[#F3F2EC] p-6 overflow-y-auto">
+    <aside className="hidden md:block fixed inset-y-0 right-0 z-30 w-80 border-l bg-[#F3F2EC] p-6 overflow-hidden">
       <div className="mb-4">
         <h3 className="text-lg sm:text-xl font-bold text-[#181814]">Progress</h3>
         <div className="mt-2 flex items-center gap-2">
@@ -30,7 +30,6 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
-          <span className="text-sm font-semibold text-[#BA7967]">{completionPercentage}%</span>
         </div>
       </div>
       

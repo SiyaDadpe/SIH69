@@ -1,0 +1,4733 @@
+[
+  {
+    "projectId": "PA001",
+    "projectName": "Urban Mining Initiative - Mumbai",
+    "analysisDate": "2025-10-15T10:30:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 12500000,
+      "capitalExpenditure": 3500000,
+      "operationalExpenditure": 7200000,
+      "maintenanceCost": 1200000,
+      "wasteManagementCost": 600000,
+      "totalEmissions": 8500,
+      "energyConsumption": 15000,
+      "waterConsumption": 45000,
+      "wasteGeneration": 3200,
+      "resourceEfficiency": 45,
+      "recyclingRate": 15,
+      "materialCircularity": 20,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 8900000,
+      "capitalExpenditure": 4200000,
+      "operationalExpenditure": 3800000,
+      "maintenanceCost": 700000,
+      "wasteManagementCost": 200000,
+      "totalEmissions": 3200,
+      "energyConsumption": 9500,
+      "waterConsumption": 28000,
+      "wasteGeneration": 850,
+      "resourceEfficiency": 78,
+      "recyclingRate": 82,
+      "materialCircularity": 85,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "mining-001",
+        "stageName": "Extraction",
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 2500,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 1200000.0,
+        "capitalCost": 2100000,
+        "maintenanceCost": 180000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000,
+        "linearMetrics": {
+          "cost": 3000000,
+          "emissions": 2500,
+          "efficiency": 40
+        },
+        "circularMetrics": {
+          "cost": 2100000,
+          "emissions": 900,
+          "efficiency": 72
+        },
+        "improvement": 30
+      },
+      {
+        "stageId": "refining-001",
+        "stageName": "Refining",
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 3200,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 1800000.0,
+        "capitalCost": 3200000,
+        "maintenanceCost": 270000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000,
+        "linearMetrics": {
+          "cost": 4500000,
+          "emissions": 3200,
+          "efficiency": 48
+        },
+        "circularMetrics": {
+          "cost": 3200000,
+          "emissions": 1100,
+          "efficiency": 80
+        },
+        "improvement": 28.9
+      },
+      {
+        "stageId": "manufacturing-001",
+        "stageName": "Manufacturing",
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 2800,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 2000000.0,
+        "capitalCost": 3600000,
+        "maintenanceCost": 300000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000,
+        "linearMetrics": {
+          "cost": 5000000,
+          "emissions": 2800,
+          "efficiency": 46
+        },
+        "circularMetrics": {
+          "cost": 3600000,
+          "emissions": 1200,
+          "efficiency": 82
+        },
+        "improvement": 28
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Western India",
+      "state": "Maharashtra",
+      "city": "Mumbai",
+      "coordinates": {
+        "latitude": 19.076,
+        "longitude": 72.8777
+      },
+      "regionalBenchmarks": {
+        "avgCost": 11000000,
+        "avgEmissions": 7200,
+        "avgEfficiency": 52
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 12,
+        "rawMaterials": 8,
+        "transportHubs": 15
+      },
+      "facilities": [
+        {
+          "id": "FAC-001-001",
+          "name": "Mumbai Primary Extraction Site",
+          "type": "mine",
+          "latitude": 19.076,
+          "longitude": 72.8777,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-001-002",
+          "name": "Mumbai Refinery",
+          "type": "refinery",
+          "latitude": 19.026,
+          "longitude": 73.02770000000001,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-001-003",
+          "name": "Mumbai Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 19.216,
+          "longitude": 72.9777,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-001-004",
+          "name": "Recycling Hub Mumbai",
+          "type": "recycler",
+          "latitude": 19.116,
+          "longitude": 72.8677,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-001-001",
+          "fromFacility": "FAC-001-001",
+          "toFacility": "FAC-001-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-001-002",
+          "fromFacility": "FAC-001-002",
+          "toFacility": "FAC-001-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-001-003",
+          "fromFacility": "FAC-001-004",
+          "toFacility": "FAC-001-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-001-004",
+          "fromFacility": "FAC-001-003",
+          "toFacility": "FAC-001-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Mumbai Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Maharashtra Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-001-001",
+          "FAC-001-002",
+          "FAC-001-003",
+          "FAC-001-004"
+        ],
+        "edges": [
+          "ROUTE-001-001",
+          "ROUTE-001-002",
+          "ROUTE-001-003",
+          "ROUTE-001-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "id": "AI-REC-001",
+        "recommendationId": "AI-REC-001",
+        "category": "Cost Optimization",
+        "title": "Implement Local Sourcing Network",
+        "description": "Establish partnerships with 5 nearby recycling facilities to reduce transportation costs by 22%",
+        "affectedStage": "stage-001-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 900000.0,
+        "implementationTime": 6,
+        "complexity": "low",
+        "priority": 5,
+        "confidenceScore": 85,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 2160000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1980000.0000000002
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ],
+        "impact": {
+          "costReduction": 1800000,
+          "emissionReduction": 450,
+          "timeframe": "6 months"
+        }
+      },
+      {
+        "id": "AI-REC-002",
+        "recommendationId": "AI-REC-002",
+        "category": "Emission Reduction",
+        "title": "Upgrade to Renewable Energy",
+        "description": "Switch 60% of energy consumption to solar power infrastructure",
+        "affectedStage": "stage-001-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 225000.0,
+        "implementationTime": 12,
+        "complexity": "medium",
+        "priority": 4,
+        "confidenceScore": 85,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 540000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 495000.00000000006
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ],
+        "impact": {
+          "costReduction": 450000,
+          "emissionReduction": 1200,
+          "timeframe": "12 months"
+        }
+      },
+      {
+        "id": "AI-REC-003",
+        "recommendationId": "AI-REC-003",
+        "category": "Resource Efficiency",
+        "title": "Implement Closed-Loop Water System",
+        "description": "Install water recycling system to reduce water usage by 40%",
+        "affectedStage": "stage-001-003",
+        "type": "process",
+        "costImpact": -29,
+        "emissionImpact": -45,
+        "efficiencyImpact": 28,
+        "circularityImpact": 36,
+        "implementationCost": 140000.0,
+        "implementationTime": 9,
+        "complexity": "high",
+        "priority": 3,
+        "confidenceScore": 85,
+        "dataSupport": 245,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 3A",
+            "successRate": 92,
+            "costSavings": 336000.0
+          },
+          {
+            "projectName": "Reference Project 3B",
+            "successRate": 91,
+            "costSavings": 308000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ],
+        "impact": {
+          "costReduction": 280000,
+          "emissionReduction": 180,
+          "timeframe": "9 months"
+        }
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 8500,
+        "circular": 3200,
+        "reduction": 62.4
+      },
+      "energyConsumption": {
+        "linear": 15000,
+        "circular": 9500,
+        "reduction": 36.7
+      },
+      "waterUsage": {
+        "linear": 45000,
+        "circular": 28000,
+        "reduction": 37.8
+      },
+      "wasteGeneration": {
+        "linear": 3200,
+        "circular": 850,
+        "reduction": 73.4
+      },
+      "totalCost": {
+        "linear": 12500000,
+        "circular": 8900000,
+        "savings": 3600000
+      },
+      "capitalInvestment": {
+        "linear": 3500000,
+        "circular": 4200000,
+        "difference": 700000
+      },
+      "materialCircularity": {
+        "linear": 20,
+        "circular": 85,
+        "improvement": 65
+      },
+      "recyclingRate": {
+        "linear": 15,
+        "circular": 82,
+        "improvement": 67
+      },
+      "industryAverage": {
+        "cost": 13500000,
+        "emissions": 9200,
+        "efficiency": 42
+      },
+      "bestInClass": {
+        "cost": 7500000,
+        "emissions": 2800,
+        "efficiency": 85
+      },
+      "performanceRanking": {
+        "overall": 68,
+        "costEfficiency": 72,
+        "sustainability": 65
+      }
+    }
+  },
+  {
+    "projectId": "PA002",
+    "projectName": "E-Waste Recovery - Bangalore",
+    "analysisDate": "2025-10-20T14:45:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 9800000,
+      "capitalExpenditure": 2800000,
+      "operationalExpenditure": 5600000,
+      "maintenanceCost": 1000000,
+      "wasteManagementCost": 400000,
+      "totalEmissions": 6200,
+      "energyConsumption": 11000,
+      "waterConsumption": 32000,
+      "wasteGeneration": 2400,
+      "resourceEfficiency": 52,
+      "recyclingRate": 22,
+      "materialCircularity": 28,
+      "implementationTimeline": 15,
+      "paybackPeriod": 32
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 6500000,
+      "capitalExpenditure": 3400000,
+      "operationalExpenditure": 2500000,
+      "maintenanceCost": 450000,
+      "wasteManagementCost": 150000,
+      "totalEmissions": 2100,
+      "energyConsumption": 6800,
+      "waterConsumption": 18000,
+      "wasteGeneration": 580,
+      "resourceEfficiency": 85,
+      "recyclingRate": 88,
+      "materialCircularity": 91,
+      "implementationTimeline": 20,
+      "paybackPeriod": 24
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-002",
+        "stageName": "Collection",
+        "linearMetrics": {
+          "cost": 2000000,
+          "emissions": 1500,
+          "efficiency": 50
+        },
+        "circularMetrics": {
+          "cost": 1300000,
+          "emissions": 500,
+          "efficiency": 82
+        },
+        "improvement": 35,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 1500,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 800000.0,
+        "capitalCost": 1300000,
+        "maintenanceCost": 120000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "sorting-002",
+        "stageName": "Sorting & Processing",
+        "linearMetrics": {
+          "cost": 3800000,
+          "emissions": 2200,
+          "efficiency": 48
+        },
+        "circularMetrics": {
+          "cost": 2400000,
+          "emissions": 750,
+          "efficiency": 86
+        },
+        "improvement": 36.8,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 2200,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 1520000.0,
+        "capitalCost": 2400000,
+        "maintenanceCost": 228000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "recovery-002",
+        "stageName": "Material Recovery",
+        "linearMetrics": {
+          "cost": 4000000,
+          "emissions": 2500,
+          "efficiency": 58
+        },
+        "circularMetrics": {
+          "cost": 2800000,
+          "emissions": 850,
+          "efficiency": 88
+        },
+        "improvement": 30,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 2500,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 1600000.0,
+        "capitalCost": 2800000,
+        "maintenanceCost": 240000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Southern India",
+      "state": "Karnataka",
+      "city": "Bangalore",
+      "coordinates": {
+        "latitude": 12.9716,
+        "longitude": 77.5946
+      },
+      "regionalBenchmarks": {
+        "avgCost": 8900000,
+        "avgEmissions": 5500,
+        "avgEfficiency": 58
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 18,
+        "rawMaterials": 6,
+        "transportHubs": 12
+      },
+      "facilities": [
+        {
+          "id": "FAC-002-001",
+          "name": "Bangalore Primary Extraction Site",
+          "type": "mine",
+          "latitude": 12.9716,
+          "longitude": 77.5946,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-002-002",
+          "name": "Bangalore Refinery",
+          "type": "refinery",
+          "latitude": 12.9216,
+          "longitude": 77.7446,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-002-003",
+          "name": "Bangalore Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 13.111600000000001,
+          "longitude": 77.6946,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-002-004",
+          "name": "Recycling Hub Bangalore",
+          "type": "recycler",
+          "latitude": 13.0116,
+          "longitude": 77.5846,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-002-001",
+          "fromFacility": "FAC-002-001",
+          "toFacility": "FAC-002-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-002-002",
+          "fromFacility": "FAC-002-002",
+          "toFacility": "FAC-002-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-002-003",
+          "fromFacility": "FAC-002-004",
+          "toFacility": "FAC-002-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-002-004",
+          "fromFacility": "FAC-002-003",
+          "toFacility": "FAC-002-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Bangalore Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Karnataka Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-002-001",
+          "FAC-002-002",
+          "FAC-002-003",
+          "FAC-002-004"
+        ],
+        "edges": [
+          "ROUTE-002-001",
+          "ROUTE-002-002",
+          "ROUTE-002-003",
+          "ROUTE-002-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-004",
+        "category": "Process Automation",
+        "title": "AI-Powered Sorting System",
+        "description": "Implement machine learning-based automated sorting to increase accuracy to 95%",
+        "impact": {
+          "costReduction": 950000,
+          "emissionReduction": 320,
+          "timeframe": "8 months"
+        },
+        "priority": 5,
+        "confidence": 89,
+        "id": "AI-REC-004",
+        "affectedStage": "stage-002-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 475000.0,
+        "implementationTime": 8,
+        "complexity": "low",
+        "confidenceScore": 89,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 1140000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1045000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-005",
+        "category": "Supply Chain",
+        "title": "Optimize Collection Routes",
+        "description": "Use AI route optimization to reduce collection vehicle emissions by 35%",
+        "impact": {
+          "costReduction": 420000,
+          "emissionReduction": 525,
+          "timeframe": "3 months"
+        },
+        "priority": 4,
+        "confidence": 94,
+        "id": "AI-REC-005",
+        "affectedStage": "stage-002-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 210000.0,
+        "implementationTime": 3,
+        "complexity": "medium",
+        "confidenceScore": 94,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 504000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 462000.00000000006
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 6200,
+        "circular": 2100,
+        "reduction": 66.1
+      },
+      "energyConsumption": {
+        "linear": 11000,
+        "circular": 6800,
+        "reduction": 38.2
+      },
+      "waterUsage": {
+        "linear": 32000,
+        "circular": 18000,
+        "reduction": 43.8
+      },
+      "wasteGeneration": {
+        "linear": 2400,
+        "circular": 580,
+        "reduction": 75.8
+      },
+      "totalCost": {
+        "linear": 9800000,
+        "circular": 6500000,
+        "savings": 3300000
+      },
+      "capitalInvestment": {
+        "linear": 2800000,
+        "circular": 3400000,
+        "difference": 600000
+      },
+      "materialCircularity": {
+        "linear": 28,
+        "circular": 91,
+        "improvement": 63
+      },
+      "recyclingRate": {
+        "linear": 22,
+        "circular": 88,
+        "improvement": 66
+      },
+      "industryAverage": {
+        "cost": 10200000,
+        "emissions": 6800,
+        "efficiency": 48
+      },
+      "bestInClass": {
+        "cost": 5800000,
+        "emissions": 1800,
+        "efficiency": 90
+      },
+      "performanceRanking": {
+        "overall": 75,
+        "costEfficiency": 78,
+        "sustainability": 72
+      }
+    }
+  },
+  {
+    "projectId": "PA003",
+    "projectName": "Steel Recycling Hub - Jamshedpur",
+    "analysisDate": "2025-10-18T09:15:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 18500000,
+      "capitalExpenditure": 5180000,
+      "operationalExpenditure": 10730000,
+      "maintenanceCost": 1850000,
+      "wasteManagementCost": 740000,
+      "totalEmissions": 15200,
+      "energyConsumption": 28000,
+      "waterConsumption": 85000,
+      "wasteGeneration": 5800,
+      "resourceEfficiency": 38,
+      "recyclingRate": 15,
+      "materialCircularity": 17,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 12300000,
+      "capitalExpenditure": 3444000,
+      "operationalExpenditure": 7133999,
+      "maintenanceCost": 1230000,
+      "wasteManagementCost": 492000,
+      "totalEmissions": 5400,
+      "energyConsumption": 16500,
+      "waterConsumption": 48000,
+      "wasteGeneration": 1850,
+      "resourceEfficiency": 72,
+      "recyclingRate": 28,
+      "materialCircularity": 32,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-003",
+        "stageName": "Scrap Collection",
+        "linearMetrics": {
+          "cost": 4500000,
+          "emissions": 3800,
+          "efficiency": 35
+        },
+        "circularMetrics": {
+          "cost": 2800000,
+          "emissions": 1200,
+          "efficiency": 68
+        },
+        "improvement": 37.8,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 3800,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 1800000.0,
+        "capitalCost": 2800000,
+        "maintenanceCost": 270000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "melting-003",
+        "stageName": "Melting & Purification",
+        "linearMetrics": {
+          "cost": 8000000,
+          "emissions": 7200,
+          "efficiency": 40
+        },
+        "circularMetrics": {
+          "cost": 5500000,
+          "emissions": 2500,
+          "efficiency": 75
+        },
+        "improvement": 31.3,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 7200,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 3200000.0,
+        "capitalCost": 5500000,
+        "maintenanceCost": 480000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "forming-003",
+        "stageName": "Forming & Finishing",
+        "linearMetrics": {
+          "cost": 6000000,
+          "emissions": 4200,
+          "efficiency": 38
+        },
+        "circularMetrics": {
+          "cost": 4000000,
+          "emissions": 1700,
+          "efficiency": 73
+        },
+        "improvement": 33.3,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 4200,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 2400000.0,
+        "capitalCost": 4000000,
+        "maintenanceCost": 360000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Eastern India",
+      "state": "Jharkhand",
+      "city": "Jamshedpur",
+      "coordinates": {
+        "latitude": 22.8046,
+        "longitude": 86.2029
+      },
+      "regionalBenchmarks": {
+        "avgCost": 17800000,
+        "avgEmissions": 14500,
+        "avgEfficiency": 42
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 9,
+        "rawMaterials": 22,
+        "transportHubs": 8
+      },
+      "facilities": [
+        {
+          "id": "FAC-003-001",
+          "name": "Jamshedpur Primary Extraction Site",
+          "type": "mine",
+          "latitude": 22.8046,
+          "longitude": 86.2029,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-003-002",
+          "name": "Jamshedpur Refinery",
+          "type": "refinery",
+          "latitude": 22.7546,
+          "longitude": 86.3529,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-003-003",
+          "name": "Jamshedpur Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 22.9446,
+          "longitude": 86.3029,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-003-004",
+          "name": "Recycling Hub Jamshedpur",
+          "type": "recycler",
+          "latitude": 22.8446,
+          "longitude": 86.1929,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-003-001",
+          "fromFacility": "FAC-003-001",
+          "toFacility": "FAC-003-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-003-002",
+          "fromFacility": "FAC-003-002",
+          "toFacility": "FAC-003-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-003-003",
+          "fromFacility": "FAC-003-004",
+          "toFacility": "FAC-003-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-003-004",
+          "fromFacility": "FAC-003-003",
+          "toFacility": "FAC-003-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Jamshedpur Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Jharkhand Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-003-001",
+          "FAC-003-002",
+          "FAC-003-003",
+          "FAC-003-004"
+        ],
+        "edges": [
+          "ROUTE-003-001",
+          "ROUTE-003-002",
+          "ROUTE-003-003",
+          "ROUTE-003-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-006",
+        "category": "Energy Efficiency",
+        "title": "Electric Arc Furnace Upgrade",
+        "description": "Modernize furnace technology to reduce energy consumption by 45%",
+        "impact": {
+          "costReduction": 2400000,
+          "emissionReduction": 3200,
+          "timeframe": "18 months"
+        },
+        "priority": 5,
+        "confidence": 91,
+        "id": "AI-REC-006",
+        "affectedStage": "stage-003-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 1200000.0,
+        "implementationTime": 18,
+        "complexity": "low",
+        "confidenceScore": 91,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 2880000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 2640000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-007",
+        "category": "Waste Management",
+        "title": "Slag Utilization Program",
+        "description": "Convert steel slag into construction materials, eliminating 70% of waste",
+        "impact": {
+          "costReduction": 850000,
+          "emissionReduction": 680,
+          "timeframe": "12 months"
+        },
+        "priority": 4,
+        "confidence": 86,
+        "id": "AI-REC-007",
+        "affectedStage": "stage-003-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 425000.0,
+        "implementationTime": 12,
+        "complexity": "medium",
+        "confidenceScore": 86,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 1020000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 935000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 15200,
+        "circular": 5400,
+        "reduction": 64.5
+      },
+      "energyConsumption": {
+        "linear": 28000,
+        "circular": 16500,
+        "reduction": 41.1
+      },
+      "waterUsage": {
+        "linear": 85000,
+        "circular": 48000,
+        "reduction": 43.5
+      },
+      "wasteGeneration": {
+        "linear": 5800,
+        "circular": 1850,
+        "reduction": 68.1
+      },
+      "totalCost": {
+        "linear": 18500000,
+        "circular": 12300000,
+        "savings": 6200000
+      },
+      "capitalInvestment": {
+        "linear": 5180000,
+        "circular": 3444000,
+        "difference": -1736000
+      },
+      "materialCircularity": {
+        "linear": 17,
+        "circular": 32,
+        "improvement": 15
+      },
+      "recyclingRate": {
+        "linear": 15,
+        "circular": 28,
+        "improvement": 13
+      },
+      "industryAverage": {
+        "cost": 19500000,
+        "emissions": 16000,
+        "efficiency": 36
+      },
+      "bestInClass": {
+        "cost": 10500000,
+        "emissions": 4200,
+        "efficiency": 80
+      },
+      "performanceRanking": {
+        "overall": 62,
+        "costEfficiency": 65,
+        "sustainability": 59
+      }
+    }
+  },
+  {
+    "projectId": "PA004",
+    "projectName": "Plastic Valorization - Pune",
+    "analysisDate": "2025-10-22T11:20:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 7200000,
+      "capitalExpenditure": 2016000,
+      "operationalExpenditure": 4175999,
+      "maintenanceCost": 720000,
+      "wasteManagementCost": 288000,
+      "totalEmissions": 4800,
+      "energyConsumption": 9500,
+      "waterConsumption": 22000,
+      "wasteGeneration": 2100,
+      "resourceEfficiency": 48,
+      "recyclingRate": 19,
+      "materialCircularity": 21,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 4800000,
+      "capitalExpenditure": 1344000,
+      "operationalExpenditure": 2784000,
+      "maintenanceCost": 480000,
+      "wasteManagementCost": 192000,
+      "totalEmissions": 1650,
+      "energyConsumption": 5800,
+      "waterConsumption": 12000,
+      "wasteGeneration": 420,
+      "resourceEfficiency": 82,
+      "recyclingRate": 32,
+      "materialCircularity": 36,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-004",
+        "stageName": "Collection & Segregation",
+        "linearMetrics": {
+          "cost": 1500000,
+          "emissions": 1100,
+          "efficiency": 45
+        },
+        "circularMetrics": {
+          "cost": 980000,
+          "emissions": 380,
+          "efficiency": 78
+        },
+        "improvement": 34.7,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 1100,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 600000.0,
+        "capitalCost": 980000,
+        "maintenanceCost": 90000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "processing-004",
+        "stageName": "Processing & Cleaning",
+        "linearMetrics": {
+          "cost": 2700000,
+          "emissions": 1800,
+          "efficiency": 50
+        },
+        "circularMetrics": {
+          "cost": 1820000,
+          "emissions": 620,
+          "efficiency": 84
+        },
+        "improvement": 32.6,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 1800,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 1080000.0,
+        "capitalCost": 1820000,
+        "maintenanceCost": 162000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "conversion-004",
+        "stageName": "Chemical Conversion",
+        "linearMetrics": {
+          "cost": 3000000,
+          "emissions": 1900,
+          "efficiency": 48
+        },
+        "circularMetrics": {
+          "cost": 2000000,
+          "emissions": 650,
+          "efficiency": 85
+        },
+        "improvement": 33.3,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 1900,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 1200000.0,
+        "capitalCost": 2000000,
+        "maintenanceCost": 180000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Western India",
+      "state": "Maharashtra",
+      "city": "Pune",
+      "coordinates": {
+        "latitude": 18.5204,
+        "longitude": 73.8567
+      },
+      "regionalBenchmarks": {
+        "avgCost": 7800000,
+        "avgEmissions": 5200,
+        "avgEfficiency": 45
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 14,
+        "rawMaterials": 7,
+        "transportHubs": 11
+      },
+      "facilities": [
+        {
+          "id": "FAC-004-001",
+          "name": "Pune Primary Extraction Site",
+          "type": "mine",
+          "latitude": 18.5204,
+          "longitude": 73.8567,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-004-002",
+          "name": "Pune Refinery",
+          "type": "refinery",
+          "latitude": 18.470399999999998,
+          "longitude": 74.00670000000001,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-004-003",
+          "name": "Pune Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 18.6604,
+          "longitude": 73.9567,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-004-004",
+          "name": "Recycling Hub Pune",
+          "type": "recycler",
+          "latitude": 18.560399999999998,
+          "longitude": 73.8467,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-004-001",
+          "fromFacility": "FAC-004-001",
+          "toFacility": "FAC-004-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-004-002",
+          "fromFacility": "FAC-004-002",
+          "toFacility": "FAC-004-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-004-003",
+          "fromFacility": "FAC-004-004",
+          "toFacility": "FAC-004-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-004-004",
+          "fromFacility": "FAC-004-003",
+          "toFacility": "FAC-004-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Pune Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Maharashtra Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-004-001",
+          "FAC-004-002",
+          "FAC-004-003",
+          "FAC-004-004"
+        ],
+        "edges": [
+          "ROUTE-004-001",
+          "ROUTE-004-002",
+          "ROUTE-004-003",
+          "ROUTE-004-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-008",
+        "category": "Technology Upgrade",
+        "title": "Pyrolysis Technology Implementation",
+        "description": "Install advanced pyrolysis units for chemical recycling with 90% efficiency",
+        "impact": {
+          "costReduction": 1200000,
+          "emissionReduction": 1400,
+          "timeframe": "15 months"
+        },
+        "priority": 5,
+        "confidence": 88,
+        "id": "AI-REC-008",
+        "affectedStage": "stage-004-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 600000.0,
+        "implementationTime": 15,
+        "complexity": "low",
+        "confidenceScore": 88,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 1440000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1320000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-009",
+        "category": "Partnership",
+        "title": "Municipal Waste Partnership",
+        "description": "Partner with 12 municipal bodies to secure steady feedstock supply",
+        "impact": {
+          "costReduction": 680000,
+          "emissionReduction": 450,
+          "timeframe": "6 months"
+        },
+        "priority": 4,
+        "confidence": 83,
+        "id": "AI-REC-009",
+        "affectedStage": "stage-004-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 340000.0,
+        "implementationTime": 6,
+        "complexity": "medium",
+        "confidenceScore": 83,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 816000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 748000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 4800,
+        "circular": 1650,
+        "reduction": 65.6
+      },
+      "energyConsumption": {
+        "linear": 9500,
+        "circular": 5800,
+        "reduction": 38.9
+      },
+      "waterUsage": {
+        "linear": 22000,
+        "circular": 12000,
+        "reduction": 45.5
+      },
+      "wasteGeneration": {
+        "linear": 2100,
+        "circular": 420,
+        "reduction": 80.0
+      },
+      "totalCost": {
+        "linear": 7200000,
+        "circular": 4800000,
+        "savings": 2400000
+      },
+      "capitalInvestment": {
+        "linear": 2016000,
+        "circular": 1344000,
+        "difference": -672000
+      },
+      "materialCircularity": {
+        "linear": 21,
+        "circular": 36,
+        "improvement": 15
+      },
+      "recyclingRate": {
+        "linear": 19,
+        "circular": 32,
+        "improvement": 13
+      },
+      "industryAverage": {
+        "cost": 8100000,
+        "emissions": 5500,
+        "efficiency": 43
+      },
+      "bestInClass": {
+        "cost": 4200000,
+        "emissions": 1400,
+        "efficiency": 88
+      },
+      "performanceRanking": {
+        "overall": 71,
+        "costEfficiency": 73,
+        "sustainability": 69
+      }
+    }
+  },
+  {
+    "projectId": "PA005",
+    "projectName": "Battery Recycling - Hyderabad",
+    "analysisDate": "2025-10-25T16:30:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 14200000,
+      "capitalExpenditure": 3976000,
+      "operationalExpenditure": 8235999,
+      "maintenanceCost": 1420000,
+      "wasteManagementCost": 568000,
+      "totalEmissions": 9800,
+      "energyConsumption": 18500,
+      "waterConsumption": 52000,
+      "wasteGeneration": 3800,
+      "resourceEfficiency": 42,
+      "recyclingRate": 16,
+      "materialCircularity": 18,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 9100000,
+      "capitalExpenditure": 2548000,
+      "operationalExpenditure": 5278000,
+      "maintenanceCost": 910000,
+      "wasteManagementCost": 364000,
+      "totalEmissions": 3200,
+      "energyConsumption": 11200,
+      "waterConsumption": 28000,
+      "wasteGeneration": 950,
+      "resourceEfficiency": 81,
+      "recyclingRate": 32,
+      "materialCircularity": 36,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-005",
+        "stageName": "Battery Collection",
+        "linearMetrics": {
+          "cost": 2800000,
+          "emissions": 2100,
+          "efficiency": 40
+        },
+        "circularMetrics": {
+          "cost": 1750000,
+          "emissions": 680,
+          "efficiency": 76
+        },
+        "improvement": 37.5,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 2100,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 1120000.0,
+        "capitalCost": 1750000,
+        "maintenanceCost": 168000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "dismantling-005",
+        "stageName": "Dismantling & Sorting",
+        "linearMetrics": {
+          "cost": 5200000,
+          "emissions": 3500,
+          "efficiency": 38
+        },
+        "circularMetrics": {
+          "cost": 3400000,
+          "emissions": 1150,
+          "efficiency": 82
+        },
+        "improvement": 34.6,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 3500,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 2080000.0,
+        "capitalCost": 3400000,
+        "maintenanceCost": 312000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "recovery-005",
+        "stageName": "Material Recovery",
+        "linearMetrics": {
+          "cost": 6200000,
+          "emissions": 4200,
+          "efficiency": 48
+        },
+        "circularMetrics": {
+          "cost": 3950000,
+          "emissions": 1370,
+          "efficiency": 85
+        },
+        "improvement": 36.3,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 4200,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 2480000.0,
+        "capitalCost": 3950000,
+        "maintenanceCost": 372000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Southern India",
+      "state": "Telangana",
+      "city": "Hyderabad",
+      "coordinates": {
+        "latitude": 17.385,
+        "longitude": 78.4867
+      },
+      "regionalBenchmarks": {
+        "avgCost": 13500000,
+        "avgEmissions": 9200,
+        "avgEfficiency": 46
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 11,
+        "rawMaterials": 9,
+        "transportHubs": 13
+      },
+      "facilities": [
+        {
+          "id": "FAC-005-001",
+          "name": "Hyderabad Primary Extraction Site",
+          "type": "mine",
+          "latitude": 17.385,
+          "longitude": 78.4867,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-005-002",
+          "name": "Hyderabad Refinery",
+          "type": "refinery",
+          "latitude": 17.335,
+          "longitude": 78.6367,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-005-003",
+          "name": "Hyderabad Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 17.525000000000002,
+          "longitude": 78.5867,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-005-004",
+          "name": "Recycling Hub Hyderabad",
+          "type": "recycler",
+          "latitude": 17.425,
+          "longitude": 78.4767,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-005-001",
+          "fromFacility": "FAC-005-001",
+          "toFacility": "FAC-005-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-005-002",
+          "fromFacility": "FAC-005-002",
+          "toFacility": "FAC-005-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-005-003",
+          "fromFacility": "FAC-005-004",
+          "toFacility": "FAC-005-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-005-004",
+          "fromFacility": "FAC-005-003",
+          "toFacility": "FAC-005-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Hyderabad Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Telangana Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-005-001",
+          "FAC-005-002",
+          "FAC-005-003",
+          "FAC-005-004"
+        ],
+        "edges": [
+          "ROUTE-005-001",
+          "ROUTE-005-002",
+          "ROUTE-005-003",
+          "ROUTE-005-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-010",
+        "category": "Process Innovation",
+        "title": "Hydrometallurgical Process",
+        "description": "Implement advanced hydrometallurgical recovery to achieve 95% material recovery rate",
+        "impact": {
+          "costReduction": 2100000,
+          "emissionReduction": 2800,
+          "timeframe": "20 months"
+        },
+        "priority": 5,
+        "confidence": 90,
+        "id": "AI-REC-010",
+        "affectedStage": "stage-005-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 1050000.0,
+        "implementationTime": 20,
+        "complexity": "low",
+        "confidenceScore": 90,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 2520000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 2310000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-011",
+        "category": "Safety & Compliance",
+        "title": "Automated Dismantling System",
+        "description": "Deploy robotic systems for safe battery dismantling, reducing hazardous exposure",
+        "impact": {
+          "costReduction": 850000,
+          "emissionReduction": 420,
+          "timeframe": "14 months"
+        },
+        "priority": 4,
+        "confidence": 87,
+        "id": "AI-REC-011",
+        "affectedStage": "stage-005-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 425000.0,
+        "implementationTime": 14,
+        "complexity": "medium",
+        "confidenceScore": 87,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 1020000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 935000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 9800,
+        "circular": 3200,
+        "reduction": 67.3
+      },
+      "energyConsumption": {
+        "linear": 18500,
+        "circular": 11200,
+        "reduction": 39.5
+      },
+      "waterUsage": {
+        "linear": 52000,
+        "circular": 28000,
+        "reduction": 46.2
+      },
+      "wasteGeneration": {
+        "linear": 3800,
+        "circular": 950,
+        "reduction": 75.0
+      },
+      "totalCost": {
+        "linear": 14200000,
+        "circular": 9100000,
+        "savings": 5100000
+      },
+      "capitalInvestment": {
+        "linear": 3976000,
+        "circular": 2548000,
+        "difference": -1428000
+      },
+      "materialCircularity": {
+        "linear": 18,
+        "circular": 36,
+        "improvement": 18
+      },
+      "recyclingRate": {
+        "linear": 16,
+        "circular": 32,
+        "improvement": 16
+      },
+      "industryAverage": {
+        "cost": 15000000,
+        "emissions": 10500,
+        "efficiency": 40
+      },
+      "bestInClass": {
+        "cost": 8200000,
+        "emissions": 2800,
+        "efficiency": 87
+      },
+      "performanceRanking": {
+        "overall": 67,
+        "costEfficiency": 70,
+        "sustainability": 64
+      }
+    }
+  },
+  {
+    "projectId": "PA006",
+    "projectName": "Textile Circular Economy - Surat",
+    "analysisDate": "2025-10-12T13:45:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 8900000,
+      "capitalExpenditure": 2492000,
+      "operationalExpenditure": 5162000,
+      "maintenanceCost": 890000,
+      "wasteManagementCost": 356000,
+      "totalEmissions": 6500,
+      "energyConsumption": 13500,
+      "waterConsumption": 68000,
+      "wasteGeneration": 4200,
+      "resourceEfficiency": 44,
+      "recyclingRate": 17,
+      "materialCircularity": 19,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 5600000,
+      "capitalExpenditure": 1568000,
+      "operationalExpenditure": 3248000,
+      "maintenanceCost": 560000,
+      "wasteManagementCost": 224000,
+      "totalEmissions": 2200,
+      "energyConsumption": 8200,
+      "waterConsumption": 32000,
+      "wasteGeneration": 1100,
+      "resourceEfficiency": 79,
+      "recyclingRate": 31,
+      "materialCircularity": 35,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-006",
+        "stageName": "Textile Collection",
+        "linearMetrics": {
+          "cost": 1800000,
+          "emissions": 1400,
+          "efficiency": 42
+        },
+        "circularMetrics": {
+          "cost": 1100000,
+          "emissions": 480,
+          "efficiency": 75
+        },
+        "improvement": 38.9,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 1400,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 720000.0,
+        "capitalCost": 1100000,
+        "maintenanceCost": 108000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "sorting-006",
+        "stageName": "Sorting & Grading",
+        "linearMetrics": {
+          "cost": 2600000,
+          "emissions": 1800,
+          "efficiency": 45
+        },
+        "circularMetrics": {
+          "cost": 1650000,
+          "emissions": 620,
+          "efficiency": 80
+        },
+        "improvement": 36.5,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 1800,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 1040000.0,
+        "capitalCost": 1650000,
+        "maintenanceCost": 156000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "recycling-006",
+        "stageName": "Fiber Recycling",
+        "linearMetrics": {
+          "cost": 4500000,
+          "emissions": 3300,
+          "efficiency": 45
+        },
+        "circularMetrics": {
+          "cost": 2850000,
+          "emissions": 1100,
+          "efficiency": 82
+        },
+        "improvement": 36.7,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 3300,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 1800000.0,
+        "capitalCost": 2850000,
+        "maintenanceCost": 270000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Western India",
+      "state": "Gujarat",
+      "city": "Surat",
+      "coordinates": {
+        "latitude": 21.1702,
+        "longitude": 72.8311
+      },
+      "regionalBenchmarks": {
+        "avgCost": 9500000,
+        "avgEmissions": 7000,
+        "avgEfficiency": 41
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 16,
+        "rawMaterials": 24,
+        "transportHubs": 10
+      },
+      "facilities": [
+        {
+          "id": "FAC-006-001",
+          "name": "Surat Primary Extraction Site",
+          "type": "mine",
+          "latitude": 21.1702,
+          "longitude": 72.8311,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-006-002",
+          "name": "Surat Refinery",
+          "type": "refinery",
+          "latitude": 21.1202,
+          "longitude": 72.98110000000001,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-006-003",
+          "name": "Surat Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 21.310200000000002,
+          "longitude": 72.9311,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-006-004",
+          "name": "Recycling Hub Surat",
+          "type": "recycler",
+          "latitude": 21.2102,
+          "longitude": 72.8211,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-006-001",
+          "fromFacility": "FAC-006-001",
+          "toFacility": "FAC-006-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-006-002",
+          "fromFacility": "FAC-006-002",
+          "toFacility": "FAC-006-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-006-003",
+          "fromFacility": "FAC-006-004",
+          "toFacility": "FAC-006-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-006-004",
+          "fromFacility": "FAC-006-003",
+          "toFacility": "FAC-006-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Surat Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Gujarat Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-006-001",
+          "FAC-006-002",
+          "FAC-006-003",
+          "FAC-006-004"
+        ],
+        "edges": [
+          "ROUTE-006-001",
+          "ROUTE-006-002",
+          "ROUTE-006-003",
+          "ROUTE-006-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-012",
+        "category": "Water Conservation",
+        "title": "Zero Liquid Discharge System",
+        "description": "Implement ZLD system to recycle 95% of water used in processing",
+        "impact": {
+          "costReduction": 1100000,
+          "emissionReduction": 850,
+          "timeframe": "16 months"
+        },
+        "priority": 5,
+        "confidence": 89,
+        "id": "AI-REC-012",
+        "affectedStage": "stage-006-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 550000.0,
+        "implementationTime": 16,
+        "complexity": "low",
+        "confidenceScore": 89,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 1320000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1210000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-013",
+        "category": "Product Innovation",
+        "title": "Premium Recycled Fiber Line",
+        "description": "Develop high-value recycled fiber products to increase revenue by 35%",
+        "impact": {
+          "costReduction": 980000,
+          "emissionReduction": 620,
+          "timeframe": "10 months"
+        },
+        "priority": 4,
+        "confidence": 82,
+        "id": "AI-REC-013",
+        "affectedStage": "stage-006-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 490000.0,
+        "implementationTime": 10,
+        "complexity": "medium",
+        "confidenceScore": 82,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 1176000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 1078000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 6500,
+        "circular": 2200,
+        "reduction": 66.2
+      },
+      "energyConsumption": {
+        "linear": 13500,
+        "circular": 8200,
+        "reduction": 39.3
+      },
+      "waterUsage": {
+        "linear": 68000,
+        "circular": 32000,
+        "reduction": 52.9
+      },
+      "wasteGeneration": {
+        "linear": 4200,
+        "circular": 1100,
+        "reduction": 73.8
+      },
+      "totalCost": {
+        "linear": 8900000,
+        "circular": 5600000,
+        "savings": 3300000
+      },
+      "capitalInvestment": {
+        "linear": 2492000,
+        "circular": 1568000,
+        "difference": -924000
+      },
+      "materialCircularity": {
+        "linear": 19,
+        "circular": 35,
+        "improvement": 16
+      },
+      "recyclingRate": {
+        "linear": 17,
+        "circular": 31,
+        "improvement": 14
+      },
+      "industryAverage": {
+        "cost": 10200000,
+        "emissions": 7500,
+        "efficiency": 39
+      },
+      "bestInClass": {
+        "cost": 5000000,
+        "emissions": 1900,
+        "efficiency": 85
+      },
+      "performanceRanking": {
+        "overall": 73,
+        "costEfficiency": 76,
+        "sustainability": 70
+      }
+    }
+  },
+  {
+    "projectId": "PA007",
+    "projectName": "Glass Recycling Facility - Chennai",
+    "analysisDate": "2025-10-28T10:00:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 6800000,
+      "capitalExpenditure": 1904000,
+      "operationalExpenditure": 3943999,
+      "maintenanceCost": 680000,
+      "wasteManagementCost": 272000,
+      "totalEmissions": 5200,
+      "energyConsumption": 12000,
+      "waterConsumption": 28000,
+      "wasteGeneration": 1800,
+      "resourceEfficiency": 51,
+      "recyclingRate": 20,
+      "materialCircularity": 22,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 4200000,
+      "capitalExpenditure": 1176000,
+      "operationalExpenditure": 2436000,
+      "maintenanceCost": 420000,
+      "wasteManagementCost": 168000,
+      "totalEmissions": 1750,
+      "energyConsumption": 7200,
+      "waterConsumption": 14000,
+      "wasteGeneration": 380,
+      "resourceEfficiency": 84,
+      "recyclingRate": 33,
+      "materialCircularity": 37,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-007",
+        "stageName": "Glass Collection",
+        "linearMetrics": {
+          "cost": 1400000,
+          "emissions": 1100,
+          "efficiency": 48
+        },
+        "circularMetrics": {
+          "cost": 850000,
+          "emissions": 370,
+          "efficiency": 82
+        },
+        "improvement": 39.3,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 1100,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 560000.0,
+        "capitalCost": 850000,
+        "maintenanceCost": 84000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "crushing-007",
+        "stageName": "Crushing & Cleaning",
+        "linearMetrics": {
+          "cost": 2200000,
+          "emissions": 1600,
+          "efficiency": 52
+        },
+        "circularMetrics": {
+          "cost": 1350000,
+          "emissions": 540,
+          "efficiency": 85
+        },
+        "improvement": 38.6,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 1600,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 880000.0,
+        "capitalCost": 1350000,
+        "maintenanceCost": 132000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "melting-007",
+        "stageName": "Melting & Forming",
+        "linearMetrics": {
+          "cost": 3200000,
+          "emissions": 2500,
+          "efficiency": 53
+        },
+        "circularMetrics": {
+          "cost": 2000000,
+          "emissions": 840,
+          "efficiency": 86
+        },
+        "improvement": 37.5,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 2500,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 1280000.0,
+        "capitalCost": 2000000,
+        "maintenanceCost": 192000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Southern India",
+      "state": "Tamil Nadu",
+      "city": "Chennai",
+      "coordinates": {
+        "latitude": 13.0827,
+        "longitude": 80.2707
+      },
+      "regionalBenchmarks": {
+        "avgCost": 7200000,
+        "avgEmissions": 5800,
+        "avgEfficiency": 48
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 13,
+        "rawMaterials": 11,
+        "transportHubs": 16
+      },
+      "facilities": [
+        {
+          "id": "FAC-007-001",
+          "name": "Chennai Primary Extraction Site",
+          "type": "mine",
+          "latitude": 13.0827,
+          "longitude": 80.2707,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-007-002",
+          "name": "Chennai Refinery",
+          "type": "refinery",
+          "latitude": 13.0327,
+          "longitude": 80.42070000000001,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-007-003",
+          "name": "Chennai Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 13.222700000000001,
+          "longitude": 80.3707,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-007-004",
+          "name": "Recycling Hub Chennai",
+          "type": "recycler",
+          "latitude": 13.1227,
+          "longitude": 80.2607,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-007-001",
+          "fromFacility": "FAC-007-001",
+          "toFacility": "FAC-007-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-007-002",
+          "fromFacility": "FAC-007-002",
+          "toFacility": "FAC-007-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-007-003",
+          "fromFacility": "FAC-007-004",
+          "toFacility": "FAC-007-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-007-004",
+          "fromFacility": "FAC-007-003",
+          "toFacility": "FAC-007-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Chennai Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Tamil Nadu Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-007-001",
+          "FAC-007-002",
+          "FAC-007-003",
+          "FAC-007-004"
+        ],
+        "edges": [
+          "ROUTE-007-001",
+          "ROUTE-007-002",
+          "ROUTE-007-003",
+          "ROUTE-007-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-014",
+        "category": "Energy Optimization",
+        "title": "Furnace Heat Recovery",
+        "description": "Install heat recovery systems to capture and reuse 60% of furnace heat",
+        "impact": {
+          "costReduction": 920000,
+          "emissionReduction": 1200,
+          "timeframe": "11 months"
+        },
+        "priority": 5,
+        "confidence": 91,
+        "id": "AI-REC-014",
+        "affectedStage": "stage-007-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 460000.0,
+        "implementationTime": 11,
+        "complexity": "low",
+        "confidenceScore": 91,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 1104000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1012000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-015",
+        "category": "Quality Improvement",
+        "title": "Optical Sorting Technology",
+        "description": "Deploy AI-based optical sorting to achieve 98% purity in recycled glass",
+        "impact": {
+          "costReduction": 450000,
+          "emissionReduction": 280,
+          "timeframe": "7 months"
+        },
+        "priority": 4,
+        "confidence": 86,
+        "id": "AI-REC-015",
+        "affectedStage": "stage-007-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 225000.0,
+        "implementationTime": 7,
+        "complexity": "medium",
+        "confidenceScore": 86,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 540000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 495000.00000000006
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 5200,
+        "circular": 1750,
+        "reduction": 66.3
+      },
+      "energyConsumption": {
+        "linear": 12000,
+        "circular": 7200,
+        "reduction": 40.0
+      },
+      "waterUsage": {
+        "linear": 28000,
+        "circular": 14000,
+        "reduction": 50.0
+      },
+      "wasteGeneration": {
+        "linear": 1800,
+        "circular": 380,
+        "reduction": 78.9
+      },
+      "totalCost": {
+        "linear": 6800000,
+        "circular": 4200000,
+        "savings": 2600000
+      },
+      "capitalInvestment": {
+        "linear": 1904000,
+        "circular": 1176000,
+        "difference": -728000
+      },
+      "materialCircularity": {
+        "linear": 22,
+        "circular": 37,
+        "improvement": 15
+      },
+      "recyclingRate": {
+        "linear": 20,
+        "circular": 33,
+        "improvement": 13
+      },
+      "industryAverage": {
+        "cost": 7500000,
+        "emissions": 6000,
+        "efficiency": 46
+      },
+      "bestInClass": {
+        "cost": 3800000,
+        "emissions": 1500,
+        "efficiency": 88
+      },
+      "performanceRanking": {
+        "overall": 78,
+        "costEfficiency": 80,
+        "sustainability": 76
+      }
+    }
+  },
+  {
+    "projectId": "PA008",
+    "projectName": "Aluminum Recovery - Kolkata",
+    "analysisDate": "2025-10-16T15:20:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 11200000,
+      "capitalExpenditure": 3136000,
+      "operationalExpenditure": 6496000,
+      "maintenanceCost": 1120000,
+      "wasteManagementCost": 448000,
+      "totalEmissions": 9200,
+      "energyConsumption": 19000,
+      "waterConsumption": 42000,
+      "wasteGeneration": 3400,
+      "resourceEfficiency": 46,
+      "recyclingRate": 18,
+      "materialCircularity": 20,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 7300000,
+      "capitalExpenditure": 2044000,
+      "operationalExpenditure": 4234000,
+      "maintenanceCost": 730000,
+      "wasteManagementCost": 292000,
+      "totalEmissions": 3100,
+      "energyConsumption": 11500,
+      "waterConsumption": 22000,
+      "wasteGeneration": 850,
+      "resourceEfficiency": 80,
+      "recyclingRate": 32,
+      "materialCircularity": 36,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-008",
+        "stageName": "Scrap Collection",
+        "linearMetrics": {
+          "cost": 2300000,
+          "emissions": 1900,
+          "efficiency": 44
+        },
+        "circularMetrics": {
+          "cost": 1450000,
+          "emissions": 620,
+          "efficiency": 78
+        },
+        "improvement": 37,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 1900,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 920000.0,
+        "capitalCost": 1450000,
+        "maintenanceCost": 138000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "sorting-008",
+        "stageName": "Sorting & Preparation",
+        "linearMetrics": {
+          "cost": 3400000,
+          "emissions": 2800,
+          "efficiency": 45
+        },
+        "circularMetrics": {
+          "cost": 2200000,
+          "emissions": 950,
+          "efficiency": 79
+        },
+        "improvement": 35.3,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 2800,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 1360000.0,
+        "capitalCost": 2200000,
+        "maintenanceCost": 204000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "smelting-008",
+        "stageName": "Smelting & Refining",
+        "linearMetrics": {
+          "cost": 5500000,
+          "emissions": 4500,
+          "efficiency": 48
+        },
+        "circularMetrics": {
+          "cost": 3650000,
+          "emissions": 1530,
+          "efficiency": 83
+        },
+        "improvement": 33.6,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 4500,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 2200000.0,
+        "capitalCost": 3650000,
+        "maintenanceCost": 330000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Eastern India",
+      "state": "West Bengal",
+      "city": "Kolkata",
+      "coordinates": {
+        "latitude": 22.5726,
+        "longitude": 88.3639
+      },
+      "regionalBenchmarks": {
+        "avgCost": 11800000,
+        "avgEmissions": 9800,
+        "avgEfficiency": 43
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 10,
+        "rawMaterials": 14,
+        "transportHubs": 11
+      },
+      "facilities": [
+        {
+          "id": "FAC-008-001",
+          "name": "Kolkata Primary Extraction Site",
+          "type": "mine",
+          "latitude": 22.5726,
+          "longitude": 88.3639,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-008-002",
+          "name": "Kolkata Refinery",
+          "type": "refinery",
+          "latitude": 22.5226,
+          "longitude": 88.5139,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-008-003",
+          "name": "Kolkata Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 22.712600000000002,
+          "longitude": 88.4639,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-008-004",
+          "name": "Recycling Hub Kolkata",
+          "type": "recycler",
+          "latitude": 22.6126,
+          "longitude": 88.3539,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-008-001",
+          "fromFacility": "FAC-008-001",
+          "toFacility": "FAC-008-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-008-002",
+          "fromFacility": "FAC-008-002",
+          "toFacility": "FAC-008-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-008-003",
+          "fromFacility": "FAC-008-004",
+          "toFacility": "FAC-008-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-008-004",
+          "fromFacility": "FAC-008-003",
+          "toFacility": "FAC-008-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Kolkata Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "West Bengal Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-008-001",
+          "FAC-008-002",
+          "FAC-008-003",
+          "FAC-008-004"
+        ],
+        "edges": [
+          "ROUTE-008-001",
+          "ROUTE-008-002",
+          "ROUTE-008-003",
+          "ROUTE-008-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-016",
+        "category": "Process Efficiency",
+        "title": "Induction Furnace Upgrade",
+        "description": "Replace conventional furnaces with energy-efficient induction technology",
+        "impact": {
+          "costReduction": 1650000,
+          "emissionReduction": 2400,
+          "timeframe": "14 months"
+        },
+        "priority": 5,
+        "confidence": 93,
+        "id": "AI-REC-016",
+        "affectedStage": "stage-008-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 825000.0,
+        "implementationTime": 14,
+        "complexity": "low",
+        "confidenceScore": 93,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 1980000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1815000.0000000002
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-017",
+        "category": "Waste Reduction",
+        "title": "Dross Recovery System",
+        "description": "Implement advanced dross processing to recover 85% of aluminum from waste",
+        "impact": {
+          "costReduction": 780000,
+          "emissionReduction": 520,
+          "timeframe": "9 months"
+        },
+        "priority": 4,
+        "confidence": 88,
+        "id": "AI-REC-017",
+        "affectedStage": "stage-008-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 390000.0,
+        "implementationTime": 9,
+        "complexity": "medium",
+        "confidenceScore": 88,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 936000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 858000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 9200,
+        "circular": 3100,
+        "reduction": 66.3
+      },
+      "energyConsumption": {
+        "linear": 19000,
+        "circular": 11500,
+        "reduction": 39.5
+      },
+      "waterUsage": {
+        "linear": 42000,
+        "circular": 22000,
+        "reduction": 47.6
+      },
+      "wasteGeneration": {
+        "linear": 3400,
+        "circular": 850,
+        "reduction": 75.0
+      },
+      "totalCost": {
+        "linear": 11200000,
+        "circular": 7300000,
+        "savings": 3900000
+      },
+      "capitalInvestment": {
+        "linear": 3136000,
+        "circular": 2044000,
+        "difference": -1092000
+      },
+      "materialCircularity": {
+        "linear": 20,
+        "circular": 36,
+        "improvement": 16
+      },
+      "recyclingRate": {
+        "linear": 18,
+        "circular": 32,
+        "improvement": 14
+      },
+      "industryAverage": {
+        "cost": 12500000,
+        "emissions": 10200,
+        "efficiency": 41
+      },
+      "bestInClass": {
+        "cost": 6500000,
+        "emissions": 2600,
+        "efficiency": 85
+      },
+      "performanceRanking": {
+        "overall": 69,
+        "costEfficiency": 72,
+        "sustainability": 66
+      }
+    }
+  },
+  {
+    "projectId": "PA009",
+    "projectName": "Construction Waste Recycling - Delhi",
+    "analysisDate": "2025-10-24T12:30:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 15800000,
+      "capitalExpenditure": 4424000,
+      "operationalExpenditure": 9164000,
+      "maintenanceCost": 1580000,
+      "wasteManagementCost": 632000,
+      "totalEmissions": 11500,
+      "energyConsumption": 22000,
+      "waterConsumption": 58000,
+      "wasteGeneration": 6800,
+      "resourceEfficiency": 41,
+      "recyclingRate": 16,
+      "materialCircularity": 18,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 10200000,
+      "capitalExpenditure": 2856000,
+      "operationalExpenditure": 5916000,
+      "maintenanceCost": 1020000,
+      "wasteManagementCost": 408000,
+      "totalEmissions": 4100,
+      "energyConsumption": 13500,
+      "waterConsumption": 32000,
+      "wasteGeneration": 1950,
+      "resourceEfficiency": 76,
+      "recyclingRate": 30,
+      "materialCircularity": 34,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-009",
+        "stageName": "Demolition & Collection",
+        "linearMetrics": {
+          "cost": 3800000,
+          "emissions": 2900,
+          "efficiency": 38
+        },
+        "circularMetrics": {
+          "cost": 2400000,
+          "emissions": 980,
+          "efficiency": 72
+        },
+        "improvement": 36.8,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 2900,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 1520000.0,
+        "capitalCost": 2400000,
+        "maintenanceCost": 228000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "processing-009",
+        "stageName": "Crushing & Screening",
+        "linearMetrics": {
+          "cost": 5600000,
+          "emissions": 4200,
+          "efficiency": 42
+        },
+        "circularMetrics": {
+          "cost": 3600000,
+          "emissions": 1450,
+          "efficiency": 78
+        },
+        "improvement": 35.7,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 4200,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 2240000.0,
+        "capitalCost": 3600000,
+        "maintenanceCost": 336000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "production-009",
+        "stageName": "Aggregate Production",
+        "linearMetrics": {
+          "cost": 6400000,
+          "emissions": 4400,
+          "efficiency": 43
+        },
+        "circularMetrics": {
+          "cost": 4200000,
+          "emissions": 1670,
+          "efficiency": 79
+        },
+        "improvement": 34.4,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 4400,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 2560000.0,
+        "capitalCost": 4200000,
+        "maintenanceCost": 384000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Northern India",
+      "state": "Delhi",
+      "city": "New Delhi",
+      "coordinates": {
+        "latitude": 28.6139,
+        "longitude": 77.209
+      },
+      "regionalBenchmarks": {
+        "avgCost": 16500000,
+        "avgEmissions": 12200,
+        "avgEfficiency": 39
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 8,
+        "rawMaterials": 19,
+        "transportHubs": 14
+      },
+      "facilities": [
+        {
+          "id": "FAC-009-001",
+          "name": "New Delhi Primary Extraction Site",
+          "type": "mine",
+          "latitude": 28.6139,
+          "longitude": 77.209,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-009-002",
+          "name": "New Delhi Refinery",
+          "type": "refinery",
+          "latitude": 28.5639,
+          "longitude": 77.35900000000001,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-009-003",
+          "name": "New Delhi Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 28.7539,
+          "longitude": 77.309,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-009-004",
+          "name": "Recycling Hub New Delhi",
+          "type": "recycler",
+          "latitude": 28.6539,
+          "longitude": 77.199,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-009-001",
+          "fromFacility": "FAC-009-001",
+          "toFacility": "FAC-009-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-009-002",
+          "fromFacility": "FAC-009-002",
+          "toFacility": "FAC-009-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-009-003",
+          "fromFacility": "FAC-009-004",
+          "toFacility": "FAC-009-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-009-004",
+          "fromFacility": "FAC-009-003",
+          "toFacility": "FAC-009-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "New Delhi Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Delhi Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-009-001",
+          "FAC-009-002",
+          "FAC-009-003",
+          "FAC-009-004"
+        ],
+        "edges": [
+          "ROUTE-009-001",
+          "ROUTE-009-002",
+          "ROUTE-009-003",
+          "ROUTE-009-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-018",
+        "category": "Market Development",
+        "title": "Government Partnership for Green Building",
+        "description": "Partner with Delhi Development Authority for mandatory recycled aggregate usage",
+        "impact": {
+          "costReduction": 2200000,
+          "emissionReduction": 1800,
+          "timeframe": "12 months"
+        },
+        "priority": 5,
+        "confidence": 85,
+        "id": "AI-REC-018",
+        "affectedStage": "stage-009-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 1100000.0,
+        "implementationTime": 12,
+        "complexity": "low",
+        "confidenceScore": 85,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 2640000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 2420000.0
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-019",
+        "category": "Technology Adoption",
+        "title": "Mobile Crushing Units",
+        "description": "Deploy mobile crushing units at demolition sites to reduce transportation costs",
+        "impact": {
+          "costReduction": 1350000,
+          "emissionReduction": 950,
+          "timeframe": "8 months"
+        },
+        "priority": 4,
+        "confidence": 89,
+        "id": "AI-REC-019",
+        "affectedStage": "stage-009-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 675000.0,
+        "implementationTime": 8,
+        "complexity": "medium",
+        "confidenceScore": 89,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 1620000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 1485000.0000000002
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 11500,
+        "circular": 4100,
+        "reduction": 64.3
+      },
+      "energyConsumption": {
+        "linear": 22000,
+        "circular": 13500,
+        "reduction": 38.6
+      },
+      "waterUsage": {
+        "linear": 58000,
+        "circular": 32000,
+        "reduction": 44.8
+      },
+      "wasteGeneration": {
+        "linear": 6800,
+        "circular": 1950,
+        "reduction": 71.3
+      },
+      "totalCost": {
+        "linear": 15800000,
+        "circular": 10200000,
+        "savings": 5600000
+      },
+      "capitalInvestment": {
+        "linear": 4424000,
+        "circular": 2856000,
+        "difference": -1568000
+      },
+      "materialCircularity": {
+        "linear": 18,
+        "circular": 34,
+        "improvement": 16
+      },
+      "recyclingRate": {
+        "linear": 16,
+        "circular": 30,
+        "improvement": 14
+      },
+      "industryAverage": {
+        "cost": 17200000,
+        "emissions": 12800,
+        "efficiency": 37
+      },
+      "bestInClass": {
+        "cost": 9200000,
+        "emissions": 3500,
+        "efficiency": 82
+      },
+      "performanceRanking": {
+        "overall": 65,
+        "costEfficiency": 68,
+        "sustainability": 62
+      }
+    }
+  },
+  {
+    "projectId": "PA010",
+    "projectName": "Paper & Pulp Circular System - Ahmedabad",
+    "analysisDate": "2025-10-19T14:15:00Z",
+    "linearModel": {
+      "type": "linear",
+      "totalCost": 10500000,
+      "capitalExpenditure": 2940000,
+      "operationalExpenditure": 6090000,
+      "maintenanceCost": 1050000,
+      "wasteManagementCost": 420000,
+      "totalEmissions": 7800,
+      "energyConsumption": 16500,
+      "waterConsumption": 95000,
+      "wasteGeneration": 3600,
+      "resourceEfficiency": 47,
+      "recyclingRate": 18,
+      "materialCircularity": 21,
+      "implementationTimeline": 18,
+      "paybackPeriod": 36
+    },
+    "circularModel": {
+      "type": "circular",
+      "totalCost": 6800000,
+      "capitalExpenditure": 1904000,
+      "operationalExpenditure": 3943999,
+      "maintenanceCost": 680000,
+      "wasteManagementCost": 272000,
+      "totalEmissions": 2650,
+      "energyConsumption": 9800,
+      "waterConsumption": 42000,
+      "wasteGeneration": 890,
+      "resourceEfficiency": 83,
+      "recyclingRate": 33,
+      "materialCircularity": 37,
+      "implementationTimeline": 24,
+      "paybackPeriod": 28
+    },
+    "productionStages": [
+      {
+        "stageId": "collection-010",
+        "stageName": "Waste Paper Collection",
+        "linearMetrics": {
+          "cost": 2100000,
+          "emissions": 1600,
+          "efficiency": 45
+        },
+        "circularMetrics": {
+          "cost": 1350000,
+          "emissions": 540,
+          "efficiency": 80
+        },
+        "improvement": 35.7,
+        "stageNumber": 1,
+        "materialInput": 5000,
+        "energyInput": 5500,
+        "waterInput": 15000,
+        "chemicalInput": 850,
+        "productOutput": 3800,
+        "byProducts": 650,
+        "wasteOutput": 550,
+        "emissions": 1600,
+        "yieldEfficiency": 76,
+        "energyEfficiency": 69.0,
+        "waterEfficiency": 25.3,
+        "processEfficiency": 72.0,
+        "operatingCost": 840000.0,
+        "capitalCost": 1350000,
+        "maintenanceCost": 126000.0,
+        "optimizationPotential": 22,
+        "recommendedParameters": {
+          "temperature": "850-900\u00b0C",
+          "pressure": "2.5 bar",
+          "flowRate": "120.0 m\u00b3/h"
+        },
+        "implementationCost": 450000,
+        "expectedSavings": 360000
+      },
+      {
+        "stageId": "pulping-010",
+        "stageName": "De-inking & Pulping",
+        "linearMetrics": {
+          "cost": 4200000,
+          "emissions": 3100,
+          "efficiency": 46
+        },
+        "circularMetrics": {
+          "cost": 2700000,
+          "emissions": 1050,
+          "efficiency": 84
+        },
+        "improvement": 35.7,
+        "stageNumber": 2,
+        "materialInput": 3800,
+        "energyInput": 5200,
+        "waterInput": 12000,
+        "chemicalInput": 650,
+        "productOutput": 3200,
+        "byProducts": 415,
+        "wasteOutput": 310,
+        "emissions": 3100,
+        "yieldEfficiency": 84,
+        "energyEfficiency": 65.5,
+        "waterEfficiency": 21.55,
+        "processEfficiency": 78.5,
+        "operatingCost": 1680000.0,
+        "capitalCost": 2700000,
+        "maintenanceCost": 252000.0,
+        "optimizationPotential": 17,
+        "recommendedParameters": {
+          "temperature": "1200-1250\u00b0C",
+          "pressure": "3.2 bar",
+          "flowRate": "107.5 m\u00b3/h"
+        },
+        "implementationCost": 535000,
+        "expectedSavings": 470000
+      },
+      {
+        "stageId": "production-010",
+        "stageName": "Paper Production",
+        "linearMetrics": {
+          "cost": 4200000,
+          "emissions": 3100,
+          "efficiency": 50
+        },
+        "circularMetrics": {
+          "cost": 2750000,
+          "emissions": 1060,
+          "efficiency": 85
+        },
+        "improvement": 34.5,
+        "stageNumber": 3,
+        "materialInput": 2600,
+        "energyInput": 4900,
+        "waterInput": 9000,
+        "chemicalInput": 450,
+        "productOutput": 2600,
+        "byProducts": 180,
+        "wasteOutput": 70,
+        "emissions": 3100,
+        "yieldEfficiency": 92,
+        "energyEfficiency": 62.0,
+        "waterEfficiency": 17.8,
+        "processEfficiency": 85.0,
+        "operatingCost": 1680000.0,
+        "capitalCost": 2750000,
+        "maintenanceCost": 252000.0,
+        "optimizationPotential": 12,
+        "recommendedParameters": {
+          "temperature": "1550-1600\u00b0C",
+          "pressure": "3.9 bar",
+          "flowRate": "95.0 m\u00b3/h"
+        },
+        "implementationCost": 620000,
+        "expectedSavings": 580000
+      }
+    ],
+    "geographicAnalysis": {
+      "region": "Western India",
+      "state": "Gujarat",
+      "city": "Ahmedabad",
+      "coordinates": {
+        "latitude": 23.0225,
+        "longitude": 72.5714
+      },
+      "regionalBenchmarks": {
+        "avgCost": 11200000,
+        "avgEmissions": 8500,
+        "avgEfficiency": 44
+      },
+      "proximityToResources": {
+        "recyclingFacilities": 15,
+        "rawMaterials": 17,
+        "transportHubs": 12
+      },
+      "facilities": [
+        {
+          "id": "FAC-010-001",
+          "name": "Ahmedabad Primary Extraction Site",
+          "type": "mine",
+          "latitude": 23.0225,
+          "longitude": 72.5714,
+          "capacity": 50000,
+          "emissions": 2800,
+          "waterUsage": 15000,
+          "energyConsumption": 5500
+        },
+        {
+          "id": "FAC-010-002",
+          "name": "Ahmedabad Refinery",
+          "type": "refinery",
+          "latitude": 22.9725,
+          "longitude": 72.7214,
+          "capacity": 42000,
+          "emissions": 3200,
+          "waterUsage": 18000,
+          "energyConsumption": 6200
+        },
+        {
+          "id": "FAC-010-003",
+          "name": "Ahmedabad Manufacturing Unit",
+          "type": "smelter",
+          "latitude": 23.1625,
+          "longitude": 72.67139999999999,
+          "capacity": 38000,
+          "emissions": 2500,
+          "waterUsage": 12000,
+          "energyConsumption": 5100
+        },
+        {
+          "id": "FAC-010-004",
+          "name": "Recycling Hub Ahmedabad",
+          "type": "recycler",
+          "latitude": 23.0625,
+          "longitude": 72.56139999999999,
+          "capacity": 25000,
+          "emissions": 950,
+          "waterUsage": 4500,
+          "energyConsumption": 2800
+        }
+      ],
+      "transportationRoutes": [
+        {
+          "id": "ROUTE-010-001",
+          "fromFacility": "FAC-010-001",
+          "toFacility": "FAC-010-002",
+          "distance": 24.5,
+          "transportMode": "truck",
+          "materialType": "raw ore",
+          "volume": 48000,
+          "emissions": 420,
+          "cost": 185000
+        },
+        {
+          "id": "ROUTE-010-002",
+          "fromFacility": "FAC-010-002",
+          "toFacility": "FAC-010-003",
+          "distance": 32.8,
+          "transportMode": "rail",
+          "materialType": "refined material",
+          "volume": 40000,
+          "emissions": 280,
+          "cost": 145000
+        },
+        {
+          "id": "ROUTE-010-003",
+          "fromFacility": "FAC-010-004",
+          "toFacility": "FAC-010-002",
+          "distance": 18.2,
+          "transportMode": "truck",
+          "materialType": "recycled input",
+          "volume": 22000,
+          "emissions": 195,
+          "cost": 98000
+        },
+        {
+          "id": "ROUTE-010-004",
+          "fromFacility": "FAC-010-003",
+          "toFacility": "FAC-010-004",
+          "distance": 15.6,
+          "transportMode": "truck",
+          "materialType": "waste materials",
+          "volume": 8500,
+          "emissions": 125,
+          "cost": 62000
+        }
+      ],
+      "regionalImpacts": [
+        {
+          "region": "Ahmedabad Metropolitan",
+          "economicImpact": 4500000,
+          "jobsCreated": 285,
+          "emissionsReduced": 5300,
+          "communityBenefit": "High"
+        },
+        {
+          "region": "Gujarat Region",
+          "economicImpact": 3200000,
+          "jobsCreated": 198,
+          "emissionsReduced": 3800,
+          "communityBenefit": "Medium"
+        }
+      ],
+      "supplyChainMap": {
+        "nodes": [
+          "FAC-010-001",
+          "FAC-010-002",
+          "FAC-010-003",
+          "FAC-010-004"
+        ],
+        "edges": [
+          "ROUTE-010-001",
+          "ROUTE-010-002",
+          "ROUTE-010-003",
+          "ROUTE-010-004"
+        ],
+        "totalDistance": 91.1,
+        "totalEmissions": 1020
+      }
+    },
+    "aiRecommendations": [
+      {
+        "recommendationId": "AI-REC-020",
+        "category": "Water Management",
+        "title": "Closed-Loop Water System",
+        "description": "Install advanced water treatment to recycle 90% of process water",
+        "impact": {
+          "costReduction": 1450000,
+          "emissionReduction": 1100,
+          "timeframe": "13 months"
+        },
+        "priority": 5,
+        "confidence": 92,
+        "id": "AI-REC-020",
+        "affectedStage": "stage-010-001",
+        "type": "supply-chain",
+        "costImpact": -15,
+        "emissionImpact": -25,
+        "efficiencyImpact": 12,
+        "circularityImpact": 18,
+        "implementationCost": 725000.0,
+        "implementationTime": 13,
+        "complexity": "low",
+        "confidenceScore": 92,
+        "dataSupport": 145,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 1A",
+            "successRate": 88,
+            "costSavings": 1740000.0
+          },
+          {
+            "projectName": "Reference Project 1B",
+            "successRate": 85,
+            "costSavings": 1595000.0000000002
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      },
+      {
+        "recommendationId": "AI-REC-021",
+        "category": "Energy Source",
+        "title": "Biomass Energy Integration",
+        "description": "Use paper sludge and waste as biomass fuel for 50% of energy needs",
+        "impact": {
+          "costReduction": 880000,
+          "emissionReduction": 1450,
+          "timeframe": "10 months"
+        },
+        "priority": 4,
+        "confidence": 87,
+        "id": "AI-REC-021",
+        "affectedStage": "stage-010-002",
+        "type": "technology",
+        "costImpact": -22,
+        "emissionImpact": -35,
+        "efficiencyImpact": 20,
+        "circularityImpact": 27,
+        "implementationCost": 440000.0,
+        "implementationTime": 10,
+        "complexity": "medium",
+        "confidenceScore": 87,
+        "dataSupport": 195,
+        "similarCaseStudies": [
+          {
+            "projectName": "Reference Project 2A",
+            "successRate": 90,
+            "costSavings": 1056000.0
+          },
+          {
+            "projectName": "Reference Project 2B",
+            "successRate": 88,
+            "costSavings": 968000.0000000001
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Implementation complexity",
+            "probability": "Medium",
+            "impact": "Medium"
+          },
+          {
+            "risk": "Resource availability",
+            "probability": "Low",
+            "impact": "Low"
+          }
+        ],
+        "mitigationStrategies": [
+          "Phased implementation approach",
+          "Secure backup suppliers",
+          "Establish contingency protocols"
+        ]
+      }
+    ],
+    "comparativeMetrics": {
+      "carbonFootprint": {
+        "linear": 7800,
+        "circular": 2650,
+        "reduction": 66.0
+      },
+      "energyConsumption": {
+        "linear": 16500,
+        "circular": 9800,
+        "reduction": 40.6
+      },
+      "waterUsage": {
+        "linear": 95000,
+        "circular": 42000,
+        "reduction": 55.8
+      },
+      "wasteGeneration": {
+        "linear": 3600,
+        "circular": 890,
+        "reduction": 75.3
+      },
+      "totalCost": {
+        "linear": 10500000,
+        "circular": 6800000,
+        "savings": 3700000
+      },
+      "capitalInvestment": {
+        "linear": 2940000,
+        "circular": 1904000,
+        "difference": -1036000
+      },
+      "materialCircularity": {
+        "linear": 21,
+        "circular": 37,
+        "improvement": 16
+      },
+      "recyclingRate": {
+        "linear": 18,
+        "circular": 33,
+        "improvement": 15
+      },
+      "industryAverage": {
+        "cost": 12000000,
+        "emissions": 9000,
+        "efficiency": 42
+      },
+      "bestInClass": {
+        "cost": 6000000,
+        "emissions": 2200,
+        "efficiency": 88
+      },
+      "performanceRanking": {
+        "overall": 74,
+        "costEfficiency": 77,
+        "sustainability": 71
+      }
+    }
+  }
+]
