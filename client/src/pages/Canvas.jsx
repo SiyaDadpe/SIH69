@@ -1,7 +1,8 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
+  updateEdge,
   useNodesState,
   useEdgesState,
   Controls,
@@ -17,6 +18,7 @@ import {
   Trash2,
   Save,
   Download,
+  Upload,
   Zap,
   Recycle,
   Factory,
@@ -27,25 +29,147 @@ import {
   Wrench,
   Package,
   AlertTriangle,
+  Pickaxe,
+  Hammer,
+  Droplet,
+  HardHat,
+  Truck,
+  FlaskConical,
+  CirclePlus,
+  Cog,
+  Sparkles,
+  Magnet,
+  Scale,
+  Wind,
+  Flame,
+  Snowflake,
+  Gem,
+  Gauge,
+  Cloud,
+  Building2,
+  TrendingDown,
+  Sparkle,
+  Link,
+  Eraser,
+  Box,
+  Boxes,
+  Layers,
+  Construction,
 } from 'lucide-react';
+
+const palette = {
+  background: '#F3F2EC',
+  sidebar: '#FFFFFF', // Changed from cream to white for left sidebar
+  border: '#E3DACB',
+  cardBorder: '#E6DDCD',
+  accent: '#C17A64',
+  accentHover: '#AE6A53',
+  neutralBadge: '#ECE2D2',
+  neutralDarkText: '#5E5248',
+  neutralLightText: '#836F62',
+};
+
+// Icon mapping for each process type
+const processIcons = {
+  // Extraction
+  openPitMining: Pickaxe,
+  stripMining: Construction,
+  drillingBlasting: Hammer,
+  hydraulicMining: Droplet,
+  manualExtraction: HardHat,
+  electricShovel: Factory,
+  dieselHaulTrucks: Truck,
+  insituLeaching: FlaskConical,
+  customExtraction: CirclePlus,
+  
+  // Processing
+  crushing: Hammer,
+  grinding: Cog,
+  washingScreening: Sparkles,
+  magneticSeparation: Magnet,
+  gravitySeparation: Scale,
+  floatationMethod: Droplet,
+  drySeparation: Wind,
+  customProcessing: CirclePlus,
+  
+  // Alumina Refining
+  aluminaCrushing: Hammer,
+  digestion: FlaskConical,
+  clarification: Gem,
+  precipitation: Snowflake,
+  calcination: Flame,
+  otherRefining: CirclePlus,
+  
+  // Smelting
+  preBakingAnodes: Flame,
+  electrolysis: Zap,
+  anodeEffectControl: Gauge,
+  bathChemistryManagement: FlaskConical,
+  offGasTreatment: Cloud,
+  othersPleaseSpecify: CirclePlus,
+  
+  // Manufacturing
+  casting: Building2,
+  rolling: TrendingDown,
+  extrusion: Wrench,
+  forgingDF: Hammer,
+  surfaceTreatment: Sparkle,
+  joiningProcesses: Link,
+  designForRecycling: Recycle,
+  othersManufacturing: CirclePlus,
+  
+  // Recycling
+  collection: Trash2,
+  sorting: Package,
+  cleaning: Eraser,
+  remelting: Flame,
+  realloying: FlaskConical,
+  castingIntoNewProducts: Box,
+  othersRecycling: CirclePlus,
+  
+  // Valorization
+  redMudValorization: Boxes,
+  spentPotLiningTreatment: Zap,
+  drossRecovery: Gem,
+  fluorideGasRecovery: Cloud,
+  slagUtilization: Layers,
+  otherWasteValorization: CirclePlus,
+};
+
 
 // ----- Custom Node for ReactFlow -----
 const ProcessNode = ({ data }) => {
-  const IconComponent = typeof data.icon === 'function' ? data.icon : Factory;
+  // Get icon from processIcons mapping using typeId
+  const IconComponent = data.typeId && processIcons[data.typeId] 
+    ? processIcons[data.typeId] 
+    : (typeof data.icon === 'function' ? data.icon : Factory);
+  const badgeBg = data.badgeBg || palette.neutralBadge;
+  const badgeBorder = data.badgeBorder || palette.cardBorder;
+  const badgeText = data.badgeText || palette.neutralDarkText;
+  const iconColor = data.iconColor || palette.neutralLightText;
+
   return (
-    <div className="rounded-lg border border-gray-300 shadow-sm bg-white hover:shadow-md transition-all duration-200">
-      <Handle type="target" position={Position.Top} className="w-2 h-2 bg-gray-800" />
-      <div className="p-4 w-52">
+    <div
+      className="rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200 border"
+      style={{ borderColor: palette.cardBorder }}
+    >
+      <Handle type="target" position={Position.Top} className="w-2 h-2" style={{ backgroundColor: palette.accent }} />
+      <div className="p-4 w-56">
         <div className="flex justify-center mb-3">
-          <IconComponent className={`w-8 h-8 ${data.color.replace('bg-', 'text-')}`} />
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center border"
+            style={{ backgroundColor: badgeBg, borderColor: badgeBorder || 'transparent', color: badgeText }}
+          >
+            <IconComponent className="w-5 h-5" style={{ color: iconColor }} />
+          </div>
         </div>
         <div className="text-center mb-2">
           <div className="text-sm font-semibold text-gray-900 mb-1">{data.label}</div>
-          <div className="text-xs text-gray-600">{data.stageName}</div>
+          <div className="text-xs" style={{ color: data.accentColor || palette.neutralLightText }}>{data.stageName}</div>
         </div>
         <div className="text-xs text-gray-500 text-center">Configure details on the right</div>
       </div>
-      <Handle type="source" position={Position.Bottom} className="w-2 h-2 bg-gray-800" />
+      <Handle type="source" position={Position.Bottom} className="w-2 h-2" style={{ backgroundColor: palette.accent }} />
     </div>
   );
 };
@@ -55,7 +179,7 @@ const nodeTypes = { processNode: ProcessNode };
 const defaultEdgeOptions = {
   type: 'bezier',
   animated: true,
-  style: { strokeWidth: 3, stroke: '#2563eb', strokeDasharray: '6 6' },
+  style: { strokeWidth: 2, stroke: palette.accent },
 };
 
 function CanvasFlow() {
@@ -78,6 +202,10 @@ function CanvasFlow() {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(320); // 80 * 4 = 320px (w-80)
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(320);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
   const opmDefaults = useMemo(() => ({
     oreGrade: 45,
     overburdenRatio: 3.2,
@@ -195,6 +323,9 @@ function CanvasFlow() {
   }), []);
   const [recyclingForm, setRecyclingForm] = useState(recyclingDefaults);
 
+  // Custom process name for "others/custom" processes
+  const [customProcessName, setCustomProcessName] = useState('');
+
   // Stages data
   const stages = [
     { id: 'extraction', label: 'Stage 1: Extraction' },
@@ -281,13 +412,76 @@ function CanvasFlow() {
 
   // Stage configuration with icons and colors
   const stageConfig = {
-    extraction: { icon: Factory, color: 'bg-red-500', name: 'Extraction', emoji: '⛏️' },
-    processing: { icon: Wrench, color: 'bg-orange-500', name: 'Processing', emoji: '⚙️' },
-    alumina_refining: { icon: Settings, color: 'bg-orange-400', name: 'Alumina Refining', emoji: '🔬' },
-    smelting: { icon: Zap, color: 'bg-yellow-500', name: 'Smelting', emoji: '🔥' },
-    manufacturing: { icon: Package, color: 'bg-blue-500', name: 'Manufacturing', emoji: '🏭' },
-    recycling: { icon: Recycle, color: 'bg-green-500', name: 'Recycling', emoji: '♻️' },
-    valorization: { icon: TrendingUp, color: 'bg-emerald-500', name: 'Valorization', emoji: '💎' },
+    extraction: {
+      icon: Factory,
+      name: 'Extraction',
+      emoji: '⛏️',
+      badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
+    processing: {
+      icon: Wrench,
+      name: 'Processing',
+      emoji: '⚙️',
+      badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
+    alumina_refining: {
+      icon: Settings,
+      name: 'Alumina Refining',
+      emoji: '🔬',
+      badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
+    smelting: {
+      icon: Zap,
+      name: 'Smelting',
+      emoji: '🔥',
+     badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
+    manufacturing: {
+      icon: Package,
+      name: 'Manufacturing',
+      emoji: '🏭',
+      badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
+    recycling: {
+      icon: Recycle,
+      name: 'Recycling',
+      emoji: '♻️',
+     badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
+    valorization: {
+      icon: TrendingUp,
+      name: 'Valorization',
+      emoji: '💎',
+      badgeBg: '#C47D65',
+      badgeText: '#FFFFFF',
+      badgeBorder: '#C47D65',
+      iconColor: '#FFFFFF',
+      accentColor: '#C47D65',
+    },
   };
 
   // Helper functions
@@ -427,14 +621,22 @@ function CanvasFlow() {
         id: stage.id,
         name: stage.label,
         icon: stageConfig[stage.id].icon,
-        color: stageConfig[stage.id].color,
+        badgeBg: stageConfig[stage.id].badgeBg,
+        badgeText: stageConfig[stage.id].badgeText,
+        badgeBorder: stageConfig[stage.id].badgeBorder,
+        iconColor: stageConfig[stage.id].iconColor,
+        accentColor: stageConfig[stage.id].accentColor,
         nodes: processTypes
           .filter((p) => p.stage === stage.id)
           .map((p) => ({
             id: p.id,
             name: p.label,
             icon: stageConfig[stage.id].icon,
-            color: stageConfig[stage.id].color,
+            badgeBg: stageConfig[stage.id].badgeBg,
+            badgeText: stageConfig[stage.id].badgeText,
+            badgeBorder: stageConfig[stage.id].badgeBorder,
+            iconColor: stageConfig[stage.id].iconColor,
+            accentColor: stageConfig[stage.id].accentColor,
             description: getProcessDescription(p.id),
             circularityImpact: getCircularityImpact(p.id),
             co2Impact: getCO2Impact(p.id),
@@ -465,8 +667,32 @@ function CanvasFlow() {
   };
 
   // ---------- ReactFlow helpers ----------
+  const edgeUpdateSuccessful = useRef(true);
+
   const onConnect = useCallback(
     (connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges]
+  );
+
+  const onEdgeUpdateStart = useCallback(() => {
+    edgeUpdateSuccessful.current = false;
+  }, []);
+
+  const onEdgeUpdate = useCallback(
+    (oldEdge, newConnection) => {
+      edgeUpdateSuccessful.current = true;
+      setEdges((els) => updateEdge(oldEdge, newConnection, els));
+    },
+    [setEdges]
+  );
+
+  const onEdgeUpdateEnd = useCallback(
+    (_, edge) => {
+      if (!edgeUpdateSuccessful.current) {
+        setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+      }
+      edgeUpdateSuccessful.current = true;
+    },
     [setEdges]
   );
 
@@ -484,7 +710,12 @@ function CanvasFlow() {
         label: nodeType.name,
         typeId: nodeType.id,
         icon: nodeType.icon,
-        color: nodeType.color,
+        color: nodeType.badgeBg,
+        badgeBg: nodeType.badgeBg,
+        badgeText: nodeType.badgeText,
+        badgeBorder: nodeType.badgeBorder,
+        iconColor: nodeType.iconColor,
+  accentColor: nodeType.accentColor,
         stageName: stages.find((s) => s.id === nodeType.stage)?.label || 'Process',
         stageId: nodeType.stage,
         circularityImpact: nodeType.circularityImpact,
@@ -520,20 +751,56 @@ function CanvasFlow() {
   const saveCanvas = useCallback(() => {
     const payload = { nodes, edges, ts: Date.now() };
     localStorage.setItem('canvasStateRF', JSON.stringify(payload));
+    alert('Canvas saved successfully! ✓');
   }, [nodes, edges]);
 
   const loadCanvas = useCallback(() => {
     const raw = localStorage.getItem('canvasStateRF');
-    if (!raw) return;
+    if (!raw) {
+      alert('No saved canvas found!');
+      return;
+    }
     const parsed = JSON.parse(raw);
     setNodes(parsed.nodes || []);
     setEdges(parsed.edges || []);
   }, [setNodes, setEdges]);
 
+  const downloadCanvas = useCallback(() => {
+    if (nodes.length === 0 && edges.length === 0) {
+      alert('Canvas is empty! Add some processes first.');
+      return;
+    }
+    const payload = {
+      nodes,
+      edges,
+      exportDate: new Date().toISOString(),
+      version: '1.0',
+    };
+    const dataStr = JSON.stringify(payload, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lca-canvas-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('Canvas downloaded successfully! ✓');
+  }, [nodes, edges]);
+
   const clearCanvas = useCallback(() => {
-    setNodes([]);
-    setEdges([]);
-  }, [setNodes, setEdges]);
+    if (nodes.length === 0 && edges.length === 0) {
+      alert('Canvas is already empty!');
+      return;
+    }
+    const confirmed = window.confirm('Are you sure you want to clear the entire canvas? This action cannot be undone.');
+    if (confirmed) {
+      setNodes([]);
+      setEdges([]);
+      alert('Canvas cleared successfully! ✓');
+    }
+  }, [nodes, edges, setNodes, setEdges]);
 
   useEffect(() => {
     // Try restoring previous state on first mount
@@ -558,6 +825,13 @@ function CanvasFlow() {
     setSelectedNodeId(node.id);
     const existing = node.data?.processConfig || {};
     
+    // Load custom process name if it exists
+    if (node.data?.customName) {
+      setCustomProcessName(node.data.customName);
+    } else {
+      setCustomProcessName('');
+    }
+    
     if (isExtraction) {
       setOpmForm({ ...opmDefaults, ...existing });
     } else if (isProcessing) {
@@ -580,12 +854,11 @@ function CanvasFlow() {
   const closeInspector = useCallback(() => {
     setInspectorOpen(false);
     setSelectedNodeId(null);
+    setCustomProcessName(''); // Clear custom process name when closing
   }, []);
 
   const handleCanvasPaneClick = useCallback(() => {
     closeInspector();
-    setLeftSidebarOpen(false);
-    setRightSidebarOpen(false);
   }, [closeInspector]);
 
   const saveInspector = useCallback(() => {
@@ -609,9 +882,27 @@ function CanvasFlow() {
       formData = recyclingForm;
     }
     
-    setNodes((nds) => nds.map((n) => n.id === selectedNodeId ? { ...n, data: { ...n.data, processConfig: { ...formData } } } : n));
+    // Update node with form data and custom process name if provided
+    setNodes((nds) => nds.map((n) => {
+      if (n.id === selectedNodeId) {
+        const updatedData = { 
+          ...n.data, 
+          processConfig: { ...formData } 
+        };
+        
+        // Add custom name if it's a custom/others process and name is provided
+        if (customProcessName.trim()) {
+          updatedData.customName = customProcessName.trim();
+          updatedData.label = customProcessName.trim(); // Update the label to display custom name
+        }
+        
+        return { ...n, data: updatedData };
+      }
+      return n;
+    }));
+    
     setInspectorOpen(false);
-  }, [selectedNodeId, opmForm, processingForm, aluminaRefiningForm, smeltingForm, manufacturingForm, valorizationForm, recyclingForm, nodes, setNodes]);
+  }, [selectedNodeId, opmForm, processingForm, aluminaRefiningForm, smeltingForm, manufacturingForm, valorizationForm, recyclingForm, customProcessName, nodes, setNodes]);
 
   const deleteSelectedNode = useCallback(() => {
     if (!selectedNodeId) return;
@@ -621,27 +912,79 @@ function CanvasFlow() {
     setSelectedNodeId(null);
   }, [selectedNodeId, setEdges, setNodes]);
 
+  // Resize handlers for left sidebar
+  const handleLeftMouseDown = useCallback(() => {
+    setIsResizingLeft(true);
+  }, []);
+
+  const handleRightMouseDown = useCallback(() => {
+    setIsResizingRight(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isResizingLeft) {
+        const newWidth = e.clientX;
+        if (newWidth >= 250 && newWidth <= 600) {
+          setLeftSidebarWidth(newWidth);
+        }
+      }
+      if (isResizingRight) {
+        const newWidth = window.innerWidth - e.clientX;
+        if (newWidth >= 250 && newWidth <= 600) {
+          setRightSidebarWidth(newWidth);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingLeft, isResizingRight]);
+
   return (
-    <div className="h-full flex bg-gray-50">
+    <div className="h-full flex" style={{ backgroundColor: palette.background, cursor: isResizingLeft || isResizingRight ? 'col-resize' : 'default', userSelect: isResizingLeft || isResizingRight ? 'none' : 'auto' }}>
       {/* Left: Process Library */}
       {leftSidebarOpen && (
-          <div 
-            className="w-80 bg-white border-r border-gray-200 transition-all duration-200 flex flex-col h-full"
-            onClick={() => setLeftSidebarOpen(true)}
+          <div
+            className="flex flex-col h-full overflow-hidden border-r relative"
+            style={{ backgroundColor: palette.sidebar, borderColor: palette.border, width: `${leftSidebarWidth}px` }}
           >
             {/* Fixed Header and Filters */}
-            <div className="p-4 border-b border-gray-200 flex-shrink-0 bg-white">
-              <div className="mb-3">
+            <div
+              className="p-4 border-b flex-shrink-0"
+              
+            >
+              <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Process Library</h3>
+                <button
+                  onClick={() => setLeftSidebarOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                  aria-label="Close sidebar"
+                >
+                  ×
+                </button>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Select Metal</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5 uppercase tracking-wide">Select Metal</label>
                   <select
                     value={selectedMetal}
                     onChange={(e) => setSelectedMetal(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border rounded-md focus:ring-2 focus:ring-[#C17A64] focus:border-transparent bg-white"
+                    style={{ borderColor: palette.cardBorder }}
                   >
                     {metals.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -651,11 +994,12 @@ function CanvasFlow() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Select Stage</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5 uppercase tracking-wide">Select Stage</label>
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border rounded-md focus:ring-2 focus:ring-[#C17A64] focus:border-transparent bg-white"
+                    style={{ borderColor: palette.cardBorder }}
                   >
                     {stages.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -665,51 +1009,74 @@ function CanvasFlow() {
                   </select>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-3">Drag processes to canvas</p>
+              <p className="text-xs text-gray-600 mt-3">Drag processes to canvas</p>
             </div>
 
             {/* Scrollable Process Cards */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 sidebar-scroll">
               <div className="space-y-3">
             {filteredCategories.map((category) => {
               const CategoryIcon = typeof category.icon === 'function' ? category.icon : Factory;
               return (
                 <div key={category.id}>
                   <div
-                    className="flex items-center justify-between mb-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded-md transition-colors"
+                    className="flex items-center justify-between mb-2 cursor-pointer p-2 rounded-md transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
                     onClick={() => toggleCategory(category.id)}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{category.emoji || '⚙️'}</span>
-                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                        {category.name} ({category.nodes.length})
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shadow-sm"
+                        style={{
+                          backgroundColor: category.badgeBg,
+                          color: category.badgeText,
+                          border: `1px solid ${category.badgeBorder || 'transparent'}`,
+                        }}
+                      >
+                        {category.nodes.length}
+                      </div>
+                      <span className="text-xs font-semibold" style={{ color: category.accentColor }}>
+                        {category.name}
                       </span>
                     </div>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${expandedCategories[category.id] ? 'rotate-0' : '-rotate-90'}`}
+                      className={`w-4 h-4 text-gray-400 transition-transform ${expandedCategories[category.id] ? 'rotate-0' : '-rotate-90'}`}
                     />
                   </div>
                   {expandedCategories[category.id] && (
-                    <div className="space-y-1.5 mb-3 ml-1">
+                    <div className="grid grid-cols-2 gap-2 mb-3">
                       {category.nodes.map((nodeType) => {
+                        const ProcessIcon = processIcons[nodeType.id] || Package;
                         return (
                           <div
                             key={nodeType.id}
-                            className="bg-white border border-gray-200 rounded-md p-2.5 cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all group text-xs"
+                            className="rounded-xl p-3 cursor-pointer transition-all group border hover:shadow-sm"
+                            style={{ backgroundColor: '#F3F2EC', borderColor: palette.cardBorder }}
                             draggable
                             onDragStart={(e) => {
                               e.dataTransfer.setData('application/json', JSON.stringify(nodeType));
                             }}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const newNode = createRFNode(nodeType, { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 });
                               setNodes((nds) => nds.concat(newNode));
                             }}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="text-base flex-shrink-0">{nodeType.emoji || '📦'}</span>
-                              <span className="text-gray-900 font-medium flex-1 leading-tight">{nodeType.name}</span>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center mb-2">
+                                <div
+                                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: category.badgeBg,
+                                    border: `1px solid ${category.badgeBorder || 'transparent'}`,
+                                  }}
+                                >
+                                  <ProcessIcon className="w-5 h-5" style={{ color: category.iconColor }} />
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-900 font-medium leading-tight mb-1">{nodeType.name}</div>
+                              <div className="text-xs text-gray-500">Drag to canvas</div>
                             </div>
-                            <div className="text-xs text-gray-500 mt-1 ml-6">Drag to canvas</div>
                           </div>
                         );
                       })}
@@ -720,48 +1087,66 @@ function CanvasFlow() {
             })}
           </div>
         </div>
+        
+        {/* Resize handle for left sidebar */}
+        <div
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize transition-colors group z-10"
+          onMouseDown={handleLeftMouseDown}
+          style={{ backgroundColor: isResizingLeft ? palette.accent : 'transparent' }}
+        >
+          <div 
+            className="absolute top-1/2 -translate-y-1/2 -right-0.5 w-1 h-16 rounded-full transition-all duration-200" 
+            style={{ 
+              backgroundColor: isResizingLeft ? palette.accent : palette.border,
+              width: isResizingLeft ? '3px' : '2px'
+            }}
+          ></div>
+        </div>
         </div>
         )}
 
         {/* Right section: Header + Canvas + Right Sidebar */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-3 flex-shrink-0">
+          <div
+            className="px-6 py-3 flex-shrink-0 border-b"
+            style={{ backgroundColor: palette.sidebar, borderColor: palette.border }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  {selectedMetal === 'aluminum' ? 'Aluminum' : selectedMetal === 'steel' ? 'Steel' : 'Metal'} LCA Canvas
+                  {selectedMetal === 'aluminum' ? 'Aluminum' : selectedMetal === 'steel' ? 'Steel' : 'Aluminum'} LCA Canvas
                 </h1>
-                <p className="text-xs text-gray-500 mt-0.5">Drag processes to build your assessment</p>
+                <p className="text-xs" style={{ color: palette.neutralLightText }}>Drag processes to build your assessment</p>
               </div>
               <div className="flex items-center gap-4">
                 {/* Metrics */}
                 <div className="flex items-center gap-2">
-                  <div className="text-center px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold text-gray-900">{nodes.length}</div>
-                    <div className="text-xs text-gray-500">processes</div>
+                    <div className="text-xs" style={{ color: palette.neutralLightText }}>processes</div>
                   </div>
-                  <div className="text-center px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold text-gray-900">{edges.length}</div>
-                    <div className="text-xs text-gray-500">connections</div>
+                    <div className="text-xs" style={{ color: palette.neutralLightText }}>connections</div>
                   </div>
-                  <div className="text-center px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200">
-                    <div className={`text-lg font-bold ${calculateTotalCO2() <= 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
+                    <div className="text-lg font-bold" style={{ color: calculateTotalCO2() <= 0 ? '#2F855A' : '#C17A64' }}>
                       {calculateTotalCO2().toFixed(1)}
                     </div>
-                    <div className="text-xs text-gray-500">kg CO₂</div>
+                    <div className="text-xs" style={{ color: palette.neutralLightText }}>kg CO₂</div>
                   </div>
-                  <div className="text-center px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold text-gray-900">0</div>
-                    <div className="text-xs text-gray-500">MJ Energy</div>
+                    <div className="text-xs" style={{ color: palette.neutralLightText }}>MJ Energy</div>
                   </div>
                 </div>
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1.5">
                   <Button
-                    variant="outline"
                     size="sm"
-                    className="text-xs font-medium"
+                    className="text-xs font-medium hover:opacity-90"
+                    style={{ backgroundColor: palette.accent, color: '#FFFFFF' }}
                     onClick={() => {}}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
@@ -769,22 +1154,25 @@ function CanvasFlow() {
                   </Button>
                   <button
                     onClick={saveCanvas}
-                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    title="Save Canvas"
+                    className="p-2 rounded-md transition-colors hover:bg-[#E9DDD0]"
+                    style={{ color: palette.accent, backgroundColor: 'transparent' }}
+                    title="Save Canvas to Browser Storage"
                   >
                     <Save className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={loadCanvas}
-                    className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-                    title="Load Canvas"
+                    onClick={downloadCanvas}
+                    className="p-2 rounded-md transition-colors hover:bg-[#E9DDD0]"
+                    style={{ color: palette.neutralLightText, backgroundColor: 'transparent' }}
+                    title="Download Canvas as JSON File"
                   >
                     <Download className="w-4 h-4" />
                   </button>
                   <button
                     onClick={clearCanvas}
-                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    title="Clear All"
+                    className="p-2 rounded-md transition-colors hover:bg-[#F5D5D0]"
+                    style={{ color: '#9B2C2C', backgroundColor: 'transparent' }}
+                    title="Clear All Processes and Connections"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -800,7 +1188,8 @@ function CanvasFlow() {
         {!leftSidebarOpen && (
           <button
             onClick={() => setLeftSidebarOpen(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-r-lg p-2 shadow-md hover:bg-gray-50 z-10"
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-lg p-2 shadow-md hover:bg-[#E9DDD0] z-10 border"
+            style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}
             aria-label="Open library"
           >
             <ChevronRight className="w-5 h-5 text-gray-600" />
@@ -812,11 +1201,17 @@ function CanvasFlow() {
           {/* Empty State Message */}
           {nodes.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <div className="text-center bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-md">
+              <div
+                className="text-center p-6 rounded-lg shadow-md border max-w-md"
+                style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}
+              >
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Start Building Your LCA</h3>
-                <p className="text-sm text-gray-600 mb-3">Drag processes from the library on the left to begin creating your lifecycle assessment flow.</p>
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-2.5 text-xs text-left">
-                  <p className="text-blue-800"><strong>Tip:</strong> Use the 'Connect' button to link processes together after adding them to the canvas.</p>
+                <p className="text-sm" style={{ color: palette.neutralLightText }}>Drag processes from the library on the left to begin creating your lifecycle assessment flow.</p>
+                <div
+                  className="rounded-md p-2.5 text-xs text-left mt-3"
+                  style={{ backgroundColor: palette.sidebar, border: `1px solid ${palette.cardBorder}`, color: palette.neutralDarkText }}
+                >
+                  <p><strong style={{ color: palette.accent }}>Tip:</strong> Use the 'Connect' button to link processes after adding them to the canvas.</p>
                 </div>
               </div>
             </div>
@@ -828,6 +1223,9 @@ function CanvasFlow() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onEdgeUpdate={onEdgeUpdate}
+            onEdgeUpdateStart={onEdgeUpdateStart}
+            onEdgeUpdateEnd={onEdgeUpdateEnd}
             nodeTypes={nodeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             onDrop={onDrop}
@@ -836,7 +1234,7 @@ function CanvasFlow() {
             onPaneClick={handleCanvasPaneClick}
             fitView
           >
-            <Background gap={20} color="#000000" variant="dots" size={1} />
+            <Background gap={20} color="#D3C5B6" variant="dots" size={1} />
             <Controls position="bottom-right" />
           </ReactFlow>
         </div>
@@ -845,7 +1243,8 @@ function CanvasFlow() {
         {!rightSidebarOpen && (
           <button
             onClick={() => setRightSidebarOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-l-lg p-2 shadow-md hover:bg-gray-50 z-10"
+            className="absolute right-0 top-1/2 -translate-y-1/2 rounded-l-lg p-2 shadow-md hover:bg-[#E9DDD0] z-10 border"
+            style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}
             aria-label="Open summary"
           >
             <ChevronRight className="w-5 h-5 text-gray-600 rotate-180" />
@@ -854,62 +1253,104 @@ function CanvasFlow() {
 
         {/* Right: Inspector or Summary */}
         {rightSidebarOpen && (
-          <div 
-            className="w-89 bg-white border-l border-gray-200 p-4 overflow-y-auto h-full shadow-lg transition-all duration-200"
-            onClick={() => setRightSidebarOpen(true)}
+          <div
+            className="p-4 overflow-y-auto h-full border-l relative sidebar-scroll"
+            style={{ backgroundColor: '#FFFFFF', borderColor: palette.border, width: `${rightSidebarWidth}px` }}
           >
+          {/* Resize handle for right sidebar */}
+          <div
+            className="absolute top-0 left-0 w-1 h-full cursor-col-resize transition-colors group z-10"
+            onMouseDown={handleRightMouseDown}
+            style={{ backgroundColor: isResizingRight ? palette.accent : 'transparent' }}
+          >
+            <div 
+              className="absolute top-1/2 -translate-y-1/2 -left-0.5 w-1 h-16 rounded-full transition-all duration-200" 
+              style={{ 
+                backgroundColor: isResizingRight ? palette.accent : palette.border,
+                width: isResizingRight ? '3px' : '2px'
+              }}
+            ></div>
+          </div>
+          
           {!inspectorOpen && (
             <>
-              <div className="mb-4">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Process Summary</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Overview of your LCA workflow</p>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Process Summary</h3>
+                  <p className="text-xs" style={{ color: palette.neutralLightText }}>Overview of your LCA workflow</p>
+                </div>
+                <button
+                  onClick={() => setRightSidebarOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                  aria-label="Close sidebar"
+                >
+                  ×
+                </button>
               </div>
 
-              <Card className="mb-3 border-gray-200 shadow-sm">
+              <Card className="mb-3 shadow-sm rounded-xl" style={{ borderColor: palette.cardBorder, backgroundColor: '#F3F2EC' }}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wide">Overall Impact</CardTitle>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-center">Overall Impact</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-600">Circularity Score</span>
+                    <span className="text-xs" style={{ color: palette.neutralLightText }}>Circularity Score</span>
                     <span className={`text-xs font-bold ${calculateTotalCircularity() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {calculateTotalCircularity()}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-600">CO₂ Impact</span>
-                    <span className={`text-xs font-bold ${calculateTotalCO2() <= 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                    <span className="text-xs" style={{ color: palette.neutralLightText }}>CO₂ Impact</span>
+                    <span className={`text-xs font-bold ${calculateTotalCO2() <= 0 ? 'text-green-600' : 'text-green-600'}`}>
                       {calculateTotalCO2()} kg
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-600">Process Nodes</span>
-                    <span className="text-xs font-bold text-blue-600">{nodes.length}</span>
+                    <span className="text-xs" style={{ color: palette.neutralLightText }}>Process Nodes</span>
+                    <span className="text-xs font-bold" style={{ color: palette.accent }}>{nodes.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-600">Connections</span>
-                    <span className="text-xs font-bold text-blue-600">{edges.length}</span>
+                    <span className="text-xs" style={{ color: palette.neutralLightText }}>Connections</span>
+                    <span className="text-xs font-bold" style={{ color: palette.accent }}>{edges.length}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="mb-3 border-gray-200 shadow-sm">
+              <Card className="mb-3 shadow-sm rounded-xl" style={{ borderColor: palette.cardBorder, backgroundColor: '#F3F2EC' }}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wide">Process Nodes</CardTitle>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-center">Process Nodes</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {nodes.length === 0 ? (
-                    <div className="text-xs text-gray-500 text-center py-3">No processes added yet</div>
+                    <div className="text-xs text-center py-3" style={{ color: palette.accent }}>No processes added yet</div>
                   ) : (
-                    <div className="space-y-1.5">
-                      {nodes.map((n) => {
-                        const nodeEmoji = n.data?.emoji || '📦';
+                    <div className="space-y-2">
+                      {nodes.map((n, index) => {
+                        const nodeColor = n.data?.badgeBg || palette.neutralBadge;
+                        const nodeTextColor = n.data?.badgeText || palette.neutralDarkText;
+                        const nodeBorderColor = n.data?.badgeBorder || 'transparent';
                         return (
-                          <div key={n.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors text-xs">
-                            <span className="text-sm">{nodeEmoji}</span>
-                            <span className="text-gray-700 truncate flex-1 font-medium">{n.data?.label}</span>
+                          <div
+                            key={n.id}
+                            className="flex items-start gap-3 p-2.5 rounded-md transition-colors hover:bg-[#E9DDD0]"
+                            style={{ backgroundColor: palette.sidebar }}
+                          >
+                            <div
+                              className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm border"
+                              style={{
+                                backgroundColor: nodeColor,
+                                color: nodeTextColor,
+                                borderColor: nodeBorderColor,
+                              }}
+                            >
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-semibold text-gray-900">{n.data?.label}</div>
+                              <div className="text-xs text-gray-500 mt-0.5">{n.data?.stageName || 'Process'}</div>
+                            </div>
                             <button
-                              className="ml-auto text-gray-400 hover:text-red-500 text-base leading-none"
+                              className="text-gray-400 hover:text-red-500 text-lg leading-none flex-shrink-0"
                               onClick={() => {
                                 setEdges((eds) => eds.filter((e) => e.source !== n.id && e.target !== n.id));
                                 setNodes((nds) => nds.filter((x) => x.id !== n.id));
@@ -926,20 +1367,24 @@ function CanvasFlow() {
                 </CardContent>
               </Card>
 
-              <Card className="border-gray-200 shadow-sm">
+              <Card className="shadow-sm rounded-xl" style={{ borderColor: palette.cardBorder, backgroundColor: '#F3F2EC' }}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wide">Process Flow</CardTitle>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wide text-center">Process Flow</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {edges.length === 0 ? (
-                    <div className="text-xs text-gray-500 text-center py-3">No connections yet</div>
+                    <div className="text-xs text-center py-3" style={{ color: palette.accent }}>No connections yet</div>
                   ) : (
                     <div className="space-y-1.5">
                       {edges.map((e) => {
                         const from = nodes.find((n) => n.id === e.source)?.data?.label || e.source;
                         const to = nodes.find((n) => n.id === e.target)?.data?.label || e.target;
                         return (
-                          <div key={e.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors text-xs">
+                          <div
+                            key={e.id}
+                            className="flex items-center gap-2 p-2 rounded-md w-60 transition-colors text-xs hover:bg-[#E9DDD0]"
+                            style={{ backgroundColor: palette.sidebar }}
+                          >
                             <div className="flex items-center gap-1 flex-1">
                               <span className="text-gray-700 truncate max-w-20 font-medium">{from}</span>
                               <span className="text-gray-400">→</span>
@@ -968,20 +1413,40 @@ function CanvasFlow() {
                   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
                   if (!selectedNode) return null;
                   
-                  const HeaderIcon = selectedNode && typeof selectedNode.data?.icon === 'function' ? selectedNode.data.icon : AlertTriangle;
-                  const headerColor = selectedNode?.data?.color ? selectedNode.data.color.replace('bg-', 'text-') : 'text-amber-600';
+                  // Get icon from processIcons mapping using typeId
+                  const HeaderIcon = selectedNode.data?.typeId && processIcons[selectedNode.data.typeId]
+                    ? processIcons[selectedNode.data.typeId]
+                    : (selectedNode && typeof selectedNode.data?.icon === 'function' ? selectedNode.data.icon : AlertTriangle);
+                  const headerBadgeBg = selectedNode?.data?.badgeBg || palette.neutralBadge;
+                  const headerBadgeText = selectedNode?.data?.badgeText || palette.neutralDarkText;
+                  const headerBadgeBorder = selectedNode?.data?.badgeBorder || 'transparent';
+                  const headerIconColor = selectedNode?.data?.iconColor || palette.neutralLightText;
+                  const headerAccent = selectedNode?.data?.accentColor || palette.accent;
                   const headerLabel = selectedNode?.data?.label || 'Extraction Process';
                   const headerStage = selectedNode?.data?.stageName || 'Stage 1: Extraction';
                   return (
-                    <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                    <div
+                      className="p-4 rounded-lg border shadow-sm"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(243,242,236,0.6), rgba(255,255,255,0.9))',
+                        borderColor: palette.cardBorder,
+                      }}
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-50 ${headerColor} flex items-center justify-center shadow-sm`}>
-                            <HeaderIcon className="w-5 h-5" />
+                          <div
+                            className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm border"
+                            style={{
+                              backgroundColor: headerBadgeBg,
+                              color: headerBadgeText,
+                              borderColor: headerBadgeBorder,
+                            }}
+                          >
+                            <HeaderIcon className="w-5 h-5" style={{ color: headerIconColor }} />
                           </div>
                           <div>
                             <div className="text-base font-bold text-gray-900">{headerLabel}</div>
-                            <div className="text-xs text-gray-600 font-medium">{headerStage}</div>
+                            <div className="text-xs font-medium" style={{ color: headerAccent }}>{headerStage}</div>
                           </div>
                         </div>
                         <button 
@@ -996,6 +1461,35 @@ function CanvasFlow() {
                     </div>
                   );
                 })()}
+
+              {/* Custom Process Name Input for "others/custom" processes */}
+              {(() => {
+                const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+                const processLabel = selectedNode?.data?.label || '';
+                const isCustomProcess = processLabel.toLowerCase().includes('custom') || 
+                                       processLabel.toLowerCase().includes('others') || 
+                                       processLabel.toLowerCase().includes('other') ||
+                                       processLabel.toLowerCase().includes('please specify');
+
+                if (isCustomProcess) {
+                  return (
+                    <div className="mb-5 px-4">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Custom Process Name
+                      </label>
+                      <input
+                        type="text"
+                        value={customProcessName}
+                        onChange={(e) => setCustomProcessName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow"
+                        placeholder="Enter custom process name"
+                      />
+                      <p className="text-xs text-gray-500 mt-1.5">Provide a specific name for this custom process</p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Form - Conditional based on stage */}
               {(() => {
@@ -1012,7 +1506,7 @@ function CanvasFlow() {
                           type="number"
                           value={opmForm.oreGrade}
                           onChange={(e) => setOpmForm((f) => ({ ...f, oreGrade: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow"
                           placeholder="Enter ore grade"
                         />
                         <p className="text-xs text-gray-500 mt-1.5">Higher grade = lower energy/waste intensity</p>
@@ -1024,7 +1518,7 @@ function CanvasFlow() {
                           type="number"
                           value={opmForm.overburdenRatio}
                           onChange={(e) => setOpmForm((f) => ({ ...f, overburdenRatio: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow"
                           placeholder="Enter ratio"
                         />
                       </div>
@@ -1034,7 +1528,7 @@ function CanvasFlow() {
                         <select
                           value={opmForm.equipmentType}
                           onChange={(e) => setOpmForm((f) => ({ ...f, equipmentType: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow bg-white"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow bg-white"
                         >
                           <option value="Electric">Electric</option>
                           <option value="Diesel">Diesel</option>
@@ -1049,7 +1543,7 @@ function CanvasFlow() {
                           step="0.01"
                           value={opmForm.waterUsage}
                           onChange={(e) => setOpmForm((f) => ({ ...f, waterUsage: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow"
                           placeholder="0.00"
                         />
                         <p className="text-xs text-gray-500 mt-1.5">For washing, dust control, slurry management</p>
@@ -1060,7 +1554,7 @@ function CanvasFlow() {
                         <select
                           value={opmForm.landUseImpact}
                           onChange={(e) => setOpmForm((f) => ({ ...f, landUseImpact: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow bg-white"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow bg-white"
                         >
                           <option value="Low">Low</option>
                           <option value="Moderate">Moderate</option>
@@ -1074,7 +1568,7 @@ function CanvasFlow() {
                           type="number"
                           value={opmForm.redMudGeneration}
                           onChange={(e) => setOpmForm((f) => ({ ...f, redMudGeneration: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C17A64] focus:border-[#C17A64] transition-shadow"
                           placeholder="0"
                         />
                         <p className="text-xs text-gray-500 mt-1.5">Depends on ore composition and extraction process</p>
@@ -1094,7 +1588,7 @@ function CanvasFlow() {
                           step="0.01"
                           value={processingForm.waterConsumption}
                           onChange={(e) => setProcessingForm((f) => ({ ...f, waterConsumption: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                         />
                         <p className="text-xs text-gray-500 mt-1">Used for washing, dust control, slurry handling</p>
                       </div>
@@ -1105,7 +1599,7 @@ function CanvasFlow() {
                           type="number"
                           value={processingForm.electricityUse}
                           onChange={(e) => setProcessingForm((f) => ({ ...f, electricityUse: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                         />
                       </div>
 
@@ -1124,7 +1618,7 @@ function CanvasFlow() {
                                     : f.chemicalAgents.filter(a => a !== 'Flocculants')
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Flocculants</span>
                           </label>
@@ -1140,7 +1634,7 @@ function CanvasFlow() {
                                     : f.chemicalAgents.filter(a => a !== 'Dispersants')
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Dispersants</span>
                           </label>
@@ -1156,7 +1650,7 @@ function CanvasFlow() {
                                     : f.chemicalAgents.filter(a => a !== 'Coagulants')
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Coagulants</span>
                           </label>
@@ -1172,7 +1666,7 @@ function CanvasFlow() {
                                     : f.chemicalAgents.filter(a => a !== 'None / Natural separation')
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">None / Natural separation</span>
                           </label>
@@ -1182,7 +1676,7 @@ function CanvasFlow() {
                           placeholder="Others (please specify)"
                           value={processingForm.chemicalAgentsOther}
                           onChange={(e) => setProcessingForm((f) => ({ ...f, chemicalAgentsOther: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent mt-2"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent mt-2"
                         />
                       </div>
 
@@ -1191,7 +1685,7 @@ function CanvasFlow() {
                         <select
                           value={processingForm.wasteTailings}
                           onChange={(e) => setProcessingForm((f) => ({ ...f, wasteTailings: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                         >
                           <option value="Stored in tailing ponds">Stored in tailing ponds</option>
                           <option value="Dry stacking">Dry stacking</option>
@@ -1206,7 +1700,7 @@ function CanvasFlow() {
                           <select
                             value={processingForm.noisePollution}
                             onChange={(e) => setProcessingForm((f) => ({ ...f, noisePollution: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           >
                             <option value="Low">Low</option>
                             <option value="Moderate">Moderate</option>
@@ -1218,7 +1712,7 @@ function CanvasFlow() {
                           <select
                             value={processingForm.dustPollution}
                             onChange={(e) => setProcessingForm((f) => ({ ...f, dustPollution: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           >
                             <option value="Low">Low</option>
                             <option value="Moderate">Moderate</option>
@@ -1237,7 +1731,7 @@ function CanvasFlow() {
                               value="Low – minimal heavy metals"
                               checked={processingForm.toxicityIndicator === 'Low – minimal heavy metals'}
                               onChange={(e) => setProcessingForm((f) => ({ ...f, toxicityIndicator: e.target.value }))}
-                              className="w-4 h-4 text-blue-600  focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64]  focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Low – minimal heavy metals</span>
                           </label>
@@ -1248,7 +1742,7 @@ function CanvasFlow() {
                               value="Moderate – presence of iron, trace metals"
                               checked={processingForm.toxicityIndicator === 'Moderate – presence of iron, trace metals'}
                               onChange={(e) => setProcessingForm((f) => ({ ...f, toxicityIndicator: e.target.value }))}
-                              className="w-4 h-4 text-blue-600  focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64]  focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Moderate – presence of iron, trace metals</span>
                           </label>
@@ -1259,7 +1753,7 @@ function CanvasFlow() {
                               value="High – elevated levels of toxic elements, highly alkaline"
                               checked={processingForm.toxicityIndicator === 'High – elevated levels of toxic elements, highly alkaline'}
                               onChange={(e) => setProcessingForm((f) => ({ ...f, toxicityIndicator: e.target.value }))}
-                              className="w-4 h-4 text-blue-600   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64]   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700 ">High – elevated levels of toxic and highly</span>
                           </label>
@@ -1270,7 +1764,7 @@ function CanvasFlow() {
                           placeholder="Others (please specify)"
                           value={processingForm.toxicityOther}
                           onChange={(e) => setProcessingForm((f) => ({ ...f, toxicityOther: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent mt-2"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent mt-2"
                         />
                       </div>
                     </div>
@@ -1286,7 +1780,7 @@ function CanvasFlow() {
                         <select
                           value={aluminaRefiningForm.enhancement}
                           onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, enhancement: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                         >
                           <option value="None">None</option>
                           <option value="Enhanced digestion">Enhanced digestion</option>
@@ -1302,7 +1796,7 @@ function CanvasFlow() {
                             type="number"
                             value={aluminaRefiningForm.energyUse}
                             onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, energyUse: Number(e.target.value) }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -1313,7 +1807,7 @@ function CanvasFlow() {
                             step="0.1"
                             value={aluminaRefiningForm.waterUse}
                             onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, waterUse: Number(e.target.value) }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           />
                         </div>
                       </div>
@@ -1324,7 +1818,7 @@ function CanvasFlow() {
                           type="number"
                           value={aluminaRefiningForm.redMudGeneration}
                           onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, redMudGeneration: Number(e.target.value) }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                         />
                       </div>
 
@@ -1340,7 +1834,7 @@ function CanvasFlow() {
                               type="number"
                               value={aluminaRefiningForm.causticSoda}
                               onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, causticSoda: Number(e.target.value) }))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                             />
                           </div>
                           <div>
@@ -1349,7 +1843,7 @@ function CanvasFlow() {
                               type="number"
                               value={aluminaRefiningForm.limeAdditives}
                               onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, limeAdditives: Number(e.target.value) }))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                             />
                           </div>
                         </div>
@@ -1358,7 +1852,7 @@ function CanvasFlow() {
                           placeholder="Others (please specify)"
                           value={aluminaRefiningForm.chemicalOther}
                           onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, chemicalOther: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent mt-2"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent mt-2"
                         />
                       </div>
 
@@ -1370,7 +1864,7 @@ function CanvasFlow() {
                             step="0.01"
                             value={aluminaRefiningForm.so2Emissions}
                             onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, so2Emissions: Number(e.target.value) }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -1380,7 +1874,7 @@ function CanvasFlow() {
                             step="0.01"
                             value={aluminaRefiningForm.noxEmissions}
                             onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, noxEmissions: Number(e.target.value) }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -1390,7 +1884,7 @@ function CanvasFlow() {
                             step="0.1"
                             value={aluminaRefiningForm.dustEmissions}
                             onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, dustEmissions: Number(e.target.value) }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg   focus:ring-[#C17A64] focus:border-transparent"
                           />
                         </div>
                       </div>
@@ -1405,7 +1899,7 @@ function CanvasFlow() {
                               value="Low – minimal heavy metals"
                               checked={aluminaRefiningForm.toxicityIndicator === 'Low – minimal heavy metals'}
                               onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, toxicityIndicator: e.target.value }))}
-                              className="w-4 h-4 text-blue-600   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64]   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Low – minimal heavy metals</span>
                           </label>
@@ -1416,7 +1910,7 @@ function CanvasFlow() {
                               value="Moderate – presence of iron, trace metals"
                               checked={aluminaRefiningForm.toxicityIndicator === 'Moderate – presence of iron, trace metals'}
                               onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, toxicityIndicator: e.target.value }))}
-                              className="w-4 h-4 text-blue-600   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64]   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Moderate – presence of iron, trace metals</span>
                           </label>
@@ -1427,7 +1921,7 @@ function CanvasFlow() {
                               value="High – elevated levels of toxic elements, highly alkaline"
                               checked={aluminaRefiningForm.toxicityIndicator === 'High – elevated levels of toxic elements, highly alkaline'}
                               onChange={(e) => setAluminaRefiningForm((f) => ({ ...f, toxicityIndicator: e.target.value }))}
-                              className="w-4 h-4 text-blue-600   focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64]   focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">High – elevated levels of toxic and highly</span>
                           </label>
@@ -1665,7 +2159,7 @@ function CanvasFlow() {
                                     : f.lightweighting.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Automotive</span>
                           </label>
@@ -1683,7 +2177,7 @@ function CanvasFlow() {
                                     : f.lightweighting.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Aerospace</span>
                           </label>
@@ -1701,7 +2195,7 @@ function CanvasFlow() {
                                     : f.lightweighting.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Construction</span>
                           </label>
@@ -1719,7 +2213,7 @@ function CanvasFlow() {
                                     : f.lightweighting.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Packaging</span>
                           </label>
@@ -1744,7 +2238,7 @@ function CanvasFlow() {
                               value="Minimal (long lifespan, low maintenance)"
                               checked={manufacturingForm.corrosionBehavior === 'Minimal (long lifespan, low maintenance)'}
                               onChange={(e) => setManufacturingForm((f) => ({ ...f, corrosionBehavior: e.target.value }))}
-                              className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Minimal (long lifespan, low maintenance)</span>
                           </label>
@@ -1755,7 +2249,7 @@ function CanvasFlow() {
                               value="Moderate (occasional maintenance)"
                               checked={manufacturingForm.corrosionBehavior === 'Moderate (occasional maintenance)'}
                               onChange={(e) => setManufacturingForm((f) => ({ ...f, corrosionBehavior: e.target.value }))}
-                              className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Moderate (occasional maintenance)</span>
                           </label>
@@ -1766,7 +2260,7 @@ function CanvasFlow() {
                               value="Severe (frequent maintenance, repairs)"
                               checked={manufacturingForm.corrosionBehavior === 'Severe (frequent maintenance, repairs)'}
                               onChange={(e) => setManufacturingForm((f) => ({ ...f, corrosionBehavior: e.target.value }))}
-                              className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Severe (frequent maintenance, repairs)</span>
                           </label>
@@ -1890,7 +2384,7 @@ function CanvasFlow() {
                                     : f.wasteTreatment.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Red Mud (RM) from bauxite refining</span>
                           </label>
@@ -1908,7 +2402,7 @@ function CanvasFlow() {
                                     : f.wasteTreatment.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Process slag (silica-rich, iron-rich, alumina-leaching)</span>
                           </label>
@@ -1926,7 +2420,7 @@ function CanvasFlow() {
                                     : f.wasteTreatment.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Dross (aluminium oxide-rich waste)</span>
                           </label>
@@ -1944,7 +2438,7 @@ function CanvasFlow() {
                                     : f.wasteTreatment.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Spent Pot Lining (SPL) from electrolysis</span>
                           </label>
@@ -1962,7 +2456,7 @@ function CanvasFlow() {
                                     : f.wasteTreatment.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Scrap (aluminium scrap-rich waste)</span>
                           </label>
@@ -1993,7 +2487,7 @@ function CanvasFlow() {
                                     : f.valorizationMethods.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Cement industry (aggregate/filler – avoids virgin materials)</span>
                           </label>
@@ -2011,7 +2505,7 @@ function CanvasFlow() {
                                     : f.valorizationMethods.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Iron extraction (high-iron slag – reuse metal)</span>
                           </label>
@@ -2029,7 +2523,7 @@ function CanvasFlow() {
                                     : f.valorizationMethods.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Rare earth element recovery – high-value material</span>
                           </label>
@@ -2047,7 +2541,7 @@ function CanvasFlow() {
                                     : f.valorizationMethods.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Rare earth element recovery (scandium, yttrium – rare, efficient)</span>
                           </label>
@@ -2065,7 +2559,7 @@ function CanvasFlow() {
                                     : f.valorizationMethods.filter((v) => v !== val)
                                 }));
                               }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C17A64] rounded focus:ring-2 focus:ring-[#C17A64]"
                             />
                             <span className="text-sm text-gray-700">Pigment/chemical</span>
                           </label>
@@ -2617,8 +3111,50 @@ function CanvasFlow() {
 
 export default function Canvas() {
   return (
-    <ReactFlowProvider>
-      <CanvasFlow />
-    </ReactFlowProvider>
+    <>
+      <style>{`
+        /* Modern Scrollbar Styles */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: #C17A64 #F3F2EC;
+        }
+
+        *::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        *::-webkit-scrollbar-track {
+          background: #F3F2EC;
+          border-radius: 4px;
+        }
+
+        *::-webkit-scrollbar-thumb {
+          background: #C17A64;
+          border-radius: 4px;
+          transition: background 0.2s ease;
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+          background: #AE6A53;
+        }
+
+        *::-webkit-scrollbar-corner {
+          background: #F3F2EC;
+        }
+
+        /* Specific styles for sidebar scrollbars */
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+          background: #D9B8AB;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+          background: #C17A64;
+        }
+      `}</style>
+      <ReactFlowProvider>
+        <CanvasFlow />
+      </ReactFlowProvider>
+    </>
   );
 }
