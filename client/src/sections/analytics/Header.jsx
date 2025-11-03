@@ -36,7 +36,7 @@ export default function Header({ selectedProject, mode = 'circular', onModeChang
 
     return (
         <header className="analytics-header bg-white shadow-sm border-b border-gray-200 mb-6">
-            <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="px-6 py-4">
                 {/* Top Row: Title and Export Controls */}
                 <div className="flex items-center justify-between mb-4">
                     <div>

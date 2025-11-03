@@ -58,7 +58,7 @@ export default function Analytics() {
                         projects={projectData}
                     />
                     
-                    <div className="max-w-7xl mx-auto px-6 mb-6">
+                    <div className="px-6 mb-6">
                         <ProjectSelector 
                             projects={projectData} 
                             onSelect={setSelectedProject} 

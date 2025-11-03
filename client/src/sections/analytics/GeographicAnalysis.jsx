@@ -456,19 +456,19 @@ export default function GeographicAnalysis({ mode, selectedProject }) {
                                 <div className="p-3 bg-blue-50 rounded-lg">
                                     <div className="text-xs text-gray-600">Jobs Created</div>
                                     <div className="text-lg font-bold text-blue-700">
-                                        {impact.jobsCreated}
+                                        {impact.jobCreation}
                                     </div>
                                 </div>
                                 <div className="p-3 bg-red-50 rounded-lg">
                                     <div className="text-xs text-gray-600">Emissions Reduced</div>
                                     <div className="text-lg font-bold text-red-700">
-                                        {impact.emissionsReduced.toLocaleString()} kg
+                                        {Math.abs(impact.environmentalImpact).toLocaleString()} kg
                                     </div>
                                 </div>
                                 <div className="p-3 bg-purple-50 rounded-lg">
-                                    <div className="text-xs text-gray-600">Community Benefit</div>
+                                    <div className="text-xs text-gray-600">Population Impact</div>
                                     <div className="text-lg font-bold text-purple-700">
-                                        {impact.communityBenefit}
+                                        {(impact.population / 1000000).toFixed(1)}M people
                                     </div>
                                 </div>
                             </div>
