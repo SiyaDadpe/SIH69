@@ -23,7 +23,6 @@ import {
   Recycle,
   Factory,
   Settings,
-  ChevronDown,
   ChevronRight,
   TrendingUp,
   Wrench,
@@ -58,8 +57,9 @@ import {
 } from 'lucide-react';
 
 const palette = {
-  background: '#F3F2EC',
-  sidebar: '#FFFFFF', // Changed from cream to white for left sidebar
+  background: '#FFFFFF', // Changed to white to match Wizard
+  sidebar: '#F3F2EC', // Cream for sidebars to match Wizard cards
+  cardBg: '#F3F2EC', // Cream for cards/process nodes
   border: '#E3DACB',
   cardBorder: '#E6DDCD',
   accent: '#C17A64',
@@ -150,8 +150,8 @@ const ProcessNode = ({ data }) => {
 
   return (
     <div
-      className="rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200 border"
-      style={{ borderColor: palette.cardBorder }}
+      className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border"
+      style={{ backgroundColor: palette.cardBg, borderColor: palette.cardBorder }}
     >
       <Handle type="target" position={Position.Top} className="w-2 h-2" style={{ backgroundColor: palette.accent }} />
       <div className="p-4 w-56">
@@ -187,15 +187,6 @@ function CanvasFlow() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   // UI state
-  const [expandedCategories, setExpandedCategories] = useState({
-    extraction: true,
-    processing: true,
-    alumina_refining: true,
-    smelting: true,
-    manufacturing: true,
-    recycling: true,
-    valorization: true,
-  });
   const [selectedCategory, setSelectedCategory] = useState('extraction');
   const [selectedMetal, setSelectedMetal] = useState('all');
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -662,10 +653,6 @@ function CanvasFlow() {
       .filter((c) => c.nodes.length > 0);
   }, [processCategories, selectedCategory, selectedMetal]);
 
-  const toggleCategory = (categoryId) => {
-    setExpandedCategories((prev) => ({ ...prev, [categoryId]: !prev[categoryId] }));
-  };
-
   // ---------- ReactFlow helpers ----------
   const edgeUpdateSuccessful = useRef(true);
 
@@ -1014,79 +1001,46 @@ function CanvasFlow() {
 
             {/* Scrollable Process Cards */}
             <div className="flex-1 overflow-y-auto p-4 sidebar-scroll">
-              <div className="space-y-3">
-            {filteredCategories.map((category) => {
-              const CategoryIcon = typeof category.icon === 'function' ? category.icon : Factory;
-              return (
-                <div key={category.id}>
-                  <div
-                    className="flex items-center justify-between mb-2 cursor-pointer p-2 rounded-md transition-colors"
-                    style={{ backgroundColor: 'transparent' }}
-                    onClick={() => toggleCategory(category.id)}
-                  >
-                    <div className="flex items-center gap-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                {filteredCategories.flatMap((category) => 
+                  category.nodes.map((nodeType) => {
+                    const ProcessIcon = processIcons[nodeType.id] || Package;
+                    return (
                       <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shadow-sm"
-                        style={{
-                          backgroundColor: category.badgeBg,
-                          color: category.badgeText,
-                          border: `1px solid ${category.badgeBorder || 'transparent'}`,
+                        key={nodeType.id}
+                        className="rounded-xl p-3 cursor-pointer transition-all group border hover:shadow-sm"
+                        style={{ backgroundColor: '#F3F2EC', borderColor: palette.cardBorder }}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('application/json', JSON.stringify(nodeType));
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newNode = createRFNode(nodeType, { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 });
+                          setNodes((nds) => nds.concat(newNode));
                         }}
                       >
-                        {category.nodes.length}
-                      </div>
-                      <span className="text-xs font-semibold" style={{ color: category.accentColor }}>
-                        {category.name}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={`w-4 h-4 text-gray-400 transition-transform ${expandedCategories[category.id] ? 'rotate-0' : '-rotate-90'}`}
-                    />
-                  </div>
-                  {expandedCategories[category.id] && (
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      {category.nodes.map((nodeType) => {
-                        const ProcessIcon = processIcons[nodeType.id] || Package;
-                        return (
-                          <div
-                            key={nodeType.id}
-                            className="rounded-xl p-3 cursor-pointer transition-all group border hover:shadow-sm"
-                            style={{ backgroundColor: '#F3F2EC', borderColor: palette.cardBorder }}
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('application/json', JSON.stringify(nodeType));
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newNode = createRFNode(nodeType, { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 });
-                              setNodes((nds) => nds.concat(newNode));
-                            }}
-                          >
-                            <div className="text-center">
-                              <div className="flex items-center justify-center mb-2">
-                                <div
-                                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                                  style={{
-                                    backgroundColor: category.badgeBg,
-                                    border: `1px solid ${category.badgeBorder || 'transparent'}`,
-                                  }}
-                                >
-                                  <ProcessIcon className="w-5 h-5" style={{ color: category.iconColor }} />
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-900 font-medium leading-tight mb-1">{nodeType.name}</div>
-                              <div className="text-xs text-gray-500">Drag to canvas</div>
+                        <div className="text-center">
+                          <div className="flex items-center justify-center mb-2">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center"
+                              style={{
+                                backgroundColor: category.badgeBg,
+                                border: `1px solid ${category.badgeBorder || 'transparent'}`,
+                              }}
+                            >
+                              <ProcessIcon className="w-5 h-5" style={{ color: category.iconColor }} />
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                          <div className="text-xs text-gray-900 font-medium leading-tight mb-1">{nodeType.name}</div>
+                          <div className="text-xs text-gray-500">Drag to canvas</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
         
         {/* Resize handle for left sidebar */}
         <div
@@ -1122,21 +1076,21 @@ function CanvasFlow() {
               <div className="flex items-center gap-4">
                 {/* Metrics */}
                 <div className="flex items-center gap-2">
-                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: palette.cardBg, borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold text-gray-900">{nodes.length}</div>
                     <div className="text-xs" style={{ color: palette.neutralLightText }}>processes</div>
                   </div>
-                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: palette.cardBg, borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold text-gray-900">{edges.length}</div>
                     <div className="text-xs" style={{ color: palette.neutralLightText }}>connections</div>
                   </div>
-                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: palette.cardBg, borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold" style={{ color: calculateTotalCO2() <= 0 ? '#2F855A' : '#C17A64' }}>
                       {calculateTotalCO2().toFixed(1)}
                     </div>
                     <div className="text-xs" style={{ color: palette.neutralLightText }}>kg CO₂</div>
                   </div>
-                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}>
+                  <div className="text-center px-3 py-1.5 rounded-md border" style={{ backgroundColor: palette.cardBg, borderColor: palette.cardBorder }}>
                     <div className="text-lg font-bold text-gray-900">0</div>
                     <div className="text-xs" style={{ color: palette.neutralLightText }}>MJ Energy</div>
                   </div>
@@ -1189,7 +1143,7 @@ function CanvasFlow() {
           <button
             onClick={() => setLeftSidebarOpen(true)}
             className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-lg p-2 shadow-md hover:bg-[#E9DDD0] z-10 border"
-            style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}
+            style={{ backgroundColor: palette.sidebar, borderColor: palette.cardBorder }}
             aria-label="Open library"
           >
             <ChevronRight className="w-5 h-5 text-gray-600" />
@@ -1197,46 +1151,48 @@ function CanvasFlow() {
         )}
 
         {/* Center: ReactFlow Canvas */}
-        <div className="flex-1 relative min-w-0">
-          {/* Empty State Message */}
-          {nodes.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <div
-                className="text-center p-6 rounded-lg shadow-md border max-w-md"
-                style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}
-              >
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Start Building Your LCA</h3>
-                <p className="text-sm" style={{ color: palette.neutralLightText }}>Drag processes from the library on the left to begin creating your lifecycle assessment flow.</p>
+        <div className="flex-1 relative min-w-0 p-4 sm:p-6">
+          <Card className="h-full bg-[#F3F2EC] overflow-hidden">
+            {/* Empty State Message */}
+            {nodes.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                 <div
-                  className="rounded-md p-2.5 text-xs text-left mt-3"
-                  style={{ backgroundColor: palette.sidebar, border: `1px solid ${palette.cardBorder}`, color: palette.neutralDarkText }}
+                  className="text-center p-6 rounded-lg shadow-md border max-w-md"
+                  style={{ backgroundColor: palette.background, borderColor: palette.cardBorder }}
                 >
-                  <p><strong style={{ color: palette.accent }}>Tip:</strong> Use the 'Connect' button to link processes after adding them to the canvas.</p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Start Building Your LCA</h3>
+                  <p className="text-sm" style={{ color: palette.neutralLightText }}>Drag processes from the library on the left to begin creating your lifecycle assessment flow.</p>
+                  <div
+                    className="rounded-md p-2.5 text-xs text-left mt-3"
+                    style={{ backgroundColor: palette.cardBg, border: `1px solid ${palette.cardBorder}`, color: palette.neutralDarkText }}
+                  >
+                    <p><strong style={{ color: palette.accent }}>Tip:</strong> Use the 'Connect' button to link processes after adding them to the canvas.</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onEdgeUpdate={onEdgeUpdate}
-            onEdgeUpdateStart={onEdgeUpdateStart}
-            onEdgeUpdateEnd={onEdgeUpdateEnd}
-            nodeTypes={nodeTypes}
-            defaultEdgeOptions={defaultEdgeOptions}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onNodeClick={(e, node) => openInspectorForNode(node)}
-            onPaneClick={handleCanvasPaneClick}
-            fitView
-          >
-            <Background gap={20} color="#D3C5B6" variant="dots" size={1} />
-            <Controls position="bottom-right" />
-          </ReactFlow>
+            )}
+            
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onEdgeUpdate={onEdgeUpdate}
+              onEdgeUpdateStart={onEdgeUpdateStart}
+              onEdgeUpdateEnd={onEdgeUpdateEnd}
+              nodeTypes={nodeTypes}
+              defaultEdgeOptions={defaultEdgeOptions}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onNodeClick={(e, node) => openInspectorForNode(node)}
+              onPaneClick={handleCanvasPaneClick}
+              fitView
+            >
+              <Background gap={20} color="#D3C5B6" variant="dots" size={1} />
+              <Controls position="bottom-right" />
+            </ReactFlow>
+          </Card>
         </div>
 
         {/* Toggle button for collapsed right sidebar */}
@@ -1244,7 +1200,7 @@ function CanvasFlow() {
           <button
             onClick={() => setRightSidebarOpen(true)}
             className="absolute right-0 top-1/2 -translate-y-1/2 rounded-l-lg p-2 shadow-md hover:bg-[#E9DDD0] z-10 border"
-            style={{ backgroundColor: '#FFFFFF', borderColor: palette.cardBorder }}
+            style={{ backgroundColor: palette.sidebar, borderColor: palette.cardBorder }}
             aria-label="Open summary"
           >
             <ChevronRight className="w-5 h-5 text-gray-600 rotate-180" />
@@ -1255,7 +1211,7 @@ function CanvasFlow() {
         {rightSidebarOpen && (
           <div
             className="p-4 overflow-y-auto h-full border-l relative sidebar-scroll"
-            style={{ backgroundColor: '#FFFFFF', borderColor: palette.border, width: `${rightSidebarWidth}px` }}
+            style={{ backgroundColor: palette.sidebar, borderColor: palette.border, width: `${rightSidebarWidth}px` }}
           >
           {/* Resize handle for right sidebar */}
           <div
