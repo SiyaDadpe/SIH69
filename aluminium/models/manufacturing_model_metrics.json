@@ -1,0 +1,28 @@
+{
+    "manufacturing_energy_MJ_per_t_product": {
+        "RMSE": 883.8704566656663,
+        "MAE": 771.5990105666025,
+        "R2": -0.0026897545530950584
+    },
+    "manufacturing_scrap_rate_%": {
+        "RMSE": 2.8637369092024407,
+        "MAE": 2.459447659897475,
+        "R2": -0.017927554572762405
+    },
+    "manufacturing_recycled_content_%": {
+        "RMSE": 11.59467701650178,
+        "MAE": 10.050705441482473,
+        "R2": -0.0011929958377301375
+    },
+    "manufacturing_transport_emissions_kgCO2e_per_t": {
+        "RMSE": 5.024060755476319,
+        "MAE": 0.785824093562299,
+        "R2": 0.9860176657758741
+    },
+    "cross_validation": {
+        "manufacturing_energy_MJ_per_t_product": 874.6390617989409,
+        "manufacturing_scrap_rate_%": 2.9487331888252593,
+        "manufacturing_recycled_content_%": 11.46655993894389,
+        "manufacturing_transport_emissions_kgCO2e_per_t": 8.208737870255252
+    }
+}

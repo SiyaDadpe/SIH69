@@ -1,0 +1,15 @@
+{
+    "training_date": "2025-09-13T21:04:25.964194",
+    "regression_targets": [
+        "beneficiation_water_m3_per_t_ore",
+        "beneficiation_electricity_kWh_per_t_ore"
+    ],
+    "classification_targets": [
+        "beneficiation_tailings_management",
+        "beneficiation_noise_pollution",
+        "beneficiation_dust_pollution"
+    ],
+    "dataset_size": 1000,
+    "test_size": 0.2,
+    "random_state": 42
+}

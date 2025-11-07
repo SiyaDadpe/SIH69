@@ -1,0 +1,52 @@
+{
+    "refining_energy_MJ_per_t_alumina": {
+        "RMSE": 1810.3071896051013,
+        "MAE": 1431.3632744385166,
+        "R2": 0.2954126993974565
+    },
+    "refining_water_m3_per_t_alumina": {
+        "RMSE": 0.5472130903620714,
+        "MAE": 0.437863917104014,
+        "R2": 0.016263835369775048
+    },
+    "refining_red_mud_kg_per_t_alumina": {
+        "RMSE": 79.68969361001176,
+        "MAE": 63.67353015492221,
+        "R2": -0.04424114025854653
+    },
+    "refining_caustic_soda_kg_per_t_alumina": {
+        "RMSE": 5.789956250761117,
+        "MAE": 4.687592065811287,
+        "R2": -0.011907882597452568
+    },
+    "refining_lime_kg_per_t_alumina": {
+        "RMSE": 2.9995127046701326,
+        "MAE": 2.3958055262125844,
+        "R2": -0.039631673481648644
+    },
+    "refining_so2_kg_per_t_alumina": {
+        "RMSE": 0.05284742556252372,
+        "MAE": 0.042462597124688514,
+        "R2": -0.011349004199327828
+    },
+    "refining_nox_kg_per_t_alumina": {
+        "RMSE": 0.045682997320255575,
+        "MAE": 0.037712196583279456,
+        "R2": 0.014066053374114373
+    },
+    "refining_dust_kg_per_t_alumina": {
+        "RMSE": 0.2770526695260989,
+        "MAE": 0.23700286711960267,
+        "R2": -0.02313357263271154
+    },
+    "cross_validation": {
+        "refining_energy_MJ_per_t_alumina": 1699.292789664828,
+        "refining_water_m3_per_t_alumina": 0.5575965390354864,
+        "refining_red_mud_kg_per_t_alumina": 76.01284462871024,
+        "refining_caustic_soda_kg_per_t_alumina": 5.807828435160544,
+        "refining_lime_kg_per_t_alumina": 2.7794146304995175,
+        "refining_so2_kg_per_t_alumina": 0.05417068944958659,
+        "refining_nox_kg_per_t_alumina": 0.04206303762424303,
+        "refining_dust_kg_per_t_alumina": 0.2871801315660257
+    }
+}
