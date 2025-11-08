@@ -122,16 +122,13 @@ const formSchema = z.object({
   }),
   others: z.string().optional(),
   location: z.string({ required_error: "Location is required." }),
-  year: z.coerce.number().min(1900).max(new Date().getFullYear()),
+  // Year is optional for Step 1 as per requirements
+  year: z.coerce.number().min(1900).max(new Date().getFullYear()).optional(),
   oreGrade: z.coerce.number().min(0).max(100),
   overburdenRatio: z.coerce.number().optional(),
-  typeOfEquipment: z.enum(equipmentTypes.map(t => t.toLowerCase()), {
-    required_error: "You need to select a type of equipment.",
-  }),
+  typeOfEquipment: z.enum(equipmentTypes.map(t => t.toLowerCase())).optional(),
   waterUsage: z.coerce.number().optional(),
-  biodiversityImpact: z.string({
-    required_error: "You need to select a biodiversity impact level.",
-  }),
+  biodiversityImpact: z.string().optional(),
   redMudGeneration: z.coerce.number().optional(),
 });
 
@@ -140,7 +137,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
     resolver: zodResolver(formSchema),
     defaultValues: initialValues || {
       applicableProcesses: [],
-      year: new Date().getFullYear(),
     },
     mode: "onChange",
   });
@@ -338,7 +334,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
                   name="typeOfEquipment"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Type of Equipment*</FormLabel>
+                      <FormLabel className={GROUP_HEADING_TEXT}>Type of Equipment</FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {equipmentTypes.map((type) => (
@@ -347,7 +343,13 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
                               id={`equip-${type}`}
                               label={type}
                               selected={field.value === type.toLowerCase()}
-                              onSelect={() => field.onChange(type.toLowerCase())}
+                              onSelect={() =>
+                                field.onChange(
+                                  field.value === type.toLowerCase()
+                                    ? undefined
+                                    : type.toLowerCase()
+                                )
+                              }
                             />
                           ))}
                         </div>
@@ -413,7 +415,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
                   name="biodiversityImpact"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Land Use / Biodiversity Impact*</FormLabel>
+                      <FormLabel className={GROUP_HEADING_TEXT}>Land Use / Biodiversity Impact</FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {biodiversityImpacts.map((impact) => (
@@ -422,7 +424,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
                               id={`bio-${impact.id}`}
                               label={impact.label}
                               selected={field.value === impact.id}
-                              onSelect={() => field.onChange(impact.id)}
+                              onSelect={() =>
+                                field.onChange(
+                                  field.value === impact.id ? undefined : impact.id
+                                )
+                              }
                             />
                           ))}
                         </div>
@@ -457,8 +463,16 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
                 type="submit"
                 onClick={handleSubmit(onSubmit)}
                 disabled={!isValid}
+                className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none"
+                style={{
+                  clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                  paddingRight: '2rem'
+                }}
               >
-                Next
+                <span className="pr-4">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
               </Button>
             </div>
           </CardFooter>
@@ -505,16 +519,14 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
   ]
 
   const schema = z.object({
-    processes: z.array(z.string()).default([]),
+    processes: z.array(z.string()).min(1, { message: "Select at least one process" }),
     processOthers: z.string().optional(),
     location: z.string({ required_error: "Location is required" }),
     oreFeedRate: z.coerce.number().min(0, { message: "Must be >= 0" }),
     waterConsumption: z.coerce.number().min(0).optional(),
     electricityUse: z.coerce.number().min(0).optional(),
     beneficiationEfficiency: z.coerce.number().min(0).max(100).optional(),
-    crushingSelections: z.array(z.string()).refine((arr) => arr.length > 0, {
-      message: "Select at least one crushing stage",
-    }),
+    crushingSelections: z.array(z.string()).default([]),
     chemicalAgents: z.array(z.string()).default([]),
     chemicalOthers: z.string().optional(),
     tailings: z.string().optional(),
@@ -568,7 +580,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                   render={() => (
                     <FormItem>
                       <div className="mb-4">
-                        <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
+                        <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes*</FormLabel>
                         <FormDescription>Choose all processes that apply.</FormDescription>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -706,7 +718,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                   />
 
                   <div className="space-y-2">
-                    <FormLabel className={GROUP_HEADING_TEXT}>Crushing*</FormLabel>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Crushing</FormLabel>
                     <FormDescription>Select stages involved.</FormDescription>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {crushingOptions.map((c) => (
@@ -797,7 +809,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                               id={`tail-${opt.id}`}
                               label={opt.label}
                               selected={field.value === opt.id}
-                              onSelect={() => field.onChange(opt.id)}
+                              onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                             />
                           ))}
                         </div>
@@ -838,7 +850,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                                 id={`noise-${opt.id}`}
                                 label={opt.label}
                                 selected={field.value === opt.id}
-                                onSelect={() => field.onChange(opt.id)}
+                                onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                               />
                             ))}
                           </div>
@@ -862,7 +874,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                                 id={`dust-${opt.id}`}
                                 label={opt.label}
                                 selected={field.value === opt.id}
-                                onSelect={() => field.onChange(opt.id)}
+                                onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                               />
                             ))}
                           </div>
@@ -876,7 +888,15 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
+            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+              paddingLeft: '2rem'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span className="pl-4">Previous</span>
+            </Button>
             <div className="flex gap-x-3">
               <motion.div
                 animate={{
@@ -895,7 +915,15 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                   Calculate LCA Score
                 </Button>
               </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                paddingRight: '2rem'
+              }}>
+                <span className="pr-4">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -1098,11 +1126,23 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       {renderStep()}
       {!(stepKey === 'mining' || stepKey === 'beneficiation' || stepKey === 'refining' || stepKey === 'smelting' || stepKey === 'manufacturing' || stepKey === 'recycling' || stepKey === 'valorization') && (
         <div className="mt-6 flex justify-between">
-          <Button variant="outline" onClick={handleBack} disabled={activeStep === 0}>
-            Back
+          <Button variant="outline" onClick={handleBack} disabled={activeStep === 0} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+            clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+            paddingLeft: '2rem'
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span className="pl-4">Back</span>
           </Button>
-          <Button onClick={handleNext}>
-            {activeStep === steps.length - 1 ? "Finish" : "Next"}
+          <Button onClick={handleNext} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+            clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+            paddingRight: '2rem'
+          }}>
+            <span className="pr-4">{activeStep === steps.length - 1 ? "Finish" : "Next"}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </Button>
         </div>
       )}
@@ -1363,7 +1403,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
                             id={`tox-${opt.id}`}
                             label={opt.label}
                             selected={field.value === opt.id}
-                            onSelect={() => field.onChange(opt.id)}
+                            onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                           />
                         ))}
                       </div>
@@ -1385,7 +1425,15 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
+            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+              paddingLeft: '2rem'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span className="pl-4">Previous</span>
+            </Button>
             <div className="flex gap-x-3">
               <motion.div
                 animate={{
@@ -1404,7 +1452,15 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
                   Calculate LCA Score
                 </Button>
               </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                paddingRight: '2rem'
+              }}>
+                <span className="pr-4">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -1594,7 +1650,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
                               id={`cell-${opt.id}`}
                               label={opt.label}
                               selected={field.value === opt.id}
-                              onSelect={() => field.onChange(opt.id)}
+                              onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                             />
                           ))}
                         </div>
@@ -1674,7 +1730,15 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
+            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+              paddingLeft: '2rem'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span className="pl-4">Previous</span>
+            </Button>
             <div className="flex gap-x-3">
               <motion.div
                 animate={{
@@ -1693,7 +1757,15 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
                   Calculate LCA Score
                 </Button>
               </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                paddingRight: '2rem'
+              }}>
+                <span className="pr-4">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -1946,7 +2018,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
                               id={`transport-${m}`}
                               label={m}
                               selected={field.value === m}
-                              onSelect={() => field.onChange(m)}
+                              onSelect={() => field.onChange(field.value === m ? undefined : m)}
                             />
                           ))}
                         </div>
@@ -2019,7 +2091,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
                             id={`cor-${opt.id}`}
                             label={opt.label}
                             selected={field.value === opt.id}
-                            onSelect={() => field.onChange(opt.id)}
+                            onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                           />
                         ))}
                       </div>
@@ -2041,7 +2113,15 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
+            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+              paddingLeft: '2rem'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span className="pl-4">Previous</span>
+            </Button>
             <div className="flex gap-x-3">
               <motion.div
                 animate={{
@@ -2060,7 +2140,15 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
                   Calculate LCA Score
                 </Button>
               </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                paddingRight: '2rem'
+              }}>
+                <span className="pr-4">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -2277,7 +2365,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
                               id={`recycle-method-${opt.id}`}
                               label={opt.label}
                               selected={field.value === opt.id}
-                              onSelect={() => field.onChange(opt.id)}
+                              onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
                             />
                           ))}
                         </div>
@@ -2418,7 +2506,15 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
+            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+              paddingLeft: '2rem'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span className="pl-4">Previous</span>
+            </Button>
             <div className="flex gap-x-3">
               <motion.div
                 animate={{
@@ -2437,7 +2533,15 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
                   Calculate LCA Score
                 </Button>
               </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Next</Button>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                paddingRight: '2rem'
+              }}>
+                <span className="pr-4">Next</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -2809,7 +2913,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                                     id={`${f.name}-${lvl}`}
                                     label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                                     selected={field.value === lvl}
-                                    onSelect={() => field.onChange(lvl)}
+                                    onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
                                   />
                                 ))}
                               </div>
@@ -2842,7 +2946,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                                     id={`${f.name}-${lvl}`}
                                     label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                                     selected={field.value === lvl}
-                                    onSelect={() => field.onChange(lvl)}
+                                    onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
                                   />
                                 ))}
                               </div>
@@ -2879,7 +2983,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                                   id={`${f.name}-${lvl}`}
                                   label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                                   selected={field.value === lvl}
-                                  onSelect={() => field.onChange(lvl)}
+                                  onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
                                 />
                               ))}
                             </div>
@@ -2894,7 +2998,15 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
             </Form>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack}>Previous</Button>
+            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
+              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+              paddingLeft: '2rem'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span className="pl-4">Previous</span>
+            </Button>
             <div className="flex gap-x-3">
               <motion.div
                 animate={{
@@ -2907,7 +3019,15 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                 }}
               >
               </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid}>Submit</Button>
+              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
+                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+                paddingRight: '2rem'
+              }}>
+                <span className="pr-4">Submit</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </Button>
             </div>
           </CardFooter>
         </Card>
