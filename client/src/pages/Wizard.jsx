@@ -32,19 +32,42 @@ export default function Wizard() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Initialize or load workflow
   useEffect(() => {
+    // Prevent double initialization in React Strict Mode
+    if (isInitialized) return;
+    
     const id = searchParams.get('id')
     if (id) {
+      console.log('📂 Loading existing workflow:', id);
       loadWorkflow(id)
+      setIsInitialized(true)
     } else {
-      // Auto-create workflow if no ID present
-      initializeWorkflow()
+      // Check if we have a workflow ID in localStorage to reuse
+      const savedWorkflowId = localStorage.getItem('currentWizardWorkflowId');
+      if (savedWorkflowId) {
+        console.log('♻️ Reusing existing workflow from localStorage:', savedWorkflowId);
+        navigate(`/wizard?id=${savedWorkflowId}`, { replace: true });
+        setIsInitialized(true);
+      } else {
+        // Auto-create workflow if no ID present
+        console.log('🆕 No existing workflow, creating new one...');
+        initializeWorkflow();
+        setIsInitialized(true);
+      }
     }
-  }, [searchParams])
+  }, [searchParams, isInitialized])
 
   const initializeWorkflow = async () => {
+    // Prevent duplicate calls
+    if (loading || workflowId) {
+      console.log('⏭️ Skipping workflow creation - already in progress or exists');
+      return;
+    }
+    
+    console.log('🆕 Creating new wizard workflow...');
     setLoading(true)
     setError(null)
     try {
@@ -60,8 +83,13 @@ export default function Wizard() {
 
       if (response.success && response.data?.workflow) {
         const newId = response.data.workflow._id
+        console.log('✅ Workflow created:', newId);
         setWorkflowId(newId)
         setWorkflowData(response.data.workflow)
+        
+        // Save to localStorage to reuse this workflow
+        localStorage.setItem('currentWizardWorkflowId', newId);
+        console.log('💾 Saved workflow ID to localStorage');
         
         // Update URL with workflow ID
         navigate(`/wizard?id=${newId}`, { replace: true })
@@ -70,20 +98,28 @@ export default function Wizard() {
         setTimeout(() => setSuccess(null), 3000)
       }
     } catch (err) {
+      console.error('❌ Error creating workflow:', err);
       setError('Failed to create workflow: ' + (err.response?.data?.message || err.message))
-      console.error('Error initializing workflow:', err)
     } finally {
       setLoading(false)
     }
   }
 
   const loadWorkflow = async (id) => {
+    // Prevent duplicate loads
+    if (loading || workflowId === id) {
+      console.log('⏭️ Skipping workflow load - already loaded');
+      return;
+    }
+    
+    console.log('📥 Loading workflow:', id);
     setLoading(true)
     setError(null)
     try {
       const response = await getWizardWorkflow(id)
       
       if (response.success && response.data?.workflow) {
+        console.log('✅ Workflow loaded:', id);
         setWorkflowId(id)
         setWorkflowData(response.data.workflow)
         
@@ -92,8 +128,8 @@ export default function Wizard() {
         setActiveStep(Math.min(completedCount, steps.length - 1))
       }
     } catch (err) {
+      console.error('❌ Error loading workflow:', err);
       setError('Failed to load workflow: ' + (err.response?.data?.message || err.message))
-      console.error('Error loading workflow:', err)
     } finally {
       setLoading(false)
     }
@@ -148,15 +184,29 @@ export default function Wizard() {
   const isCompleted = completionPercentage === 100
   const isSubmitted = workflowData?.status === 'submitted'
 
+  // Handle workflow update from each step
+  const handleWorkflowUpdate = (updatedWorkflow) => {
+    console.log('📊 [Wizard Page] Workflow updated:', updatedWorkflow);
+    console.log('📊 [Wizard Page] Completed steps:', updatedWorkflow.completedSteps);
+    console.log('📊 [Wizard Page] Current step:', updatedWorkflow.currentStep);
+    setWorkflowData(updatedWorkflow);
+  }
+
   // Handle workflow submission from Step 7
   const handleWorkflowSubmitted = (data) => {
-    setWorkflowData(data.workflow)
-    setSuccess('🎉 Workflow submitted successfully! Redirecting to dashboard...')
+    console.log('✅ [Wizard Page] Workflow submitted:', data);
+    setWorkflowData(data.workflow);
+    
+    // Clear the saved workflow ID from localStorage since it's completed
+    localStorage.removeItem('currentWizardWorkflowId');
+    console.log('🗑️ Cleared workflow ID from localStorage');
+    
+    setSuccess('🎉 Workflow submitted successfully! Redirecting to dashboard...');
     
     // Navigate to dashboard after 2 seconds
     setTimeout(() => {
-      navigate('/dashboard')
-    }, 2000)
+      navigate('/dashboard');
+    }, 2000);
   }
 
   return (
@@ -201,7 +251,23 @@ export default function Wizard() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Submit Workflow button removed - now auto-submits on Step 7 completion */}
+            {/* Start New Workflow button */}
+            {!isSubmitted && workflowId && (
+              <Button
+                onClick={() => {
+                  if (confirm('Are you sure you want to start a new workflow? Current progress will be saved but you will create a new workflow.')) {
+                    localStorage.removeItem('currentWizardWorkflowId');
+                    console.log('🗑️ Cleared workflow ID - will create new one');
+                    navigate('/wizard', { replace: true });
+                    window.location.reload();
+                  }
+                }}
+                variant="outline"
+                className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
+              >
+                Start New Workflow
+              </Button>
+            )}
             
             {isSubmitted && (
               <Button
@@ -239,7 +305,7 @@ export default function Wizard() {
             onStepChange={setActiveStep}
             workflowId={workflowId}
             workflowData={workflowData}
-            onWorkflowUpdate={setWorkflowData}
+            onWorkflowUpdate={handleWorkflowUpdate}
             onWorkflowSubmitted={handleWorkflowSubmitted}
           />
           <ProgressTracker 

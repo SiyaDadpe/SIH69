@@ -390,6 +390,16 @@ const updateStep = asyncHandler(async (req, res) => {
   const { id, stepName } = req.params;
   const stepData = req.body;
 
+  // Debug logging
+  console.log('='.repeat(80));
+  console.log('[DEBUG] updateStep called');
+  console.log('Workflow ID:', id);
+  console.log('Step Name:', stepName);
+  console.log('Received Data:', JSON.stringify(stepData, null, 2));
+  console.log('Data keys:', Object.keys(stepData));
+  console.log('Data size:', Object.keys(stepData).length);
+  console.log('='.repeat(80));
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
@@ -414,8 +424,17 @@ const updateStep = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update the step data
-  workflow[stepName] = stepData;
+  console.log('[DEBUG] Workflow found:', workflow._id);
+  console.log('[DEBUG] Current step data before update:', JSON.stringify(workflow[stepName], null, 2));
+
+  // Update the step data - merge with existing data to prevent overwrites
+  if (workflow[stepName]) {
+    workflow[stepName] = { ...workflow[stepName].toObject(), ...stepData };
+  } else {
+    workflow[stepName] = stepData;
+  }
+  
+  console.log('[DEBUG] Step data after update:', JSON.stringify(workflow[stepName], null, 2));
 
   // Mark step as completed if markCompleted flag is true
   if (stepData.markCompleted === true) {
@@ -429,23 +448,30 @@ const updateStep = asyncHandler(async (req, res) => {
       valorization: 6
     };
     await workflow.markStepCompleted(stepNumbers[stepName]);
+    console.log('[INFO] Step marked as completed');
   } else {
     await workflow.save();
+    console.log('[INFO] Workflow saved without marking complete');
   }
+
+  // Verify the save
+  const updatedWorkflow = await WizardWorkflow.findById(id);
+  console.log('[DEBUG] Verified saved data:', JSON.stringify(updatedWorkflow[stepName], null, 2));
 
   console.log('[INFO] Wizard step updated:', {
     workflowId: workflow._id,
     stepName,
-    completed: workflow.completedSteps.includes(validSteps.indexOf(stepName))
+    completed: workflow.completedSteps.includes(validSteps.indexOf(stepName)),
+    fieldsSaved: Object.keys(updatedWorkflow[stepName] || {}).length
   });
 
   res.status(200).json({
     success: true,
     message: `Step '${stepName}' updated successfully`,
     data: {
-      workflow,
-      completionPercentage: workflow.completionPercentage,
-      isCompleted: workflow.isCompleted
+      workflow: updatedWorkflow,
+      completionPercentage: updatedWorkflow.completionPercentage,
+      isCompleted: updatedWorkflow.isCompleted
     }
   });
 });
