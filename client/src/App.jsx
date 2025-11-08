@@ -10,6 +10,7 @@ import Projects from './pages/Projects';
 import Canvas from './pages/Canvas';
 import Analytics from './pages/Analytics';
 import MainLayout from './layouts/MainLayout';
+import RouteError from './components/RouteError';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -18,45 +19,55 @@ function App() {
     // Routes without sidebar
     {
       path: "/",
-      element: <Landing />
+      element: <Landing />,
+      errorElement: <RouteError />
     },
     {
       path: "/login",
-      element: <Login />
+      element: <Login />,
+      errorElement: <RouteError />
     },
     {
       path: "/signup",
-      element: <Signup />
+      element: <Signup />,
+      errorElement: <RouteError />
     },
     
     // Routes with sidebar - wrapped in MainLayout
     {
       path: "/",
       element: <MainLayout />,
+      errorElement: <RouteError />,
       children: [
         {
           path: "dashboard",
-          element: <Dashboard />
+          element: <Dashboard />,
+          errorElement: <RouteError />
         },
         {
           path: "projects",
-          element: <Projects />
+          element: <Projects />,
+          errorElement: <RouteError />
         },
         {
           path: "wizard",
-          element: <Wizard />
+          element: <Wizard />,
+          errorElement: <RouteError />
         },
         {
           path: "reports",
-          element: <Reports />
+          element: <Reports />,
+          errorElement: <RouteError />
         },
         {
           path: "canvas",
-          element: <Canvas />
+          element: <Canvas />,
+          errorElement: <RouteError />
         },
         {
           path: "analytics",
-          element: <Analytics/>
+          element: <Analytics />,
+          errorElement: <RouteError />
         }
       ]
     }

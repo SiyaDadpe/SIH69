@@ -1,30 +1,78 @@
-import React, { useEffect, useState } from 'react';
-import AnalyticsDashboard from '../sections/reports/AnalyticsDashboard';
-import { fetchReports } from '../services/reportService';
+import React, { useState, useEffect } from 'react';
+import ProjectSelector from '../sections/analytics/ProjectSelector';
+import Header from '../sections/analytics/Header';
+import TabbedDashboard from '../sections/analytics/TabbedDashboard';
 
 export default function Analytics() {
-    const [reports, setReports] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [projectData, setProjectData] = useState(null);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [mode, setMode] = useState('circular');
+    const [activeTab, setActiveTab] = useState(1);
 
     useEffect(() => {
-        async function loadReports() {
+        // Fetch project analytics data
+        const fetchProjectData = async () => {
             try {
-                setLoading(true);
-                setError(null);
-                const { reports } = await fetchReports();
-                setReports(reports);
-            } catch (err) {
-                setError('Failed to load reports');
-            } finally {
-                setLoading(false);
+                const response = await fetch('/src/data/projectAnalytics.json');
+                const data = await response.json();
+                console.log('Project Analytics Data:', data);
+                setProjectData(data);
+            } catch (error) {
+                console.error('Error loading project analytics data:', error);
             }
-        }
-        loadReports();
+        };
+
+        fetchProjectData();
     }, []);
 
-    if (loading) return <div>Loading analytics...</div>;
-    if (error) return <div>{error}</div>;
+    useEffect(() => {
+        if (selectedProject) {
+            console.log('Selected Project:', selectedProject);
+        }
+    }, [selectedProject]);
 
-    return <AnalyticsDashboard reports={reports} />;
+    useEffect(() => {
+        console.log('Analysis Mode Changed:', mode);
+    }, [mode]);
+
+    useEffect(() => {
+        console.log('Active Tab Changed:', activeTab);
+    }, [activeTab]);
+
+    return (
+        <div className="analytics-page min-h-screen bg-gray-50">
+            {!projectData ? (
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#BA7967] mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading analytics data...</p>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <Header 
+                        selectedProject={selectedProject}
+                        mode={mode}
+                        onModeChange={setMode}
+                        onProjectSelect={setSelectedProject}
+                        projects={projectData}
+                    />
+                    
+                    <div className="px-6 mb-6">
+                        <ProjectSelector 
+                            projects={projectData} 
+                            onSelect={setSelectedProject} 
+                        />
+                    </div>
+
+                    <TabbedDashboard 
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        mode={mode}
+                        selectedProject={selectedProject}
+                    />
+                </>
+            )}
+        </div>
+    );
 }

@@ -1,0 +1,76 @@
+{
+    "smelting_energy_kWh_per_t_al": {
+        "RMSE": 396.38119933319786,
+        "MAE": 333.7852064785015,
+        "R2": 0.6269654138311201,
+        "RMSE_relative": 0.027940667049665892,
+        "MAE_relative": 0.023528313996749903,
+        "y_mean": 14186.53315
+    },
+    "smelting_energy_MJ_per_t_al": {
+        "RMSE": 1426.972533119738,
+        "MAE": 1201.6268757101302,
+        "R2": 0.6269652632579726,
+        "RMSE_relative": 0.027940671318872855,
+        "MAE_relative": 0.02352831663041099,
+        "y_mean": 51071.519250000005
+    },
+    "smelting_co2_kg_per_t_al": {
+        "RMSE": 302.27618766806114,
+        "MAE": 228.1376495616827,
+        "R2": 0.9960512867051954,
+        "RMSE_relative": 0.026307586128345332,
+        "MAE_relative": 0.01985518909465982,
+        "y_mean": 11490.0769
+    },
+    "smelting_pfc_kg_per_t_al": {
+        "RMSE": 0.04791457090522835,
+        "MAE": 0.038537909357209486,
+        "R2": 0.6739391100354024,
+        "RMSE_relative": 0.31610817577413614,
+        "MAE_relative": 0.25424725704320583,
+        "y_mean": 0.1515765
+    },
+    "smelting_so2_kg_per_t_al": {
+        "RMSE": 0.74391336400507,
+        "MAE": 0.6485545665911139,
+        "R2": -0.0807010764951972,
+        "RMSE_relative": 0.28006677358823506,
+        "MAE_relative": 0.2441663152590595,
+        "y_mean": 2.6562
+    },
+    "smelting_nox_kg_per_t_al": {
+        "RMSE": 0.302072285025657,
+        "MAE": 0.2647360498775887,
+        "R2": -0.019917291037315987,
+        "RMSE_relative": 0.2980486285403621,
+        "MAE_relative": 0.2612097186754699,
+        "y_mean": 1.0134999999999998
+    },
+    "smelting_fluoride_recovery_%": {
+        "RMSE": 3.971867102515866,
+        "MAE": 3.3830109295877526,
+        "R2": -0.11011513825777364,
+        "RMSE_relative": 0.043336156706209494,
+        "MAE_relative": 0.03691127824759557,
+        "y_mean": 91.6525
+    },
+    "smelting_thermal_recovery_%": {
+        "RMSE": 4.46051520157192,
+        "MAE": 3.88798994231581,
+        "R2": -0.04857385798739955,
+        "RMSE_relative": 0.3510972648724404,
+        "MAE_relative": 0.3060325036259443,
+        "y_mean": 12.704500000000001
+    },
+    "cross_validation": {
+        "smelting_energy_kWh_per_t_al": 396.3741917949706,
+        "smelting_energy_MJ_per_t_al": 1426.9471864233815,
+        "smelting_co2_kg_per_t_al": 293.7213426656683,
+        "smelting_pfc_kg_per_t_al": 0.05010790050834582,
+        "smelting_so2_kg_per_t_al": 0.7351925246666914,
+        "smelting_nox_kg_per_t_al": 0.2982707006732462,
+        "smelting_fluoride_recovery_%": 3.911293718308906,
+        "smelting_thermal_recovery_%": 4.42870227058914
+    }
+}

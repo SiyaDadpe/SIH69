@@ -118,3 +118,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Solid themed styles for ScrollStack cards (no glass, two solid alternates) */
+.scroll-stack-card {
+  background-color: #BA7967; /* primary mud tone */
+  color: #ffffff;
+  border: 1px solid rgba(0,0,0,0.25);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+.dark .scroll-stack-card {
+  background-color: #BA7967;
+  border-color: rgba(0,0,0,0.35);
+}
+/* Alternate solid color for every even card */
+.scroll-stack-card:nth-child(even) {
+  background-color: #6B5B59; /* secondary mud tone */
+}
+.dark .scroll-stack-card:nth-child(even) {
+  background-color: #6B5B59;
+}
+/* Typography inside cards */
+.scroll-stack-card h2 {
+  color: #ffffff;
+}
+.scroll-stack-card p {
+  color: rgba(255,255,255,0.9);
+}
