@@ -15,6 +15,7 @@ const {
   updateStep,
   completeStep,
   submitWorkflow,
+  saveDraftReport,
   deleteWorkflow,
   getUserWorkflows,
   getPublicWorkflows,
@@ -81,6 +82,13 @@ router.delete('/workflows/:id', deleteWorkflow);
  * @access  Public
  */
 router.post('/workflows/:id/submit', submitWorkflow);
+
+/**
+ * @route   POST /api/wizard/workflows/:id/save-draft
+ * @desc    Save incomplete workflow and generate/update draft report
+ * @access  Public
+ */
+router.post('/workflows/:id/save-draft', saveDraftReport);
 
 /**
  * @route   POST /api/wizard/workflows/:id/generate-report

@@ -146,9 +146,28 @@ const ReportSchema = new Schema({
     // Index defined separately below
   },
   sections: [ReportSectionSchema],
+  circularityScore: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: null
+  },
+  co2Savings: {
+    type: Number,
+    min: 0,
+    default: null
+  },
   summary: {
     type: Schema.Types.Mixed,
-    default: {}
+    default: {
+      circularityScore: null,
+      gwp: null,
+      energyDemand: null,
+      waterConsumption: null,
+      costAnalysis: {},
+      keyFindings: [],
+      recommendations: []
+    }
   },
   attachments: [{
     filename: {
@@ -187,7 +206,8 @@ const ReportSchema = new Schema({
   schemaVersion: {
     type: String,
     default: '1.0'
-  }
+  },
+  // For frontend compatibility
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -195,6 +215,41 @@ const ReportSchema = new Schema({
 });
 
 // ============================================================================
+// VIRTUALS FOR FRONTEND COMPATIBILITY
+ReportSchema.virtual('id').get(function() {
+  return this._id;
+});
+
+// Ensure 'name' always returns title if not set
+ReportSchema.virtual('name').get(function() {
+  return this.name || this.title;
+});
+
+// Ensure 'category' is derived from status if not set
+ReportSchema.virtual('category').get(function() {
+  if (this.category) return this.category;
+  if (this.status === 'archived') return 'archived';
+  if (this.status === 'final') return 'completed';
+  return 'active';
+});
+
+// Ensure 'version' is always available
+ReportSchema.virtual('version').get(function() {
+  return this.version || this.schemaVersion || '1.0';
+});
+
+// Ensure summary fields for frontend
+ReportSchema.virtual('frontendSummary').get(function() {
+  return {
+    circularityScore: this.summary?.circularityScore ?? null,
+    gwp: this.summary?.gwp ?? null,
+    energyDemand: this.summary?.energyDemand ?? null,
+    waterConsumption: this.summary?.waterConsumption ?? null,
+    costAnalysis: this.summary?.costAnalysis ?? {},
+    keyFindings: this.summary?.keyFindings ?? [],
+    recommendations: this.summary?.recommendations ?? []
+  };
+});
 // INDEXES
 // ============================================================================
 
