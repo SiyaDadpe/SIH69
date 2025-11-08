@@ -133,6 +133,10 @@ const formSchema = z.object({
 });
 
 function MiningProcessDetails({ onNext, onSave, initialValues }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues || {
@@ -145,12 +149,73 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
     handleSubmit,
     control,
     watch,
-    formState: { isValid },
+    formState: { isValid, errors },
   } = form;
 
-  const onSubmit = (data) => {
-    onSave?.(data)
-    onNext?.()
+  const onSubmit = async (data) => {
+    console.log('='.repeat(80));
+    console.log('🎯 [Mining Form] FORM SUBMISSION STARTED');
+    console.log('='.repeat(80));
+    console.log('📋 Form Data:', JSON.stringify(data, null, 2));
+    console.log('📊 Data Keys:', Object.keys(data));
+    console.log('📏 Number of fields:', Object.keys(data).length);
+    console.log('✅ Form is valid:', isValid);
+    console.log('❌ Form errors:', Object.keys(errors));
+    
+    // Don't validate - let form validation handle it
+    // Just save whatever data we have
+    
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+    
+    try {
+      console.log('💾 [Mining Form] Calling onSave function...');
+      console.log('💾 [Mining Form] onSave exists?', typeof onSave);
+      
+      if (!onSave) {
+        console.error('❌ [Mining Form] onSave function is not provided!');
+        setSaveError('Save function not available');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Call onSave and WAIT for it to complete
+      console.log('💾 [Mining Form] Executing onSave with data...');
+      await onSave(data);
+      console.log('✅ [Mining Form] onSave completed successfully');
+      
+      setSaveSuccess(true);
+      
+      // Small delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('➡️  [Mining Form] Calling onNext to move to next step...');
+      if (onNext) {
+        onNext();
+        console.log('✅ [Mining Form] onNext called');
+      } else {
+        console.error('❌ [Mining Form] onNext function is not provided!');
+      }
+      
+      console.log('='.repeat(80));
+      console.log('✅ [Mining Form] FORM SUBMISSION COMPLETED');
+      console.log('='.repeat(80));
+    } catch (error) {
+      console.error('='.repeat(80));
+      console.error('❌ [Mining Form] FORM SUBMISSION FAILED');
+      console.error('='.repeat(80));
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      setSaveError(error.message || 'Failed to save data');
+      setIsSaving(false);
+    } finally {
+      // Don't reset isSaving here if we're moving to next step
+      if (!saveSuccess) {
+        setIsSaving(false);
+      }
+    }
   };
 
   const applicableProcesses = watch("applicableProcesses");
@@ -440,8 +505,25 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <div className="flex gap-x-3">
+          <CardFooter className="flex flex-col gap-3">
+            {saveSuccess && (
+              <div className="w-full text-green-600 text-sm p-3 bg-green-50 rounded border border-green-200 flex items-center gap-2">
+                <span className="text-lg">✅</span>
+                <span>Data saved successfully!</span>
+              </div>
+            )}
+            {saveError && (
+              <div className="w-full text-red-600 text-sm p-3 bg-red-50 rounded border border-red-200 flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <span>{saveError}</span>
+              </div>
+            )}
+            {!isValid && Object.keys(errors).length > 0 && (
+              <div className="w-full text-orange-600 text-sm p-3 bg-orange-50 rounded border border-orange-200">
+                ℹ️ Please fill required fields: {Object.keys(errors).join(', ')}
+              </div>
+            )}
+            <div className="flex gap-x-3 w-full justify-end">
               <motion.div
                 animate={{
                   scale: [1, 1.01, 1],
@@ -462,17 +544,10 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
               <Button
                 type="submit"
                 onClick={handleSubmit(onSubmit)}
-                disabled={!isValid}
-                className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none"
-                style={{
-                  clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                  paddingRight: '2rem'
-                }}
+                disabled={!isValid || isSaving}
+                className={isSaving ? 'opacity-50 cursor-not-allowed' : ''}
               >
-                <span className="pr-4">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
+                {isSaving ? '💾 Saving...' : 'Next'}
               </Button>
             </div>
           </CardFooter>
@@ -980,12 +1055,18 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 
   // Helper function to save step data to backend
   const handleSaveStep = async (stepName, data) => {
+    console.log('💾 [handleSaveStep] Called for step:', stepName);
+    console.log('💾 [handleSaveStep] Workflow ID:', workflowId);
+    console.log('💾 [handleSaveStep] Data received:', data);
+    console.log('💾 [handleSaveStep] Data keys:', Object.keys(data));
+    console.log('💾 [handleSaveStep] Data size:', Object.keys(data).length);
+    
     if (!workflowId) {
-      console.error('No workflow ID available')
-      return
+      console.error('❌ [handleSaveStep] No workflow ID available');
+      return;
     }
     
-    setSaving(true)
+    setSaving(true);
     try {
       // Map step names to API functions
       const stepFunctions = {
@@ -996,35 +1077,46 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         manufacturing: updateManufacturingStep,
         recycling: updateRecyclingStep,
         valorization: updateValorizationStep,
-      }
+      };
       
-      const updateFn = stepFunctions[stepName]
+      const updateFn = stepFunctions[stepName];
+      console.log('💾 [handleSaveStep] Update function found:', !!updateFn);
+      
       if (updateFn) {
         // Save the step data
-        const response = await updateFn(workflowId, data)
+        console.log('💾 [handleSaveStep] Calling API function...');
+        const response = await updateFn(workflowId, data);
+        console.log('💾 [handleSaveStep] API Response:', response);
+        
         if (response.success && response.data?.workflow) {
-          onWorkflowUpdate?.(response.data.workflow)
+          onWorkflowUpdate?.(response.data.workflow);
+          console.log('✅ [handleSaveStep] Workflow updated successfully');
           
           // Mark step as complete
           try {
-            const completeResponse = await completeStep(workflowId, stepName)
+            console.log('💾 [handleSaveStep] Marking step as complete...');
+            const completeResponse = await completeStep(workflowId, stepName);
             if (completeResponse.success && completeResponse.data?.workflow) {
-              onWorkflowUpdate?.(completeResponse.data.workflow)
-              console.log(`✅ Step "${stepName}" completed successfully`)
+              onWorkflowUpdate?.(completeResponse.data.workflow);
+              console.log(`✅ Step "${stepName}" completed successfully`);
             }
           } catch (completeError) {
-            console.error(`Error marking ${stepName} as complete:`, completeError)
+            console.error(`❌ Error marking ${stepName} as complete:`, completeError);
           }
         }
+      } else {
+        console.error('❌ [handleSaveStep] No update function found for step:', stepName);
       }
       
       // Save to local state
-      setFormValues((p) => ({ ...p, [stepName]: data }))
+      setFormValues((p) => ({ ...p, [stepName]: data }));
+      console.log('💾 [handleSaveStep] Saved to local state');
     } catch (error) {
-      console.error(`Error saving ${stepName} step:`, error)
-      throw error
+      console.error(`❌ Error saving ${stepName} step:`, error);
+      throw error;
     } finally {
-      setSaving(false)
+      setSaving(false);
+      console.log('💾 [handleSaveStep] Completed (saving flag reset)');
     }
   }
 

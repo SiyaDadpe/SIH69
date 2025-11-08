@@ -142,6 +142,7 @@ const systemStatusRoutes = require('./routes/systemStatusRoutes');
 const canvasRoutes = require('./routes/canvasRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const wizardRoutes = require('./routes/wizardRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 
 app.use('/api/projects', projectRoutes);
 app.use('/api/dashboard', dashboardRoutes);
@@ -151,6 +152,7 @@ app.use('/api/system-status', systemStatusRoutes);
 app.use('/api/canvas', canvasRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/wizard', wizardRoutes);
+app.use('/api/export', exportRoutes);
 
 // Serve uploaded files (mounted at root level for /uploads/:filename route)
 app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));

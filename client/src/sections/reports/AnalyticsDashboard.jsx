@@ -6,7 +6,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import reportsDataset from '@/data/reports.json';
+
 import {
     ResponsiveContainer,
     LineChart,
@@ -50,12 +50,8 @@ const formatMonthLabel = (input) => {
 };
 
 const AnalyticsDashboard = ({ reports }) => {
-	const dataset = useMemo(() => {
-		if (Array.isArray(reports) && reports.length > 0) {
-			return reports;
-		}
-		return Array.isArray(reportsDataset) ? reportsDataset : [];
-	}, [reports]);
+	// Always use the passed-in reports prop (from backend), never fallback to static data
+	const dataset = useMemo(() => (Array.isArray(reports) ? reports : []), [reports]);
 
 	const {
 		totalReports,

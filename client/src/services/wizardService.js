@@ -88,10 +88,17 @@ export const deleteWizardWorkflow = async (id) => {
  */
 export const updateMiningStep = async (id, data) => {
   try {
+    console.log('🚀 [Frontend] Sending mining step data:', {
+      workflowId: id,
+      dataKeys: Object.keys(data),
+      data: data
+    });
     const response = await api.put(`/wizard/workflows/${id}/steps/mining`, data);
+    console.log('✅ [Frontend] Mining step response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error updating mining step:', error);
+    console.error('❌ [Frontend] Error updating mining step:', error);
+    console.error('Error details:', error.response?.data);
     throw error;
   }
 };

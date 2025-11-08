@@ -11,6 +11,180 @@ const mongoose = require('mongoose');
 const { clearCache, clearAllCache } = require('../utils/localCache');
 
 /**
+ * Helper function to generate a comprehensive report from wizard workflow
+ * @param {Object} workflow - The wizard workflow document
+ * @param {Object} project - The associated project document
+ * @returns {Promise<Object>} The created report document
+ */
+async function generateReportFromWizard(workflow, project) {
+  const sections = [];
+  
+  // Populate workflow user details if not already populated
+  if (!workflow.userId?.name) {
+    await workflow.populate('userId', 'name email');
+  }
+
+  // Executive Summary
+  const completedStepsCount = workflow.completedSteps?.length || 0;
+  const circularityScore = workflow.calculatedResults?.circularityScore || 0;
+  const totalGWP = workflow.calculatedResults?.totalGWP || 0;
+  
+  sections.push({
+    title: 'Executive Summary',
+    order: 0,
+    content: `This Life Cycle Assessment (LCA) report was generated from a wizard workflow for ${workflow.metalType}. The assessment completed ${completedStepsCount} out of 7 process stages, achieving a circularity score of ${circularityScore.toFixed(2)}%. This report provides comprehensive insights into the environmental impacts across the entire value chain.`,
+    metrics: [
+      {
+        name: 'circularity_score',
+        label: 'Circularity Score',
+        value: parseFloat(circularityScore.toFixed(2)),
+        unit: '%',
+        timestamp: new Date()
+      },
+      {
+        name: 'completed_steps',
+        label: 'Completed Process Stages',
+        value: completedStepsCount,
+        unit: 'stages',
+        timestamp: new Date()
+      }
+    ]
+  });
+
+  // Environmental Impact Assessment
+  sections.push({
+    title: 'Environmental Impact Assessment',
+    order: 1,
+    content: `The workflow analysis shows a Global Warming Potential (GWP) of ${totalGWP.toFixed(2)} kg CO₂-eq, energy consumption of ${(workflow.calculatedResults?.energyConsumption || 0).toFixed(2)} kWh, water usage of ${(workflow.calculatedResults?.waterUsage || 0).toFixed(2)} liters, and waste generation of ${(workflow.calculatedResults?.wasteGenerated || 0).toFixed(2)} kg.`,
+    metrics: [
+      {
+        name: 'gwp',
+        label: 'Global Warming Potential',
+        value: parseFloat(totalGWP.toFixed(2)),
+        unit: 'kg CO₂-eq',
+        timestamp: new Date()
+      },
+      {
+        name: 'energy_consumption',
+        label: 'Energy Consumption',
+        value: parseFloat((workflow.calculatedResults?.energyConsumption || 0).toFixed(2)),
+        unit: 'kWh',
+        timestamp: new Date()
+      },
+      {
+        name: 'water_usage',
+        label: 'Water Usage',
+        value: parseFloat((workflow.calculatedResults?.waterUsage || 0).toFixed(2)),
+        unit: 'liters',
+        timestamp: new Date()
+      },
+      {
+        name: 'waste_generated',
+        label: 'Waste Generated',
+        value: parseFloat((workflow.calculatedResults?.wasteGenerated || 0).toFixed(2)),
+        unit: 'kg',
+        timestamp: new Date()
+      }
+    ]
+  });
+
+  // Process Stage Details
+  const stageNames = ['Mining', 'Beneficiation', 'Refining', 'Smelting', 'Manufacturing', 'Recycling', 'Valorization'];
+  const stageData = [
+    workflow.mining,
+    workflow.beneficiation,
+    workflow.refining,
+    workflow.smelting,
+    workflow.manufacturing,
+    workflow.recycling,
+    workflow.valorization
+  ];
+  
+  let stageContent = 'The following process stages were analyzed:\n\n';
+  stageData.forEach((data, index) => {
+    if (data && Object.keys(data).length > 0) {
+      stageContent += `**${stageNames[index]}**: `;
+      const dataPoints = Object.entries(data)
+        .filter(([key, val]) => val !== null && val !== undefined && val !== '')
+        .slice(0, 3)
+        .map(([key, val]) => `${key}: ${val}`)
+        .join(', ');
+      stageContent += dataPoints || 'Configured';
+      stageContent += '\n\n';
+    }
+  });
+
+  sections.push({
+    title: 'Process Stage Analysis',
+    order: 2,
+    content: stageContent,
+    metrics: []
+  });
+
+  // CO2 Savings & Circularity Benefits
+  const co2Saved = workflow.calculatedResults?.gwpSaved || workflow.calculatedResults?.co2Savings || 0;
+  const recyclingRate = workflow.calculatedResults?.recyclingRate || 0;
+  
+  sections.push({
+    title: 'Sustainability Benefits',
+    order: 3,
+    content: `This workflow demonstrates significant sustainability benefits with ${co2Saved.toFixed(2)} kg CO₂-eq saved through circular economy practices. The recycling rate achieved is ${recyclingRate.toFixed(2)}%, contributing to reduced environmental impact and resource conservation.`,
+    metrics: [
+      {
+        name: 'co2_saved',
+        label: 'CO₂ Emissions Saved',
+        value: parseFloat(co2Saved.toFixed(2)),
+        unit: 'kg CO₂-eq',
+        timestamp: new Date()
+      },
+      {
+        name: 'recycling_rate',
+        label: 'Recycling Rate',
+        value: parseFloat(recyclingRate.toFixed(2)),
+        unit: '%',
+        timestamp: new Date()
+      }
+    ]
+  });
+
+  // Create the report
+  const reportData = {
+    title: `LCA Report: ${workflow.name}`,
+    description: workflow.description || `Life Cycle Assessment report generated from wizard workflow for ${workflow.metalType}`,
+    projectId: project?._id,
+    author: {
+      userId: workflow.userId?._id,
+      name: workflow.userId?.name || 'System Generated',
+      email: workflow.userId?.email || 'noreply@example.com'
+    },
+    status: workflow.isCompleted ? 'final' : 'draft',
+    visibility: workflow.isPublic ? 'public' : 'private',
+    sections: sections,
+    circularityScore: circularityScore,
+    co2Savings: co2Saved,
+    tags: [
+      'wizard-generated',
+      workflow.metalType?.toLowerCase() || 'metal',
+      'lca',
+      workflow.isCompleted ? 'completed' : 'in-progress',
+      ...(workflow.tags || [])
+    ],
+    metadata: {
+      sourceType: 'wizard-workflow',
+      workflowId: workflow._id.toString(),
+      projectId: project?._id?.toString(),
+      metalType: workflow.metalType,
+      generatedAt: new Date(),
+      completionPercentage: workflow.completionPercentage || 0,
+      completedSteps: workflow.completedSteps || []
+    }
+  };
+
+  const report = await Report.create(reportData);
+  return report;
+}
+
+/**
  * @desc    Create new wizard workflow
  * @route   POST /api/wizard/workflows
  * @access  Public
@@ -216,6 +390,16 @@ const updateStep = asyncHandler(async (req, res) => {
   const { id, stepName } = req.params;
   const stepData = req.body;
 
+  // Debug logging
+  console.log('='.repeat(80));
+  console.log('[DEBUG] updateStep called');
+  console.log('Workflow ID:', id);
+  console.log('Step Name:', stepName);
+  console.log('Received Data:', JSON.stringify(stepData, null, 2));
+  console.log('Data keys:', Object.keys(stepData));
+  console.log('Data size:', Object.keys(stepData).length);
+  console.log('='.repeat(80));
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
@@ -240,8 +424,17 @@ const updateStep = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update the step data
-  workflow[stepName] = stepData;
+  console.log('[DEBUG] Workflow found:', workflow._id);
+  console.log('[DEBUG] Current step data before update:', JSON.stringify(workflow[stepName], null, 2));
+
+  // Update the step data - merge with existing data to prevent overwrites
+  if (workflow[stepName]) {
+    workflow[stepName] = { ...workflow[stepName].toObject(), ...stepData };
+  } else {
+    workflow[stepName] = stepData;
+  }
+  
+  console.log('[DEBUG] Step data after update:', JSON.stringify(workflow[stepName], null, 2));
 
   // Mark step as completed if markCompleted flag is true
   if (stepData.markCompleted === true) {
@@ -255,23 +448,30 @@ const updateStep = asyncHandler(async (req, res) => {
       valorization: 6
     };
     await workflow.markStepCompleted(stepNumbers[stepName]);
+    console.log('[INFO] Step marked as completed');
   } else {
     await workflow.save();
+    console.log('[INFO] Workflow saved without marking complete');
   }
+
+  // Verify the save
+  const updatedWorkflow = await WizardWorkflow.findById(id);
+  console.log('[DEBUG] Verified saved data:', JSON.stringify(updatedWorkflow[stepName], null, 2));
 
   console.log('[INFO] Wizard step updated:', {
     workflowId: workflow._id,
     stepName,
-    completed: workflow.completedSteps.includes(validSteps.indexOf(stepName))
+    completed: workflow.completedSteps.includes(validSteps.indexOf(stepName)),
+    fieldsSaved: Object.keys(updatedWorkflow[stepName] || {}).length
   });
 
   res.status(200).json({
     success: true,
     message: `Step '${stepName}' updated successfully`,
     data: {
-      workflow,
-      completionPercentage: workflow.completionPercentage,
-      isCompleted: workflow.isCompleted
+      workflow: updatedWorkflow,
+      completionPercentage: updatedWorkflow.completionPercentage,
+      isCompleted: updatedWorkflow.isCompleted
     }
   });
 });
@@ -413,6 +613,20 @@ const submitWorkflow = asyncHandler(async (req, res) => {
       workflowId: workflow._id,
       userId: workflow.userId
     });
+
+    // Automatically generate a report from the completed wizard workflow
+    try {
+      const report = await generateReportFromWizard(workflow, project);
+      console.log('[INFO] Report generated from wizard workflow:', {
+        reportId: report._id,
+        workflowId: workflow._id,
+        projectId: project._id,
+        status: report.status
+      });
+    } catch (reportError) {
+      console.error('[ERROR] Failed to generate report from wizard workflow:', reportError);
+      // Don't fail the submission if report generation fails
+    }
 
     // Clear dashboard cache so new project appears immediately
     clearCache(`dashboard:${workflow.userId}`);
@@ -963,6 +1177,146 @@ const generateAndSaveReport = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Save incomplete workflow and generate draft report
+ * @route   POST /api/wizard/workflows/:id/save-draft
+ * @access  Public
+ */
+const saveDraftReport = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid workflow ID format'
+    });
+  }
+
+  const workflow = await WizardWorkflow.findById(id).populate('userId', 'name email');
+
+  if (!workflow) {
+    return res.status(404).json({
+      success: false,
+      message: 'Wizard workflow not found'
+    });
+  }
+
+  // Check if workflow is incomplete
+  if (workflow.isCompleted) {
+    return res.status(400).json({
+      success: false,
+      message: 'Workflow is already completed. Use submit endpoint instead.',
+      data: {
+        completionPercentage: workflow.completionPercentage
+      }
+    });
+  }
+
+  // Create or find associated project
+  let project = await Project.findOne({ wizardWorkflowId: workflow._id });
+  
+  if (!project) {
+    project = await Project.create({
+      name: workflow.name,
+      description: workflow.description || `LCA Project for ${workflow.metalType} (In Progress)`,
+      metalType: workflow.metalType,
+      owner: workflow.userId,
+      status: 'in-progress',
+      circularityScore: workflow.calculatedResults?.circularityScore || 0,
+      wizardWorkflowId: workflow._id,
+      metadata: {
+        wizardData: {
+          mining: workflow.mining,
+          beneficiation: workflow.beneficiation,
+          refining: workflow.refining,
+          smelting: workflow.smelting,
+          manufacturing: workflow.manufacturing,
+          recycling: workflow.recycling,
+          valorization: workflow.valorization
+        }
+      }
+    });
+  }
+
+  // Check if draft report already exists for this workflow
+  let report = await Report.findOne({ 
+    'metadata.workflowId': workflow._id.toString(),
+    status: 'draft'
+  });
+
+  if (report) {
+    // Update existing draft report
+    const updatedSections = await buildReportSections(workflow);
+    report.sections = updatedSections;
+    report.circularityScore = workflow.calculatedResults?.circularityScore || 0;
+    report.co2Savings = workflow.calculatedResults?.gwpSaved || 0;
+    report.metadata.completionPercentage = workflow.completionPercentage;
+    report.metadata.completedSteps = workflow.completedSteps;
+    report.updatedAt = new Date();
+    await report.save();
+
+    console.log('[INFO] Draft report updated:', {
+      reportId: report._id,
+      workflowId: workflow._id,
+      completionPercentage: workflow.completionPercentage
+    });
+  } else {
+    // Generate new draft report
+    report = await generateReportFromWizard(workflow, project);
+    
+    console.log('[INFO] Draft report generated:', {
+      reportId: report._id,
+      workflowId: workflow._id,
+      completionPercentage: workflow.completionPercentage,
+      status: report.status
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Draft report saved successfully',
+    data: {
+      workflow,
+      project,
+      report,
+      completionPercentage: workflow.completionPercentage
+    }
+  });
+});
+
+/**
+ * Helper function to build report sections from workflow data
+ */
+async function buildReportSections(workflow) {
+  const sections = [];
+  const completedStepsCount = workflow.completedSteps?.length || 0;
+  const circularityScore = workflow.calculatedResults?.circularityScore || 0;
+  
+  sections.push({
+    title: 'Executive Summary',
+    order: 0,
+    content: `This is a draft LCA report for ${workflow.metalType}. Currently ${completedStepsCount} out of 7 stages have been completed (${workflow.completionPercentage}% complete). Preliminary circularity score: ${circularityScore.toFixed(2)}%.`,
+    metrics: [
+      {
+        name: 'completion',
+        label: 'Completion Progress',
+        value: workflow.completionPercentage,
+        unit: '%',
+        timestamp: new Date()
+      },
+      {
+        name: 'circularity_score',
+        label: 'Preliminary Circularity Score',
+        value: parseFloat(circularityScore.toFixed(2)),
+        unit: '%',
+        timestamp: new Date()
+      }
+    ]
+  });
+
+  return sections;
+}
+
 module.exports = {
   createWorkflow,
   getWorkflows,
@@ -971,6 +1325,7 @@ module.exports = {
   updateStep,
   completeStep,
   submitWorkflow,
+  saveDraftReport,
   deleteWorkflow,
   getUserWorkflows,
   getPublicWorkflows,

@@ -10,6 +10,7 @@
 const express = require('express');
 const router = express.Router();
 const { body, query, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validators/commonValidators');
 const {
   createReport,
   getReports,
@@ -20,8 +21,25 @@ const {
   archiveReport,
   getReportStats,
   exportReport,
-  bulkCreateReports
+  bulkCreateReports,
+  getReportsAnalytics,
+  bulkExportReports
 } = require('../controllers/reportController');
+
+/**
+ * @route   POST /api/reports/bulk-export
+ * @desc    Bulk export reports as PDF or Excel bundle
+ * @access  Public
+ */
+router.post(
+  '/bulk-export',
+  body('reportIds').isArray({ min: 1, max: 100 }).withMessage('reportIds must be an array of 1-100 IDs'),
+  body('format').isIn(['pdf', 'excel']).withMessage('Format must be pdf or excel'),
+  handleValidationErrors,
+  bulkExportReports
+);
+// Analytics/overview endpoint for dashboard
+router.get('/analytics', getReportsAnalytics);
 
 // ============================================================================
 // VALIDATION MIDDLEWARE
@@ -165,34 +183,6 @@ const validateBulkCreate = [
     .notEmpty().withMessage('Each report must have a title')
     .isLength({ min: 3, max: 200 }).withMessage('Title must be between 3 and 200 characters')
 ];
-
-/**
- * Middleware to handle validation errors
- */
-const handleValidationErrors = (req, res, next) => {
-  const { validationResult } = require('express-validator');
-  const errors = validationResult(req);
-  
-  if (!errors.isEmpty()) {
-    console.warn('[WARN]', 'Validation failed', {
-      path: req.path,
-      method: req.method,
-      errors: errors.array()
-    });
-    
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array().map(err => ({
-        field: err.path || err.param,
-        message: err.msg,
-        value: err.value
-      }))
-    });
-  }
-  
-  next();
-};
 
 // ============================================================================
 // ROUTES
