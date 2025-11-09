@@ -1,0 +1,110 @@
+{
+  "Baseline": {
+    "scenario_name": "Baseline",
+    "product_code": "manufacturing",
+    "impacts": {
+      "gwp": {
+        "score": 29.0,
+        "unit": "kg CO2-eq"
+      },
+      "water_use": {
+        "score": 29.0,
+        "unit": "placeholder units"
+      },
+      "land_use": {
+        "score": 29.0,
+        "unit": "placeholder units"
+      }
+    },
+    "contributions": {
+      "mining": 0.43515,
+      "beneficiation": 2.9000000000000004,
+      "refining": 6.959999999999997,
+      "smelting": 48.43800000000002,
+      "manufacturing": 2.9000000000000004,
+      "recycling": 1.74,
+      "waste": 0.0
+    }
+  },
+  "Renewable Energy": {
+    "scenario_name": "Renewable Energy",
+    "product_code": "manufacturing",
+    "impacts": {
+      "gwp": {
+        "score": 30.0,
+        "unit": "kg CO2-eq"
+      },
+      "water_use": {
+        "score": 30.0,
+        "unit": "placeholder units"
+      },
+      "land_use": {
+        "score": 30.0,
+        "unit": "placeholder units"
+      }
+    },
+    "contributions": {
+      "mining": 0.45015000000000005,
+      "beneficiation": 3.0,
+      "refining": 7.199999999999996,
+      "smelting": 50.070000000000014,
+      "manufacturing": 3.0,
+      "recycling": 1.8,
+      "waste": 0.0
+    }
+  },
+  "High Recycling": {
+    "scenario_name": "High Recycling",
+    "product_code": "manufacturing",
+    "impacts": {
+      "gwp": {
+        "score": 31.0,
+        "unit": "kg CO2-eq"
+      },
+      "water_use": {
+        "score": 31.0,
+        "unit": "placeholder units"
+      },
+      "land_use": {
+        "score": 31.0,
+        "unit": "placeholder units"
+      }
+    },
+    "contributions": {
+      "mining": 0.46515000000000006,
+      "beneficiation": 3.1,
+      "refining": 7.439999999999995,
+      "smelting": 51.512000000000015,
+      "manufacturing": 3.1,
+      "recycling": 1.8600000000000003,
+      "waste": 0.0
+    }
+  },
+  "Improved Efficiency": {
+    "scenario_name": "Improved Efficiency",
+    "product_code": "manufacturing",
+    "impacts": {
+      "gwp": {
+        "score": 32.0,
+        "unit": "kg CO2-eq"
+      },
+      "water_use": {
+        "score": 32.0,
+        "unit": "placeholder units"
+      },
+      "land_use": {
+        "score": 32.0,
+        "unit": "placeholder units"
+      }
+    },
+    "contributions": {
+      "mining": 0.4803000000000001,
+      "beneficiation": 3.2,
+      "refining": 7.679999999999994,
+      "smelting": 53.084,
+      "manufacturing": 3.2,
+      "recycling": 1.9200000000000004,
+      "waste": 0.0
+    }
+  }
+}

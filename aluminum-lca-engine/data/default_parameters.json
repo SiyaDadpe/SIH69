@@ -1,0 +1,34 @@
+{
+  "mining": {
+    "Mining Method": ["Open Pit Mining"],
+    "Type of Equipment": ["Loaders", "Haul Trucks", "Drills"],
+    "Water Usage (m³ per tonne of ore)": 2.5,
+    "Ore Grade (%)": 25
+  },
+  "refining": {
+    "energy_mix": "grid_average",
+    "bauxite_to_alumina_ratio": 2.5,
+    "caustic_soda_consumption": 0.1
+  },
+  "smelting": {
+    "electricity_kwh_per_kg": 13.5,
+    "anode_consumption_kg_per_kg": 0.4
+  },
+  "casting": {
+    "yield_rate": 0.95,
+    "natural_gas_mj_per_kg": 2.0
+  },
+  "rolling": {
+    "electricity_kwh_per_kg": 0.75,
+    "lubricant_g_per_kg": 1.2
+  },
+  "recycling": {
+    "scrap_input_fraction": 0.5,
+    "electricity_kwh_per_kg": 0.6
+  },
+  "transport": {
+    "mode": "truck",
+    "distance_km": 250,
+    "load_tonnes": 20
+  }
+}
