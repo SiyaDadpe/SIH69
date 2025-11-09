@@ -19,6 +19,7 @@ const Operation = require('./Operation');
 const CanvasWorkflow = require('./CanvasWorkflow');
 const Report = require('./Report');
 const WizardWorkflow = require('./WizardWorkflow');
+const WizardWorkflowOutput = require('./WizardWorkflowOutput');
 
 module.exports = {
   User,
@@ -29,5 +30,6 @@ module.exports = {
   Operation,
   CanvasWorkflow,
   Report,
-  WizardWorkflow
+  WizardWorkflow,
+  WizardWorkflowOutput
 };

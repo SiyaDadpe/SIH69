@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wizard Flow Tester</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { padding: 12px 24px; margin: 10px 5px; font-size: 16px; cursor: pointer; border: none; border-radius: 4px; }
+        .test-btn { background: #4CAF50; color: white; }
+        .test-btn:hover { background: #45a049; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        h2 { color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }
+        .field { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Wizard Data Flow Tester</h1>
+        <p>Test if your frontend can send data to the backend API</p>
+
+        <h2>Test Configuration</h2>
+        <div class="field">
+            <label>Backend URL:</label>
+            <input type="text" id="backendUrl" value="http://localhost:5000" />
+        </div>
+        <div class="field">
+            <label>Workflow ID:</label>
+            <input type="text" id="workflowId" value="690ec1c418d9e184d306e396" />
+        </div>
+
+        <h2>Mining Step Data</h2>
+        <div class="field">
+            <label>Location:</label>
+            <select id="location">
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Western Australia">Western Australia</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Ore Grade (%):</label>
+            <input type="number" id="oreGrade" value="38" />
+        </div>
+        <div class="field">
+            <label>Overburden Ratio:</label>
+            <input type="number" id="overburdenRatio" value="450" />
+        </div>
+
+        <button class="test-btn" onclick="testAPI()">🚀 Test API Call</button>
+        <button class="test-btn" onclick="verifyDatabase()">🔍 Verify in Database</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const backendUrl = document.getElementById('backendUrl').value;
+            const workflowId = document.getElementById('workflowId').value;
+            
+            const testData = {
+                applicableProcesses: ['openPit', 'drilling'],
+                location: document.getElementById('location').value,
+                year: 2025,
+                oreGrade: parseInt(document.getElementById('oreGrade').value),
+                overburdenRatio: parseInt(document.getElementById('overburdenRatio').value),
+                typeOfEquipment: 'diesel',
+                waterUsage: 250,
+                biodiversityImpact: 'moderate',
+                productionVolume: 1000,
+                fuelConsumption: 50,
+                waterSource: 'Groundwater',
+                blastingFrequency: 'Weekly',
+                explosivesUsed: 100,
+                redMudGeneration: 50,
+                landReclamation: 'Planned',
+                dustControl: 'Water spraying',
+                noiseLevel: 85,
+                transport: {
+                    distance: 50,
+                    mode: 'Road',
+                    vehicleType: 'Diesel trucks'
+                }
+            };
+
+            resultDiv.innerHTML = '<div class="result info">⏳ Sending request...</div>';
+
+            try {
+                console.log('📤 Sending data:', testData);
+                
+                const response = await fetch(`${backendUrl}/api/wizard/workflows/${workflowId}/steps/mining`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+                console.log('📥 Response:', result);
+
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ SUCCESS!</h3>
+                            <p><strong>Message:</strong> ${result.message}</p>
+                            <p><strong>Fields saved:</strong> ${Object.keys(result.data.workflow.mining || {}).length}</p>
+                            <h4>Response Data:</h4>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ ERROR</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Message:</strong> ${result.message || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ NETWORK ERROR</h3>
+                        <p>${error.message}</p>
+                        <p>Make sure your backend server is running on ${backendUrl}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function verifyDatabase() {
+            const resultDiv = document.getElementById('result');
+            const backendUrl = document.getElementById('backendUrl').value;
+            const workflowId = document.getElementById('workflowId').value;
+
+            resultDiv.innerHTML = '<div class="result info">⏳ Fetching from database...</div>';
+
+            try {
+                const response = await fetch(`${backendUrl}/api/wizard/workflows/${workflowId}`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const miningData = result.data.workflow.mining || {};
+                    const fieldCount = Object.keys(miningData).filter(k => {
+                        const val = miningData[k];
+                        return val !== undefined && val !== null && val !== '' && !(Array.isArray(val) && val.length === 0);
+                    }).length;
+
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ DATABASE VERIFICATION</h3>
+                            <p><strong>Workflow ID:</strong> ${result.data.workflow._id}</p>
+                            <p><strong>Status:</strong> ${result.data.workflow.status}</p>
+                            <p><strong>Completed Steps:</strong> ${result.data.workflow.completedSteps.length}</p>
+                            <p><strong>Mining fields with data:</strong> ${fieldCount}</p>
+                            <h4>Mining Data:</h4>
+                            <pre>${JSON.stringify(miningData, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ ERROR</h3>
+                            <p>${result.message || 'Failed to fetch data'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ ERROR</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-verify on page load
+        window.onload = () => {
+            console.log('🔧 Wizard Flow Tester loaded');
+            console.log('📋 Instructions:');
+            console.log('1. Make sure your backend server is running');
+            console.log('2. Click "Test API Call" to send data');
+            console.log('3. Click "Verify in Database" to check if data was saved');
+        };
+    </script>
+</body>
+</html>

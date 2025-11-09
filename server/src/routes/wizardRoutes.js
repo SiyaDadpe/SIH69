@@ -20,7 +20,8 @@ const {
   getUserWorkflows,
   getPublicWorkflows,
   getStatistics,
-  generateAndSaveReport
+  generateAndSaveReport,
+  generateStepPrediction
 } = require('../controllers/wizardController');
 
 // ============================================================================
@@ -115,6 +116,14 @@ router.put('/workflows/:id/steps/:stepName', updateStep);
  * @access  Public
  */
 router.post('/workflows/:id/steps/:stepName/complete', completeStep);
+
+/**
+ * @route   POST /api/wizard/workflows/:id/steps/:stepName/predict
+ * @desc    Generate AI predictions for empty fields in a step
+ * @access  Public
+ * @params  stepName: mining|beneficiation|refining|smelting|manufacturing|recycling|valorization
+ */
+router.post('/workflows/:id/steps/:stepName/predict', generateStepPrediction);
 
 // ============================================================================
 // USER ROUTES

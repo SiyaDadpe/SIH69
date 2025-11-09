@@ -17,6 +17,10 @@ import {
   saveAndCompleteStep,
   submitWizardWorkflow
 } from "@/services/wizardService";
+import { 
+  generateStepPrediction, 
+  validateRequiredFields 
+} from "@/services/aiPredictionService";
 // Removed other data imports to avoid pre-filling from dataset
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,7 +136,7 @@ const formSchema = z.object({
   redMudGeneration: z.coerce.number().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -238,7 +242,14 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
                 </CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button 
+                  type="button" 
+                  className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" 
+                  onClick={() => onGenerateAIPrediction?.(form.getValues())}
+                  disabled={predicting}
+                >
+                  {predicting ? 'Predicting...' : 'Generate AI Predictions'}
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -559,7 +570,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues }) {
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const benLocations = [...new Set((Array.isArray(beneficiationData) ? beneficiationData : []).map((d) => d.location))]
     .filter(Boolean)
 
@@ -641,7 +652,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues }) {
                 <CardDescription className="text-center">Provide beneficiation process details. Fields marked with * are required.</CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
               </div>
             </div>
           </CardHeader>
@@ -1013,6 +1024,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [formValues, setFormValues] = useState({})
   const [completed, setCompleted] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [predicting, setPredicting] = useState(false)
+  const [predictionError, setPredictionError] = useState(null)
+  const [predictionSuccess, setPredictionSuccess] = useState(null)
 
   // Load existing workflow data into form values
   React.useEffect(() => {
@@ -1120,6 +1134,149 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     }
   }
 
+  // Map frontend field names to backend field names
+  const mapFormDataToBackendFields = (stepName, formData) => {
+    const mappings = {
+      mining: {
+        applicableProcesses: 'mining_method',
+        oreGrade: 'mining_ore_grade_percent',
+        location: 'location' // Keep as-is
+      },
+      beneficiation: {
+        processes: 'beneficiation_process_Crushing', // Backend expects this specific field
+        oreFeedRate: 'ore_feed_rate',
+        location: 'location'
+      },
+      refining: {
+        energyUse: 'energy_use',
+        waterUse: 'water_use',
+        redMudGen: 'red_mud_generation'
+      },
+      smelting: {
+        electricityDemand: 'electricity_demand',
+        co2Emissions: 'co2_emissions',
+        cellTechnology: 'cell_technology'
+      },
+      manufacturing: {
+        processes: 'manufacturing_process_Casting', // Backend expects this specific field
+        transportDistance: 'transport_distance',
+        scrapRate: 'scrap_rate'
+      },
+      recycling: {
+        scrapInputPercent: 'scrap_input_percentage',
+        collectionRatePercent: 'collection_rate',
+        recyclingMethod: 'recycling_methods'
+      },
+      valorization: {
+        wasteTypes: 'waste_types',
+        valorizationMethods: 'valorization_methods',
+        wasteUtilizationOverallPercent: 'waste_utilization_percentages'
+      }
+    };
+
+    const stepMappings = mappings[stepName] || {};
+    const mappedData = { ...formData };
+
+    // Apply field name mappings
+    Object.entries(stepMappings).forEach(([frontendField, backendField]) => {
+      if (formData[frontendField] !== undefined) {
+        let value = formData[frontendField];
+        
+        // Handle special conversions
+        if (frontendField === 'applicableProcesses' && Array.isArray(value)) {
+          // Convert array to first element or joined string
+          value = value.length > 0 ? value[0] : '';
+        } else if (frontendField === 'processes' && Array.isArray(value)) {
+          // For beneficiation/manufacturing, check if specific process is included
+          if (stepName === 'beneficiation') {
+            value = value.includes('crushing') ? 1 : 0;
+          } else if (stepName === 'manufacturing') {
+            value = value.includes('casting') ? 1 : 0;
+          }
+        } else if (Array.isArray(value)) {
+          // Keep arrays as-is for other fields
+          value = value.length > 0 ? value : [];
+        }
+        
+        mappedData[backendField] = value;
+        
+        // Remove the old field name if different
+        if (frontendField !== backendField) {
+          delete mappedData[frontendField];
+        }
+      }
+    });
+
+    return mappedData;
+  };
+
+  // Handle AI Prediction
+  const handleGenerateAIPrediction = async (stepName, currentFormData) => {
+    console.log('🤖 [AI Prediction] Button clicked for step:', stepName);
+    console.log('🤖 [AI Prediction] Current form data (frontend):', currentFormData);
+    
+    if (!workflowId) {
+      setPredictionError('No workflow ID available. Please create a workflow first.');
+      return;
+    }
+    
+    // Clear previous messages
+    setPredictionError(null);
+    setPredictionSuccess(null);
+    
+    // Map frontend field names to backend field names
+    const mappedData = mapFormDataToBackendFields(stepName, currentFormData);
+    console.log('🔄 [AI Prediction] Mapped data (backend format):', mappedData);
+    console.log('🔄 [AI Prediction] Mapped keys:', Object.keys(mappedData).join(', '));
+    console.log('🔄 [AI Prediction] Mapped values:', Object.entries(mappedData).map(([k,v]) => `${k}=${JSON.stringify(v)}`).join(', '));
+    
+    // Validate required fields with mapped data
+    const validation = validateRequiredFields(stepName, mappedData);
+    if (!validation.valid) {
+      setPredictionError(validation.error);
+      console.error('❌ [AI Prediction] Validation failed:', validation.error);
+      setTimeout(() => setPredictionError(null), 5000);
+      return;
+    }
+    
+    setPredicting(true);
+    
+    try {
+      // Call AI prediction API with mapped data
+      const response = await generateStepPrediction(workflowId, stepName, mappedData);
+      
+      if (response.success && response.data?.combinedData) {
+        console.log('✅ [AI Prediction] Predictions received:', response.data.combinedData);
+        console.log('📊 [AI Prediction] Metadata:', response.data.predictionMetadata);
+        
+        // Map the response back to frontend field names for form population
+        const frontendData = { ...currentFormData, ...response.data.combinedData };
+        
+        // Update form values with predicted data
+        setFormValues((prev) => ({
+          ...prev,
+          [stepName]: frontendData
+        }));
+        
+        // Show success message
+        const predictedCount = response.data.predictionMetadata.predictedCount;
+        const confidence = (response.data.predictionMetadata.confidence * 100).toFixed(1);
+        setPredictionSuccess(`🎉 Generated ${predictedCount} predictions with ${confidence}% confidence`);
+        
+        console.log('✅ [AI Prediction] Form values updated successfully');
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => setPredictionSuccess(null), 5000);
+      }
+    } catch (error) {
+      console.error('❌ [AI Prediction] Error:', error);
+      setPredictionError(error.response?.data?.message || 'Failed to generate predictions');
+      setTimeout(() => setPredictionError(null), 5000);
+    } finally {
+      setPredicting(false);
+    }
+  };
+
   const renderStep = () => {
     switch(stepKey) {
       case 'mining':
@@ -1128,6 +1285,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onNext={handleNext}
             onSave={(data) => handleSaveStep('mining', data)}
             initialValues={formValues.mining}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('mining', data)}
+            predicting={predicting}
           />
         );
       case 'beneficiation':
@@ -1137,6 +1296,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onBack={handleBack}
             onSave={(data) => handleSaveStep('beneficiation', data)}
             initialValues={formValues.beneficiation}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('beneficiation', data)}
+            predicting={predicting}
           />
         );
       case 'refining':
@@ -1146,6 +1307,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onBack={handleBack}
             onSave={(data) => handleSaveStep('refining', data)}
             initialValues={formValues.refining}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('refining', data)}
+            predicting={predicting}
           />
         );
       case 'smelting':
@@ -1155,6 +1318,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onBack={handleBack}
             onSave={(data) => handleSaveStep('smelting', data)}
             initialValues={formValues.smelting}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('smelting', data)}
+            predicting={predicting}
           />
         );
       case 'manufacturing':
@@ -1164,6 +1329,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onBack={handleBack}
             onSave={(data) => handleSaveStep('manufacturing', data)}
             initialValues={formValues.manufacturing}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('manufacturing', data)}
+            predicting={predicting}
           />
         );
       case 'recycling':
@@ -1173,6 +1340,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onBack={handleBack}
             onSave={(data) => handleSaveStep('recycling', data)}
             initialValues={formValues.recycling}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('recycling', data)}
+            predicting={predicting}
           />
         );
       case 'valorization':
@@ -1182,6 +1351,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onBack={handleBack}
             onSave={(data) => handleSaveStep('valorization', data)}
             initialValues={formValues.valorization}
+            onGenerateAIPrediction={(data) => handleGenerateAIPrediction('valorization', data)}
+            predicting={predicting}
             onSubmitSuccess={async () => {
               setCompleted(true)
               // Auto-submit workflow after Step 7 completion
@@ -1215,6 +1386,35 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 
   return (
     <WizardContainer title={currentStep.title} subtitle={currentStep.description}>
+      {/* AI Prediction Notifications */}
+      {predictionError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 animate-in slide-in-from-top">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="font-semibold">Prediction Failed</p>
+              <p className="text-sm mt-1">{predictionError}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {predictionSuccess && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 animate-in slide-in-from-top">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="font-semibold">Predictions Generated!</p>
+              <p className="text-sm mt-1">{predictionSuccess}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {renderStep()}
       {!(stepKey === 'mining' || stepKey === 'beneficiation' || stepKey === 'refining' || stepKey === 'smelting' || stepKey === 'manufacturing' || stepKey === 'recycling' || stepKey === 'valorization') && (
         <div className="mt-6 flex justify-between">
@@ -1251,7 +1451,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const processOptions = [
     { id: 'crushing', label: 'Crushing' },
     { id: 'clarification', label: 'Clarification (separating alumina liquor from red mud)' },
@@ -1324,7 +1524,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
                 <CardDescription className="text-center">Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required.</CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
               </div>
             </div>
           </CardHeader>
@@ -1562,7 +1762,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues }) {
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const processOptions = [
     { id: 'pre_baking_anodes', label: 'Pre-baking anodes (heat treatment)' },
     { id: 'anode_effect_control', label: 'Anode effect control (stability maintenance)' },
@@ -1631,7 +1831,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
                 <CardDescription className="text-center">Select processes, variants, and enter required energy and emissions data. Fields marked with * are required.</CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
               </div>
             </div>
           </CardHeader>
@@ -1867,7 +2067,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues }) {
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const processOptions = [
     { id: 'casting', label: 'Casting (ingots, billets - high-temperature energy)' },
     { id: 'extrusion', label: 'Extrusion (tubes, profiles - efficient shaping)' },
@@ -1964,7 +2164,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
                 <CardDescription className="text-center">Select processes, then fill in required logistics and casting details as applicable.</CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
               </div>
             </div>
           </CardHeader>
@@ -2250,7 +2450,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues }) {
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const processOptions = [
     { id: 'collection', label: 'Collection (scrap gathering – manual or automated)' },
     { id: 'cleaning', label: 'Cleaning (removal of coatings, oils)' },
@@ -2331,7 +2531,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
                 <CardDescription className="text-center">Define processes, variants, and core metrics for recycling.</CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
               </div>
             </div>
           </CardHeader>
@@ -2643,7 +2843,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues }) {
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
   const wasteTypeOptions = [
     { id: 'red_mud', label: 'Red Mud (iron, titanium, rare earths)' },
     { id: 'spl', label: 'Spent Pot Lining (SPL – hazardous cyanide, fluoride)' },
@@ -2749,7 +2949,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                 <CardDescription className="text-center">Waste types, valorization methods, utilization metrics, risks, and viability.</CardDescription>
               </div>
               <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white">Generate AI Predictions</Button>
+                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
               </div>
             </div>
           </CardHeader>
@@ -3241,3 +3441,4 @@ function StepForm({ stepKey, stepTitle, values, onChange, miningOptions }) {
     </Card>
   )
 }
+

@@ -1317,6 +1317,113 @@ async function buildReportSections(workflow) {
   return sections;
 }
 
+/**
+ * @desc    Generate AI predictions for a workflow step
+ * @route   POST /api/wizard/workflows/:id/steps/:stepName/predict
+ * @access  Public
+ */
+const generateStepPrediction = asyncHandler(async (req, res) => {
+  const { id, stepName } = req.params;
+  const userData = req.body;
+
+  // Import AI prediction service
+  const { generatePredictions, validateRequiredFields } = require('../services/aiPredictionService');
+  const { WizardWorkflowOutput } = require('../models');
+
+  console.log(`[AI Prediction] Request received for workflow: ${id}, step: ${stepName}`);
+
+  // Validate workflow ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid workflow ID format'
+    });
+  }
+
+  // Validate step name
+  const validSteps = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+  if (!validSteps.includes(stepName)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid step name. Must be one of: ${validSteps.join(', ')}`
+    });
+  }
+
+  // Find the workflow
+  const workflow = await WizardWorkflow.findById(id);
+  if (!workflow) {
+    return res.status(404).json({
+      success: false,
+      message: 'Wizard workflow not found'
+    });
+  }
+
+  // Validate required fields are present
+  const validation = validateRequiredFields(stepName, userData);
+  if (!validation.valid) {
+    return res.status(400).json({
+      success: false,
+      message: validation.error,
+      missingFields: validation.missingFields
+    });
+  }
+
+  try {
+    // Generate predictions
+    const predictionResult = generatePredictions(stepName, userData);
+
+    if (!predictionResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate predictions'
+      });
+    }
+
+    // Save user-only data to WizardWorkflow (update the step)
+    workflow[stepName] = userData;
+    workflow.updatedAt = new Date();
+    await workflow.save();
+
+    console.log(`[AI Prediction] Saved user data to WizardWorkflow for step: ${stepName}`);
+
+    // Save combined data (user + AI predictions) to WizardWorkflowOutput
+    const outputData = await WizardWorkflowOutput.createOrUpdate(
+      workflow._id,
+      workflow.userId,
+      stepName,
+      predictionResult.combinedData,
+      {
+        predictedFields: predictionResult.predictionMetadata.predictedFields,
+        confidence: predictionResult.predictionMetadata.confidence,
+        workflowName: workflow.name,
+        metalType: workflow.metalType
+      }
+    );
+
+    console.log(`[AI Prediction] Saved combined data to WizardWorkflowOutput for step: ${stepName}`);
+    console.log(`[AI Prediction] Predicted ${predictionResult.predictionMetadata.predictedCount} fields`);
+
+    // Return the combined data to frontend for form filling
+    res.status(200).json({
+      success: true,
+      message: `AI predictions generated successfully for ${stepName} step`,
+      data: {
+        combinedData: predictionResult.combinedData,
+        predictionMetadata: predictionResult.predictionMetadata,
+        workflowId: workflow._id,
+        outputId: outputData._id
+      }
+    });
+
+  } catch (error) {
+    console.error(`[AI Prediction] Error:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating predictions: ' + error.message
+    });
+  }
+});
+
 module.exports = {
   createWorkflow,
   getWorkflows,
@@ -1330,5 +1437,6 @@ module.exports = {
   getUserWorkflows,
   getPublicWorkflows,
   getStatistics,
-  generateAndSaveReport
+  generateAndSaveReport,
+  generateStepPrediction
 };

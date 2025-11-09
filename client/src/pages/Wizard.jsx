@@ -42,20 +42,31 @@ export default function Wizard() {
     const id = searchParams.get('id')
     if (id) {
       console.log('📂 Loading existing workflow:', id);
-      loadWorkflow(id)
-      setIsInitialized(true)
+      loadWorkflow(id).then(() => {
+        setIsInitialized(true)
+      });
     } else {
       // Check if we have a workflow ID in localStorage to reuse
       const savedWorkflowId = localStorage.getItem('currentWizardWorkflowId');
       if (savedWorkflowId) {
         console.log('♻️ Reusing existing workflow from localStorage:', savedWorkflowId);
-        navigate(`/wizard?id=${savedWorkflowId}`, { replace: true });
-        setIsInitialized(true);
+        // Verify the workflow exists before navigating
+        loadWorkflow(savedWorkflowId).then(() => {
+          setIsInitialized(true);
+        }).catch(() => {
+          // If loading fails, clear localStorage and create new workflow
+          console.warn('⚠️ Saved workflow invalid, creating new one');
+          localStorage.removeItem('currentWizardWorkflowId');
+          initializeWorkflow().then(() => {
+            setIsInitialized(true);
+          });
+        });
       } else {
         // Auto-create workflow if no ID present
         console.log('🆕 No existing workflow, creating new one...');
-        initializeWorkflow();
-        setIsInitialized(true);
+        initializeWorkflow().then(() => {
+          setIsInitialized(true);
+        });
       }
     }
   }, [searchParams, isInitialized])
@@ -115,6 +126,8 @@ export default function Wizard() {
     console.log('📥 Loading workflow:', id);
     setLoading(true)
     setError(null)
+    let shouldRethrow = false;
+    
     try {
       const response = await getWizardWorkflow(id)
       
@@ -123,13 +136,37 @@ export default function Wizard() {
         setWorkflowId(id)
         setWorkflowData(response.data.workflow)
         
+        // Save valid workflow to localStorage
+        localStorage.setItem('currentWizardWorkflowId', id);
+        
+        // Update URL if needed
+        if (searchParams.get('id') !== id) {
+          navigate(`/wizard?id=${id}`, { replace: true });
+        }
+        
         // Set active step based on workflow progress
         const completedCount = response.data.workflow.completedSteps?.length || 0
         setActiveStep(Math.min(completedCount, steps.length - 1))
       }
     } catch (err) {
       console.error('❌ Error loading workflow:', err);
-      setError('Failed to load workflow: ' + (err.response?.data?.message || err.message))
+      
+      // Check if it's a 404 error (workflow not found)
+      if (err.response?.status === 404) {
+        console.warn('⚠️ Workflow not found in database. Creating a new one...');
+        
+        // Clear the invalid workflow ID from localStorage
+        localStorage.removeItem('currentWizardWorkflowId');
+        
+        // Create a new workflow
+        setError(null); // Clear error before creating new workflow
+        setLoading(false); // Reset loading state before calling initializeWorkflow
+        await initializeWorkflow();
+        shouldRethrow = true;
+      } else {
+        setError('Failed to load workflow: ' + (err.response?.data?.message || err.message))
+        shouldRethrow = true;
+      }
     } finally {
       setLoading(false)
     }
