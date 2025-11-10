@@ -1,5 +1,5 @@
 {
-    "training_date": "2025-09-13T17:25:15.952702",
+    "training_date": "2025-11-10T00:15:46.485424",
     "model_type": "GradientBoostingRegressor",
     "feature_names": [
         "mining_ore_grade_percent",
