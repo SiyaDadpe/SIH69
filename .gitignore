@@ -78,3 +78,4 @@ INTEGRATION_ANALYSIS.md
 # Virtual Environment (generated)
 # ============================================================================
 .venv/
+.venv-bene310/

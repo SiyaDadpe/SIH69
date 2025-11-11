@@ -169,3 +169,14 @@ backup/
 .tmp/
 tmp/
 temp/
+
+# ============================================================================
+# Python Virtual Environments (beneficiation API venvs, etc.)
+# ============================================================================
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+**/.venv/
+**/.venv*/
