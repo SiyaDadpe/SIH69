@@ -198,6 +198,21 @@ export default function Signup() {
         a, button, input, select, textarea {
           cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="%23BA7967" opacity="0.7"/><circle cx="12" cy="12" r="4" fill="white"/></svg>') 12 12, pointer;
         }
+         /* Custom Scrollbar */
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
+        }
+        .scrollbar-thin:hover::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
       `}</style>
 
       {/* Background Split - Left Black with Plasma, Right Brown */}
@@ -225,7 +240,7 @@ export default function Signup() {
           <div className={`absolute top-0 left-0 w-1/2 h-full flex flex-col items-center justify-center px-12 transition-all duration-700 ease-in-out ${
             isActive ? 'translate-x-full opacity-0 pointer-events-none z-10' : 'opacity-100 z-20'
           }`}>
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30 pr-2">
               <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
               <p className="text-white/80 text-sm mb-6">Join us to start your sustainability journey</p>
               
@@ -337,7 +352,7 @@ export default function Signup() {
           </div>
 
           {/* Sign In Form - Right side initially, moves to left when active */}
-          <div className={`absolute top-0 right-0 w-1/2 h-full flex flex-col items-center justify-center px-12 transition-all duration-700 ease-in-out ${
+          <div className={`absolute top-0 right-0 w-1/2 h-full flex flex-col items-center justify-center px-12 transition-all duration-700 ease-in-out bg-black ${
             isActive ? 'opacity-100 z-20' : 'opacity-0 pointer-events-none z-10'
           }`}>
             <div className="w-full max-w-md">
