@@ -4,8 +4,9 @@ import { useState } from "react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2, ChevronLeft, ChevronRight, BrainCircuitIcon } from "lucide-react"
-import users from "@/data/users.json"
 import { useSidebar } from "@/contexts/SidebarContext"
+import { getCurrentUser, logout } from "@/services/authService"
+import { toast } from "sonner"
 
 const HEADER_HEIGHT = 10
 
@@ -22,7 +23,7 @@ export default function Sidebar() {
   const baseItemClass = "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted"
   const activeItemClass = "bg-muted font-semibold"
 
-  const currentUser = users?.[0]
+  const currentUser = getCurrentUser()
   const initials = (currentUser?.name || "User")
     .split(" ")
     .map((n) => n[0])
@@ -31,7 +32,11 @@ export default function Sidebar() {
     .toUpperCase()
 
   const handleLogout = () => {
-    navigate("/login")
+    logout()
+    toast.success("Logged out successfully")
+    setTimeout(() => {
+      navigate("/signup")
+    }, 1500)
   }
 
   return (

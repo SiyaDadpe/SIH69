@@ -30,16 +30,14 @@ const getInsights = asyncHandler(async (req, res) => {
   // Build filter
   const filter = {};
 
-  // Non-admin users only see insights for their projects or global insights
-  if (!isAdmin) {
-    const userProjects = await Project.find({ owner: userId }).select('_id').lean();
-    const projectIds = userProjects.map(p => p._id);
-    
-    filter.$or = [
-      { relatedProjectId: { $in: projectIds } },
-      { relatedProjectId: { $exists: false } } // Global insights
-    ];
-  }
+  // Users only see insights for their projects or global insights
+  const userProjects = await Project.find({ userId: userId }).select('_id').lean();
+  const projectIds = userProjects.map(p => p._id);
+  
+  filter.$or = [
+    { relatedProjectId: { $in: projectIds } },
+    { relatedProjectId: { $exists: false } } // Global insights
+  ];
 
   // Apply optional filters
   if (type) filter.type = type;

@@ -1,15 +1,17 @@
-
-
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
 import Plasma from '../components/animations/plasma';
+import { register, login } from '../services/authService';
+import { toast } from 'sonner';
 
 export default function Signup() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isActive, setIsActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [signupData, setSignupData] = useState({
     fullName: '',
     organization: '',
@@ -67,25 +69,122 @@ export default function Signup() {
     return newErrors;
   };
 
-  const handleSignupSubmit = (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateSignup();
-    if (Object.keys(newErrors).length === 0) {
-      console.log('Signup submitted:', signupData);
-      navigate('/dashboard');
-    } else {
+    
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await register({
+        name: signupData.fullName,
+        email: signupData.email,
+        password: signupData.password,
+        organization: signupData.organization
+      });
+
+      if (response.success) {
+        toast.success('Account created successfully! 🎉', {
+          description: 'Welcome to the platform. Redirecting to dashboard...',
+          duration: 3000
+        });
+
+        // Redirect to the page they were trying to access, or dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      
+      if (error.message && error.message.includes('already exists')) {
+        toast.error('Account already exists', {
+          description: 'This email is already registered. Please login instead.',
+          duration: 4000
+        });
+      } else if (error.errors && Array.isArray(error.errors)) {
+        // Show validation errors from backend
+        const errorMessages = error.errors.map(err => err.message).join(', ');
+        toast.error('Validation Error', {
+          description: errorMessages,
+          duration: 5000
+        });
+      } else if (error.message && error.message.includes('server')) {
+        // Server connection error
+        toast.error('Server Connection Error', {
+          description: error.message,
+          duration: 5000
+        });
+      } else {
+        toast.error('Signup failed', {
+          description: error.message || 'Unable to create account. Please try again.',
+          duration: 4000
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateLogin();
-    if (Object.keys(newErrors).length === 0) {
-      console.log('Login submitted:', loginData);
-      navigate('/dashboard');
-    } else {
+    
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await login({
+        email: loginData.email,
+        password: loginData.password
+      });
+
+      if (response.success) {
+        toast.success('Welcome back! 👋', {
+          description: 'Login successful. Redirecting to dashboard...',
+          duration: 3000
+        });
+
+        // Redirect to the page they were trying to access, or dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      if (error.message && error.message.includes('Invalid')) {
+        toast.error('Invalid credentials', {
+          description: 'Invalid email or password. Please try again.',
+          duration: 4000
+        });
+      } else if (error.message && error.message.includes('server')) {
+        // Server connection error
+        toast.error('Server Connection Error', {
+          description: error.message,
+          duration: 5000
+        });
+      } else {
+        toast.error('Login failed', {
+          description: error.message || 'Unable to login. Please try again.',
+          duration: 4000
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -216,8 +315,22 @@ export default function Signup() {
                 </div>
                 {errors.acceptTerms && <p className="text-red-300 text-xs">{errors.acceptTerms}</p>}
 
-                <Button type="submit" className="w-full bg-[#BA7967] text-white hover:bg-[#A0685A] font-semibold h-11 mt-4 border-2 border-white/20 hover:border-white/40 transition-all duration-300 shadow-lg">
-                  Sign Up
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full bg-[#BA7967] text-white hover:bg-[#A0685A] font-semibold h-11 mt-4 border-2 border-white/20 hover:border-white/40 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating Account...
+                    </span>
+                  ) : (
+                    'Sign Up'
+                  )}
                 </Button>
               </form>
             </div>
@@ -266,8 +379,22 @@ export default function Signup() {
                   </a>
                 </div>
 
-                <Button type="submit" className="w-full bg-[#BA7967] text-white hover:bg-[#A0685A] font-semibold h-11 mt-4 border-2 border-white/20 hover:border-white/40 transition-all duration-300 shadow-lg">
-                  Sign In
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full bg-[#BA7967] text-white hover:bg-[#A0685A] font-semibold h-11 mt-4 border-2 border-white/20 hover:border-white/40 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing In...
+                    </span>
+                  ) : (
+                    'Sign In'
+                  )}
                 </Button>
               </form>
             </div>

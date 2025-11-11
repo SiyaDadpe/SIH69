@@ -31,7 +31,7 @@ const getLatestBenchmark = asyncHandler(async (req, res) => {
     // Aggregate user's project statistics
     const projectStats = await Project.aggregate([
       {
-        $match: { owner: userId }
+        $match: { userId: userId }
       },
       {
         $group: {

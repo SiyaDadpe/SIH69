@@ -204,10 +204,11 @@ router.get(
 /**
  * @route   POST /api/projects
  * @desc    Create a new project
- * @access  Public (TEMPORARY - for testing without auth)
+ * @access  Private (Authenticated users)
  */
 router.post(
   '/',
+  authenticate,
   validateCreateProject,
   handleValidationErrors,
   createProject

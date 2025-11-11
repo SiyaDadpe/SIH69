@@ -152,8 +152,9 @@ async function generateReportFromWizard(workflow, project) {
     title: `LCA Report: ${workflow.name}`,
     description: workflow.description || `Life Cycle Assessment report generated from wizard workflow for ${workflow.metalType}`,
     projectId: project?._id,
+    userId: workflow.userId?._id || workflow.userId, // Set userId
     author: {
-      userId: workflow.userId?._id,
+      userId: workflow.userId?._id || workflow.userId,
       name: workflow.userId?.name || 'System Generated',
       email: workflow.userId?.email || 'noreply@example.com'
     },
@@ -190,31 +191,17 @@ async function generateReportFromWizard(workflow, project) {
  * @access  Public
  */
 const createWorkflow = asyncHandler(async (req, res) => {
-  const { name, metalType, userId, description } = req.body;
+  const { name, metalType, description } = req.body;
 
-  if (!userId) {
+  if (!metalType) {
     return res.status(400).json({
       success: false,
-      message: 'User ID is required'
+      message: 'Metal type is required'
     });
   }
 
-  // Validate userId format
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid user ID format'
-    });
-  }
-
-  // Check if user exists
-  const userExists = await User.findById(userId);
-  if (!userExists) {
-    return res.status(404).json({
-      success: false,
-      message: 'User not found'
-    });
-  }
+  // Use authenticated user's ID
+  const userId = req.user._id;
 
   const workflow = await WizardWorkflow.createEmpty(userId, metalType, name);
   
@@ -226,7 +213,8 @@ const createWorkflow = asyncHandler(async (req, res) => {
   console.log('[INFO] Wizard workflow created:', {
     workflowId: workflow._id,
     userId,
-    metalType
+    metalType,
+    userEmail: req.user.email
   });
 
   res.status(201).json({
@@ -239,32 +227,23 @@ const createWorkflow = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get all wizard workflows with filtering
+ * @desc    Get all wizard workflows for authenticated user
  * @route   GET /api/wizard/workflows
- * @access  Public
+ * @access  Private
  */
 const getWorkflows = asyncHandler(async (req, res) => {
   const {
-    userId,
     metalType,
     status,
-    isPublic,
     page = 1,
     limit = 10,
     sort = '-updatedAt'
   } = req.query;
 
-  const query = {};
-
-  if (userId) {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid user ID format'
-      });
-    }
-    query.userId = userId;
-  }
+  // Filter by authenticated user's ID
+  const query = {
+    userId: req.user._id
+  };
 
   if (metalType) {
     query.metalType = metalType;
@@ -274,10 +253,6 @@ const getWorkflows = asyncHandler(async (req, res) => {
     query.status = status;
   }
 
-  if (isPublic !== undefined) {
-    query.isPublic = isPublic === 'true';
-  }
-
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const [workflows, total] = await Promise.all([
@@ -285,7 +260,7 @@ const getWorkflows = asyncHandler(async (req, res) => {
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit))
-      .populate('userId', 'name email'),
+      .populate('userId', 'name email organization'),
     WizardWorkflow.countDocuments(query)
   ]);
 
@@ -316,7 +291,10 @@ const getWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findById(id).populate('userId', 'name email');
+  const workflow = await WizardWorkflow.findOne({
+    _id: id,
+    userId: req.user._id // Only find if belongs to user
+  }).populate('userId', 'name email organization');
 
   if (!workflow) {
     return res.status(404).json({
@@ -349,7 +327,10 @@ const updateWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findById(id);
+  const workflow = await WizardWorkflow.findOne({
+    _id: id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!workflow) {
     return res.status(404).json({
@@ -369,6 +350,7 @@ const updateWorkflow = asyncHandler(async (req, res) => {
 
   console.log('[INFO] Wizard workflow updated:', {
     workflowId: workflow._id,
+    userId: req.user._id,
     updates: Object.keys(req.body)
   });
 
@@ -395,6 +377,7 @@ const updateStep = asyncHandler(async (req, res) => {
   console.log('[DEBUG] updateStep called');
   console.log('Workflow ID:', id);
   console.log('Step Name:', stepName);
+  console.log('User ID:', req.user._id);
   console.log('Received Data:', JSON.stringify(stepData, null, 2));
   console.log('Data keys:', Object.keys(stepData));
   console.log('Data size:', Object.keys(stepData).length);
@@ -415,7 +398,10 @@ const updateStep = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findById(id);
+  const workflow = await WizardWorkflow.findOne({
+    _id: id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!workflow) {
     return res.status(404).json({
@@ -499,7 +485,10 @@ const completeStep = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findById(id);
+  const workflow = await WizardWorkflow.findOne({
+    _id: id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!workflow) {
     return res.status(404).json({
@@ -553,7 +542,10 @@ const submitWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findById(id);
+  const workflow = await WizardWorkflow.findOne({
+    _id: id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!workflow) {
     return res.status(404).json({
@@ -582,7 +574,8 @@ const submitWorkflow = asyncHandler(async (req, res) => {
       name: workflow.name,
       description: workflow.description || `LCA Project for ${workflow.metalType} created from wizard workflow`,
       metalType: workflow.metalType,
-      owner: workflow.userId,
+      userId: workflow.userId, // Set userId
+      owner: workflow.userId, // Keep owner for backward compatibility
       status: 'completed',
       circularityScore: workflow.calculatedResults?.circularityScore || 0,
       gwp: workflow.calculatedResults?.totalGWP || 0,
@@ -667,7 +660,10 @@ const deleteWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findById(id);
+  const workflow = await WizardWorkflow.findOne({
+    _id: id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!workflow) {
     return res.status(404).json({
@@ -679,7 +675,8 @@ const deleteWorkflow = asyncHandler(async (req, res) => {
   await workflow.deleteOne();
 
   console.log('[INFO] Wizard workflow deleted:', {
-    workflowId: id
+    workflowId: id,
+    userId: req.user._id
   });
 
   res.status(200).json({

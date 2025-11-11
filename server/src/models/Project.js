@@ -119,10 +119,18 @@ const projectSchema = new mongoose.Schema(
       default: 'draft'
     },
 
-    owner: {
+    // User who created/owns this project
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Project owner is required']
+      required: [true, 'User ID is required'],
+      index: true
+    },
+
+    // Legacy field - kept for backward compatibility
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
       // Index defined separately below
     },
 

@@ -30,13 +30,8 @@ const createProject = asyncHandler(async (req, res) => {
     circularityScore,
     gwp,
     status,
-    metadata,
-    owner // TEMPORARY: Allow passing owner ID for testing
+    metadata
   } = req.body;
-
-  // TEMPORARY: For testing without auth, use provided owner or create a dummy ObjectId
-  const mongoose = require('mongoose');
-  const ownerId = req.user?._id || owner || new mongoose.Types.ObjectId('507f1f77bcf86cd799439011');
 
   // Create project with authenticated user as owner
   const project = await Project.create({
@@ -46,15 +41,16 @@ const createProject = asyncHandler(async (req, res) => {
     circularityScore,
     gwp,
     status: status || 'draft',
-    owner: ownerId, // Set owner from authenticated user or provided ID
+    userId: req.user._id, // Set userId from authenticated user
+    owner: req.user._id, // Also set owner for backward compatibility
     metadata: metadata || {}
   });
 
   console.log('[INFO]', 'Project created successfully', {
     projectId: project._id,
     projectName: project.name,
-    owner: ownerId,
-    ownerEmail: req.user?.email || 'test-user'
+    userId: req.user._id,
+    userEmail: req.user.email
   });
 
   if (req.user?._id) {
@@ -135,11 +131,8 @@ const getProjects = asyncHandler(async (req, res) => {
     filter.status = req.query.status;
   }
 
-  // Filter by owner (show user's own projects)
-  // Admins can see all projects, others see only their own
-  if (req.user.role !== 'admin') {
-    filter.owner = req.user._id;
-  }
+  // Filter by user - show only user's own projects
+  filter.userId = req.user._id;
 
   // Search in project name (text search)
   if (req.query.search) {
@@ -152,7 +145,7 @@ const getProjects = asyncHandler(async (req, res) => {
   // Execute query with pagination
   const [projects, totalProjects] = await Promise.all([
     Project.find(filter)
-      .populate('owner', 'name email organization role')
+      .populate('userId', 'name email organization')
       .sort(sortBy)
       .skip(skip)
       .limit(limit)
@@ -202,11 +195,13 @@ const getProjects = asyncHandler(async (req, res) => {
  * @returns {Object} JSON response with project details
  */
 const getProjectById = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id)
-    .populate('owner', 'name email organization role');
+  const project = await Project.findOne({
+    _id: req.params.id,
+    userId: req.user._id // Only find if belongs to user
+  }).populate('userId', 'name email organization');
 
   if (!project) {
-    console.warn('[WARN]', 'Project not found', {
+    console.warn('[WARN]', 'Project not found or access denied', {
       projectId: req.params.id,
       userId: req.user._id
     });
@@ -214,24 +209,6 @@ const getProjectById = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'Project not found'
-    });
-  }
-
-  // Check if user has access to view this project
-  // User can view if: they own it, or they are admin
-  const isOwner = project.owner._id.toString() === req.user._id.toString();
-  const isAdmin = req.user.role === 'admin';
-
-  if (!isOwner && !isAdmin) {
-    console.warn('[WARN]', 'Unauthorized project access attempt', {
-      projectId: project._id,
-      userId: req.user._id,
-      ownerId: project.owner._id
-    });
-
-    return res.status(403).json({
-      success: false,
-      message: 'Access forbidden. You do not have permission to view this project.'
     });
   }
 
@@ -259,10 +236,13 @@ const getProjectById = asyncHandler(async (req, res) => {
  * @returns {Object} JSON response with updated project
  */
 const updateProject = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id);
+  const project = await Project.findOne({
+    _id: req.params.id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!project) {
-    console.warn('[WARN]', 'Project not found for update', {
+    console.warn('[WARN]', 'Project not found or access denied for update', {
       projectId: req.params.id,
       userId: req.user._id
     });
@@ -270,23 +250,6 @@ const updateProject = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'Project not found'
-    });
-  }
-
-  // Check if user is owner or admin
-  const isOwner = project.owner.toString() === req.user._id.toString();
-  const isAdmin = req.user.role === 'admin';
-
-  if (!isOwner && !isAdmin) {
-    console.warn('[WARN]', 'Unauthorized project update attempt', {
-      projectId: project._id,
-      userId: req.user._id,
-      ownerId: project.owner
-    });
-
-    return res.status(403).json({
-      success: false,
-      message: 'Access forbidden. Only the project owner or admin can update this project.'
     });
   }
 
@@ -310,8 +273,8 @@ const updateProject = asyncHandler(async (req, res) => {
   // Save updated project
   await project.save();
 
-  // Populate owner details
-  await project.populate('owner', 'name email organization role');
+  // Populate user details
+  await project.populate('userId', 'name email organization');
 
   console.log('[INFO]', 'Project updated successfully', {
     projectId: project._id,
@@ -320,8 +283,8 @@ const updateProject = asyncHandler(async (req, res) => {
     updatedByEmail: req.user.email
   });
 
-  // Invalidate dashboard cache for the project owner (Redis - async operation)
-  await clearCache(`dashboard:${project.owner._id}`);
+  // Invalidate dashboard cache for the user
+  await clearCache(`dashboard:${req.user._id}`);
 
   res.status(200).json({
     success: true,
@@ -343,10 +306,13 @@ const updateProject = asyncHandler(async (req, res) => {
  * @returns {Object} JSON response confirming deletion
  */
 const deleteProject = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id);
+  const project = await Project.findOne({
+    _id: req.params.id,
+    userId: req.user._id // Only find if belongs to user
+  });
 
   if (!project) {
-    console.warn('[WARN]', 'Project not found for deletion', {
+    console.warn('[WARN]', 'Project not found or access denied for deletion', {
       projectId: req.params.id,
       userId: req.user._id
     });
@@ -354,23 +320,6 @@ const deleteProject = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'Project not found'
-    });
-  }
-
-  // Check if user is owner or admin
-  const isOwner = project.owner.toString() === req.user._id.toString();
-  const isAdmin = req.user.role === 'admin';
-
-  if (!isOwner && !isAdmin) {
-    console.warn('[WARN]', 'Unauthorized project deletion attempt', {
-      projectId: project._id,
-      userId: req.user._id,
-      ownerId: project.owner
-    });
-
-    return res.status(403).json({
-      success: false,
-      message: 'Access forbidden. Only the project owner or admin can delete this project.'
     });
   }
 
@@ -415,7 +364,7 @@ const getProjectStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   const stats = await Project.aggregate([
-    { $match: { owner: userId } },
+    { $match: { userId: userId } },
     {
       $group: {
         _id: null,
@@ -430,7 +379,7 @@ const getProjectStats = asyncHandler(async (req, res) => {
   ]);
 
   const statusCount = await Project.aggregate([
-    { $match: { owner: userId } },
+    { $match: { userId: userId } },
     {
       $group: {
         _id: '$status',

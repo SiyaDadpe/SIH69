@@ -48,28 +48,9 @@ const userSchema = new mongoose.Schema(
 
     organization: {
       type: String,
+      required: [true, 'Organization is required'],
       trim: true,
       maxlength: [200, 'Organization name cannot exceed 200 characters']
-    },
-
-    role: {
-      type: String,
-      required: [true, 'Role is required'],
-      enum: {
-        values: ['engineer', 'manager', 'policymaker', 'researcher'],
-        message: '{VALUE} is not a valid role'
-      },
-      default: 'engineer'
-    },
-
-    subscription: {
-      type: String,
-      required: [true, 'Subscription tier is required'],
-      enum: {
-        values: ['basic', 'pro', 'enterprise'],
-        message: '{VALUE} is not a valid subscription tier'
-      },
-      default: 'basic'
     },
 
     password: {
@@ -77,11 +58,6 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: [8, 'Password must be at least 8 characters long'],
       select: false // Don't include password in queries by default
-    },
-
-    preferences: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {}
     },
 
     lastLogin: {
@@ -102,9 +78,6 @@ const userSchema = new mongoose.Schema(
 
 // Email index is automatically created by unique: true, no need to define separately
 
-// Index for filtering by role and subscription
-userSchema.index({ role: 1, subscription: 1 });
-
 // Index for organization lookups
 userSchema.index({ organization: 1 });
 
@@ -117,9 +90,7 @@ userSchema.virtual('profile').get(function() {
   return {
     name: this.name,
     email: this.email,
-    organization: this.organization,
-    role: this.role,
-    subscription: this.subscription
+    organization: this.organization
   };
 });
 
@@ -136,13 +107,7 @@ userSchema.methods.updateLastLogin = function() {
   return this.save();
 };
 
-/**
- * Check if user has pro or enterprise subscription
- * @returns {boolean}
- */
-userSchema.methods.hasPremiumAccess = function() {
-  return ['pro', 'enterprise'].includes(this.subscription);
-};
+
 
 /**
  * Pre-save middleware

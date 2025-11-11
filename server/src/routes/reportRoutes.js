@@ -11,6 +11,7 @@ const express = require('express');
 const router = express.Router();
 const { body, query, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validators/commonValidators');
+const { authenticate } = require('../middleware/authMiddleware');
 const {
   createReport,
   getReports,
@@ -29,17 +30,18 @@ const {
 /**
  * @route   POST /api/reports/bulk-export
  * @desc    Bulk export reports as PDF or Excel bundle
- * @access  Public
+ * @access  Private
  */
 router.post(
   '/bulk-export',
+  authenticate,
   body('reportIds').isArray({ min: 1, max: 100 }).withMessage('reportIds must be an array of 1-100 IDs'),
   body('format').isIn(['pdf', 'excel']).withMessage('Format must be pdf or excel'),
   handleValidationErrors,
   bulkExportReports
 );
 // Analytics/overview endpoint for dashboard
-router.get('/analytics', getReportsAnalytics);
+router.get('/analytics', authenticate, getReportsAnalytics);
 
 // ============================================================================
 // VALIDATION MIDDLEWARE
@@ -191,10 +193,11 @@ const validateBulkCreate = [
 /**
  * @route   GET /api/reports/stats
  * @desc    Get report statistics
- * @access  Public
+ * @access  Private
  */
 router.get(
   '/stats',
+  authenticate,
   query('projectId').optional().isMongoId().withMessage('Invalid project ID format'),
   handleValidationErrors,
   getReportStats
@@ -203,10 +206,11 @@ router.get(
 /**
  * @route   POST /api/reports/bulk
  * @desc    Bulk create reports
- * @access  Public
+ * @access  Private
  */
 router.post(
   '/bulk',
+  authenticate,
   validateBulkCreate,
   handleValidationErrors,
   bulkCreateReports
@@ -215,10 +219,11 @@ router.post(
 /**
  * @route   POST /api/reports
  * @desc    Create a new report
- * @access  Public
+ * @access  Private
  */
 router.post(
   '/',
+  authenticate,
   validateCreateReport,
   handleValidationErrors,
   createReport
@@ -226,11 +231,12 @@ router.post(
 
 /**
  * @route   GET /api/reports
- * @desc    Get all reports with filtering and pagination
- * @access  Public
+ * @desc    Get all reports for authenticated user
+ * @access  Private
  */
 router.get(
   '/',
+  authenticate,
   validateQueryParams,
   handleValidationErrors,
   getReports
@@ -239,10 +245,11 @@ router.get(
 /**
  * @route   GET /api/reports/:id
  * @desc    Get a single report by ID
- * @access  Public
+ * @access  Private
  */
 router.get(
   '/:id',
+  authenticate,
   validateReportId,
   handleValidationErrors,
   getReportById
@@ -251,10 +258,11 @@ router.get(
 /**
  * @route   PATCH /api/reports/:id
  * @desc    Update a report
- * @access  Public
+ * @access  Private
  */
 router.patch(
   '/:id',
+  authenticate,
   validateUpdateReport,
   handleValidationErrors,
   updateReport
@@ -263,10 +271,11 @@ router.patch(
 /**
  * @route   DELETE /api/reports/:id
  * @desc    Delete a report
- * @access  Public
+ * @access  Private
  */
 router.delete(
   '/:id',
+  authenticate,
   validateReportId,
   handleValidationErrors,
   deleteReport
@@ -275,10 +284,11 @@ router.delete(
 /**
  * @route   POST /api/reports/:id/publish
  * @desc    Publish a report (set status to final)
- * @access  Public
+ * @access  Private
  */
 router.post(
   '/:id/publish',
+  authenticate,
   validateReportId,
   handleValidationErrors,
   publishReport
@@ -287,10 +297,11 @@ router.post(
 /**
  * @route   POST /api/reports/:id/archive
  * @desc    Archive a report
- * @access  Public
+ * @access  Private
  */
 router.post(
   '/:id/archive',
+  authenticate,
   validateReportId,
   handleValidationErrors,
   archiveReport
@@ -299,10 +310,11 @@ router.post(
 /**
  * @route   GET /api/reports/:id/export
  * @desc    Export a report (JSON or PDF)
- * @access  Public
+ * @access  Private
  */
 router.get(
   '/:id/export',
+  authenticate,
   validateReportId,
   query('format').optional().isIn(['json', 'pdf']).withMessage('Format must be json or pdf'),
   handleValidationErrors,

@@ -6,6 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
+const { authenticate } = require('../middleware/authMiddleware');
 
 const {
   createWorkflow,
@@ -45,58 +46,58 @@ router.get('/statistics', getStatistics);
 /**
  * @route   POST /api/wizard/workflows
  * @desc    Create new wizard workflow
- * @access  Public
+ * @access  Private
  */
-router.post('/workflows', createWorkflow);
+router.post('/workflows', authenticate, createWorkflow);
 
 /**
  * @route   GET /api/wizard/workflows
- * @desc    Get all wizard workflows with filtering
- * @access  Public
+ * @desc    Get all wizard workflows for authenticated user
+ * @access  Private
  */
-router.get('/workflows', getWorkflows);
+router.get('/workflows', authenticate, getWorkflows);
 
 /**
  * @route   GET /api/wizard/workflows/:id
  * @desc    Get single wizard workflow by ID
- * @access  Public
+ * @access  Private
  */
-router.get('/workflows/:id', getWorkflow);
+router.get('/workflows/:id', authenticate, getWorkflow);
 
 /**
  * @route   PUT /api/wizard/workflows/:id
  * @desc    Update wizard workflow basic info
- * @access  Public
+ * @access  Private
  */
-router.put('/workflows/:id', updateWorkflow);
+router.put('/workflows/:id', authenticate, updateWorkflow);
 
 /**
  * @route   DELETE /api/wizard/workflows/:id
  * @desc    Delete wizard workflow
- * @access  Public
+ * @access  Private
  */
-router.delete('/workflows/:id', deleteWorkflow);
+router.delete('/workflows/:id', authenticate, deleteWorkflow);
 
 /**
  * @route   POST /api/wizard/workflows/:id/submit
  * @desc    Submit completed wizard workflow
- * @access  Public
+ * @access  Private
  */
-router.post('/workflows/:id/submit', submitWorkflow);
+router.post('/workflows/:id/submit', authenticate, submitWorkflow);
 
 /**
  * @route   POST /api/wizard/workflows/:id/save-draft
  * @desc    Save incomplete workflow and generate/update draft report
- * @access  Public
+ * @access  Private
  */
-router.post('/workflows/:id/save-draft', saveDraftReport);
+router.post('/workflows/:id/save-draft', authenticate, saveDraftReport);
 
 /**
  * @route   POST /api/wizard/workflows/:id/generate-report
  * @desc    Generate and save report from wizard workflow
- * @access  Public
+ * @access  Private
  */
-router.post('/workflows/:id/generate-report', generateAndSaveReport);
+router.post('/workflows/:id/generate-report', authenticate, generateAndSaveReport);
 
 // ============================================================================
 // STEP ROUTES
@@ -105,35 +106,28 @@ router.post('/workflows/:id/generate-report', generateAndSaveReport);
 /**
  * @route   PUT /api/wizard/workflows/:id/steps/:stepName
  * @desc    Update specific wizard step data
- * @access  Public
+ * @access  Private
  * @params  stepName: mining|beneficiation|refining|smelting|manufacturing|recycling|valorization
  */
-router.put('/workflows/:id/steps/:stepName', updateStep);
+router.put('/workflows/:id/steps/:stepName', authenticate, updateStep);
 
 /**
  * @route   POST /api/wizard/workflows/:id/steps/:stepName/complete
  * @desc    Mark a step as completed
- * @access  Public
+ * @access  Private
  */
-router.post('/workflows/:id/steps/:stepName/complete', completeStep);
+router.post('/workflows/:id/steps/:stepName/complete', authenticate, completeStep);
 
 /**
  * @route   POST /api/wizard/workflows/:id/steps/:stepName/predict
  * @desc    Generate AI predictions for empty fields in a step
- * @access  Public
+ * @access  Private
  * @params  stepName: mining|beneficiation|refining|smelting|manufacturing|recycling|valorization
  */
-router.post('/workflows/:id/steps/:stepName/predict', generateStepPrediction);
+router.post('/workflows/:id/steps/:stepName/predict', authenticate, generateStepPrediction);
 
 // ============================================================================
-// USER ROUTES
+// USER ROUTES (Removed - no longer needed as all routes are user-specific)
 // ============================================================================
-
-/**
- * @route   GET /api/wizard/users/:userId/workflows
- * @desc    Get wizard workflows by user
- * @access  Public
- */
-router.get('/users/:userId/workflows', getUserWorkflows);
 
 module.exports = router;
