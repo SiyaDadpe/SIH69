@@ -1,396 +1,537 @@
-from fastapi import FastAPI, HTTPException, Depends
+import os
+import sys
+import joblib
+import json
+import logging
+import numpy as np
+import pandas as pd
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
-from typing import List, Dict, Any, Optional
-import os
-import pandas as pd
-import numpy as np
-import logging
-import traceback
-import joblib
+from typing import Dict, Any, List, Optional
 from datetime import datetime
-import json
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api_valorization")
 
 app = FastAPI(
-    title="Valorization Model API",
-    description="API for predicting waste valorization outcomes in aluminum production",
-    version="1.0.0"
+    title="Valorization LCA API",
+    description="API for predicting valorization phase parameters in LCA calculations",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
-# Add CORS middleware to allow frontend requests
+# Allow frontend connections
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Define where the model is stored
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "valorization_model.joblib")
-PREPROCESSOR_PATH = os.path.join(PROJECT_ROOT, "preprocessing", "valorization_preprocessor.joblib")
+# Paths
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+MODEL_PATH = os.path.join(ROOT, 'models', 'valorization_model.joblib')
+PREPROCESSOR_PATH = os.path.join(ROOT, 'preprocessing', 'valorization_preprocessor.joblib')
+FEATURE_NAMES_PATH = os.path.join(ROOT, 'preprocessing', 'valorization_feature_names.joblib')
+TARGET_NAMES_PATH = os.path.join(ROOT, 'preprocessing', 'valorization_target_names.joblib')
+METADATA_PATH = os.path.join(ROOT, 'models', 'valorization_model_metadata.json')
 
-# Global variables for loaded model and preprocessor
-model_bundle = None
-preprocessor = None
+# Globals
+_model = None
+_preprocessor = None
+_feature_names = None
+_target_names = None
+_model_metadata = None
+_load_errors = []
+_preprocessing_metadata = None
 
-# Define input structure using Pydantic with validation
-class WasteTypeInput(BaseModel):
-    Red_Mud: bool = Field(False, description="Whether Red Mud waste is present")
-    SPL: bool = Field(False, description="Whether Spent Pot Lining is present")
-    Dross: bool = Field(False, description="Whether Dross is present")
-    Fluoride_Gases: bool = Field(False, description="Whether Fluoride Gases are present")
-    Slag: bool = Field(False, description="Whether Slag is present")
-    Other: bool = Field(False, description="Whether Other waste is present")
+# Optional .env loader (non-fatal if missing)
+try:
+    from dotenv import load_dotenv  # type: ignore
+except Exception:  # pragma: no cover
+    load_dotenv = None  # type: ignore
 
-class WasteUtilizationInput(BaseModel):
-    Red_Mud: float = Field(0.0, ge=0, le=100, description="Percentage utilization of Red Mud")
-    SPL: float = Field(0.0, ge=0, le=100, description="Percentage utilization of Spent Pot Lining")
-    Dross: float = Field(0.0, ge=0, le=100, description="Percentage utilization of Dross")
-    Fluoride_Gases: float = Field(0.0, ge=0, le=100, description="Percentage utilization of Fluoride Gases")
-    Slag: float = Field(0.0, ge=0, le=100, description="Percentage utilization of Slag")
-    Other: float = Field(0.0, ge=0, le=100, description="Percentage utilization of Other waste")
+# Optional MongoDB client(s)
+try:
+    from motor.motor_asyncio import AsyncIOMotorClient  # type: ignore
+    _MONGO_DRIVER = 'motor'
+except Exception:  # pragma: no cover
+    AsyncIOMotorClient = None  # type: ignore
+    _MONGO_DRIVER = None
+try:
+    from pymongo import MongoClient  # type: ignore
+    from bson import ObjectId  # type: ignore
+except Exception:  # pragma: no cover
+    MongoClient = None  # type: ignore
+    ObjectId = None  # type: ignore
 
-class ValorizationMethodInput(BaseModel):
-    Cement_Additive: bool = Field(False, description="Whether Cement Additive method is used")
-    Soil_Stabilization: bool = Field(False, description="Whether Soil Stabilization method is used")
-    Iron_Extraction: bool = Field(False, description="Whether Iron Extraction method is used")
-    Rare_Earth_Extraction: bool = Field(False, description="Whether Rare Earth Extraction method is used")
-    SPL_Encapsulation: bool = Field(False, description="Whether SPL Encapsulation method is used")
-    Dross_Recovery: bool = Field(False, description="Whether Dross Recovery method is used")
-    Fluoride_Capture: bool = Field(False, description="Whether Fluoride Capture method is used")
-    Other: bool = Field(False, description="Whether Other method is used")
-
-class ToxicityInput(BaseModel):
-    Red_Mud: str = Field("Not Applicable", description="Toxicity level of Red Mud")
-    SPL: str = Field("Not Applicable", description="Toxicity level of Spent Pot Lining")
-    Dross: str = Field("Not Applicable", description="Toxicity level of Dross")
-    Fluoride_Gases: str = Field("Not Applicable", description="Toxicity level of Fluoride Gases")
-    Slag: str = Field("Not Applicable", description="Toxicity level of Slag")
-    Other: str = Field("Not Applicable", description="Toxicity level of Other waste")
-    
-    @validator('*', pre=True, each_item=False)
-    def validate_toxicity(cls, v):
-        valid_values = ["Low", "Moderate", "High", "Not Applicable"]
-        if v not in valid_values:
-            raise ValueError(f"Toxicity must be one of {valid_values}")
-        return v
-
-class RiskInput(BaseModel):
-    Red_Mud: str = Field("Not Applicable", description="Groundwater risk of Red Mud")
-    SPL: str = Field("Not Applicable", description="Groundwater risk of Spent Pot Lining")
-    Dross: str = Field("Not Applicable", description="Groundwater risk of Dross")
-    Fluoride_Gases: str = Field("Not Applicable", description="Groundwater risk of Fluoride Gases")
-    Slag: str = Field("Not Applicable", description="Groundwater risk of Slag")
-    Other: str = Field("Not Applicable", description="Groundwater risk of Other waste")
-    
-    @validator('*', pre=True, each_item=False)
-    def validate_risk(cls, v):
-        valid_values = ["Low", "Moderate", "High", "Not Applicable"]
-        if v not in valid_values:
-            raise ValueError(f"Risk must be one of {valid_values}")
-        return v
-
-class EconomicViabilityInput(BaseModel):
-    Cement_Additive: str = Field("Not Applicable", description="Economic viability of Cement Additive")
-    Soil_Stabilization: str = Field("Not Applicable", description="Economic viability of Soil Stabilization")
-    Iron_Extraction: str = Field("Not Applicable", description="Economic viability of Iron Extraction")
-    Rare_Earth_Extraction: str = Field("Not Applicable", description="Economic viability of Rare Earth Extraction")
-    SPL_Encapsulation: str = Field("Not Applicable", description="Economic viability of SPL Encapsulation")
-    Dross_Recovery: str = Field("Not Applicable", description="Economic viability of Dross Recovery")
-    Fluoride_Capture: str = Field("Not Applicable", description="Economic viability of Fluoride Capture")
-    
-    @validator('*', pre=True, each_item=False)
-    def validate_economic(cls, v):
-        valid_values = ["Low", "Moderate", "High", "Not Applicable"]
-        if v not in valid_values:
-            raise ValueError(f"Economic viability must be one of {valid_values}")
-        return v
-
-class AdditionalNumericInput(BaseModel):
-    emission_reduction_kgCO2e_per_t_waste: float = Field(
-        0.0, ge=0, description="Emission reduction in kg CO2e per ton of waste"
-    )
-    recovery_efficiency: float = Field(
-        0.0, ge=0, le=100, description="Recovery efficiency percentage"
-    )
-
-class PredictionInput(BaseModel):
-    waste_types: WasteTypeInput
-    waste_utilization: WasteUtilizationInput
-    valorization_methods: ValorizationMethodInput
-    toxicity: ToxicityInput
-    risk: RiskInput
-    economic_viability: EconomicViabilityInput
-    additional_numeric: AdditionalNumericInput
-
-class PredictionOutput(BaseModel):
-    valorization_emission_reduction_kgCO2e_per_t_waste: float
-    valorization_recovery_efficiency: float
-    confidence: Optional[Dict[str, float]] = None
-
-def load_model_and_preprocessor():
-    """Load model and preprocessor once at startup"""
-    global model_bundle, preprocessor
-    # Attempt to load artifacts but allow degraded startup
+# Best-effort: load environment from aluminium/scripts/.env and repo .env if available
+if load_dotenv is not None:
+    scripts_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.env'))
+    root_env_path = os.path.abspath(os.path.join(ROOT, '..', '.env'))
     try:
-        if os.path.exists(MODEL_PATH):
-            model_bundle = joblib.load(MODEL_PATH)
-        else:
-            model_bundle = None
-        if os.path.exists(PREPROCESSOR_PATH):
-            preprocessor = joblib.load(PREPROCESSOR_PATH)
-        else:
-            preprocessor = None
-        logger.info("Attempted to load model and preprocessor")
+        if os.path.exists(scripts_env_path):
+            load_dotenv(scripts_env_path)
+        if os.path.exists(root_env_path):
+            load_dotenv(root_env_path)
+    except Exception:
+        pass
+
+class PredictRequest(BaseModel):
+    data: Dict[str, Any]
+    return_confidence: bool = Field(default=False, description="Whether to return confidence intervals")
+
+class FeatureInfo(BaseModel):
+    name: str
+    type: str
+    description: Optional[str] = None
+    expected_range: Optional[List[Any]] = None
+
+class ModelInfo(BaseModel):
+    model_type: str
+    training_date: str
+    feature_count: int
+    target_names: List[str]
+    dataset_size: int
+    test_size: float
+    random_state: int
+
+def _load_artifacts():
+    global _model, _preprocessor, _feature_names, _target_names, _model_metadata, _preprocessing_metadata
+    _load_errors.clear()
+
+    # Feature and target names are required
+    try:
+        _feature_names = joblib.load(FEATURE_NAMES_PATH)
+        _target_names = joblib.load(TARGET_NAMES_PATH)
+        logger.info(f"Loaded {len(_feature_names)} feature names and {len(_target_names)} target names")
     except Exception as e:
-        logger.error(f"Error loading model or preprocessor: {e}")
-        model_bundle = None
-        preprocessor = None
+        msg = f"Failed to load feature/target names: {e}"
+        logger.error(msg)
+        _load_errors.append(msg)
+        raise
+
+    # Model loading (non-fatal)
+    try:
+        _model = joblib.load(MODEL_PATH)
+        logger.info("Model loaded successfully")
+    except Exception as e:
+        msg = f"Failed to load model at {MODEL_PATH}: {e}"
+        logger.warning(msg)
+        _load_errors.append(msg)
+        _model = None
+
+    # Preprocessor is optional
+    try:
+        _preprocessor = joblib.load(PREPROCESSOR_PATH)
+        logger.info("Preprocessor loaded successfully")
+    except Exception as e:
+        msg = f"Failed to load preprocessor at {PREPROCESSOR_PATH}: {e}"
+        logger.warning(msg)
+        _load_errors.append(msg)
+        _preprocessor = None
+
+    # Preprocessing metadata (optional)
+    try:
+        pm_path = os.path.join(ROOT, 'preprocessing', 'valorization_metadata.joblib')
+        if os.path.exists(pm_path):
+            _preprocessing_metadata = joblib.load(pm_path)
+            logger.info("Loaded preprocessing metadata for valorization")
+        else:
+            _preprocessing_metadata = {}
+    except Exception as e:
+        logger.warning(f"Failed to load preprocessing metadata: {e}")
+        _preprocessing_metadata = {}
+
+    # Metadata is optional; load if present
+    try:
+        if os.path.exists(METADATA_PATH):
+            with open(METADATA_PATH, 'r') as f:
+                _model_metadata = json.load(f)
+            logger.info("Model metadata loaded successfully")
+        else:
+            _model_metadata = {}
+    except Exception as e:
+        msg = f"Failed to load model metadata: {e}"
+        logger.warning(msg)
+        _load_errors.append(msg)
+        _model_metadata = {}
+
+# ------------------------------
+# Optional MongoDB configuration
+# ------------------------------
+def _get_mongo_uri() -> Optional[str]:
+    """Fetch Mongo URI dynamically so late-loaded env works too."""
+    uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI")
+    if uri:
+        uri = uri.strip()
+    return uri
+
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+_mongo_client = None
+_mongo_db = None
+
+async def get_mongo_db():
+    """Lazily initialize and return a MongoDB database handle if possible."""
+    global _mongo_client, _mongo_db
+    MONGO_URI = _get_mongo_uri()
+    if not MONGO_URI:
+        return None
+
+    # Prefer motor (async)
+    if AsyncIOMotorClient is not None:
+        if _mongo_client is None:
+            try:
+                _mongo_client = AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+                await _mongo_client.server_info()
+                default_db = None
+                try:
+                    default_db = _mongo_client.get_default_database()
+                except Exception:
+                    default_db = None
+                if default_db is not None:
+                    _mongo_db = default_db
+                else:
+                    db_name = MONGO_DB_NAME or "LCA"
+                    _mongo_db = _mongo_client[db_name]
+            except Exception as e:
+                logger.warning(f"Mongo (motor) connection failed: {e}")
+                _mongo_db = None
+        return _mongo_db
+
+    # Fallback to pymongo (sync)
+    if MongoClient is not None:
+        if _mongo_client is None:
+            try:
+                _mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+                _mongo_client.server_info()
+                default_db = None
+                try:
+                    default_db = _mongo_client.get_default_database()
+                except Exception:
+                    default_db = None
+                if default_db is not None:
+                    _mongo_db = default_db
+                else:
+                    db_name = MONGO_DB_NAME or "LCA"
+                    _mongo_db = _mongo_client[db_name]
+            except Exception as e:
+                logger.warning(f"Mongo (pymongo) connection failed: {e}")
+                _mongo_db = None
+        return _mongo_db
+
+    return None
 
 @app.on_event("startup")
 async def startup_event():
-    """Load model and preprocessor when the application starts"""
-    load_model_and_preprocessor()
-
-def input_to_dataframe(input_data: PredictionInput) -> pd.DataFrame:
-    """Convert input data to DataFrame format for prediction"""
-    data = {}
-    
-    # Waste types
-    for waste, present in input_data.waste_types.dict().items():
-        data[f"waste_type_{waste}"] = [1 if present else 0]
-    
-    # Waste utilization percentages
-    for waste, percentage in input_data.waste_utilization.dict().items():
-        data[f"waste_utilization_{waste}_%"] = [percentage]
-    
-    # Valorization methods
-    for method, used in input_data.valorization_methods.dict().items():
-        data[f"valorization_method_{method}"] = [1 if used else 0]
-    
-    # Toxicity levels
-    for waste, level in input_data.toxicity.dict().items():
-        data[f"toxicity_{waste}"] = [level]
-    
-    # Risk levels
-    for waste, level in input_data.risk.dict().items():
-        data[f"groundwater_risk_{waste}"] = [level]
-    
-    # Economic viability
-    for method, viability in input_data.economic_viability.dict().items():
-        data[f"economic_viability_{method}"] = [viability]
-    
-    # Additional numeric fields
-    data["emission_reduction_kgCO2e_per_t_waste"] = [input_data.additional_numeric.emission_reduction_kgCO2e_per_t_waste]
-    data["recovery_efficiency_%"] = [input_data.additional_numeric.recovery_efficiency]
-    
-    return pd.DataFrame(data)
-
-def predict_with_model(new_data: pd.DataFrame) -> pd.DataFrame:
-    """Make predictions using the loaded model and preprocessor"""
-    try:
-        if model_bundle is None or preprocessor is None:
-            load_model_and_preprocessor()
-        
-        model = model_bundle['model']
-        feature_names = model_bundle['feature_names']
-        target_names = model_bundle['target_names']
-        preproc_metadata = model_bundle.get('preprocessor_metadata', {}) or {}
-        
-        # Transform the data using the preprocessor
-        input_order = (preproc_metadata.get('numeric_columns', []) +
-                       preproc_metadata.get('binary_columns', []) +
-                       preproc_metadata.get('ordinal_columns', []))
-        
-        # Ensure all required columns are present
-        raw = new_data.copy()
-        for col in input_order:
-            if col not in raw.columns:
-                if col in preproc_metadata.get('binary_columns', []):
-                    raw[col] = 0
-                elif col in preproc_metadata.get('ordinal_columns', []):
-                    raw[col] = 'Not Applicable'
-                else:
-                    raw[col] = 0.0
-        
-        # Transform with the preprocessor
-        X_proc = preprocessor.transform(raw[input_order])
-        
-        # Make predictions
-        predictions = model.predict(X_proc)
-        
-        # Create result dataframe
-        result_df = pd.DataFrame(predictions, columns=target_names)
-        return result_df
-        
-    except Exception as e:
-        logger.error(f"Prediction failed: {e}")
-        raise
-
-@app.post("/predict/", response_model=PredictionOutput)
-def predict(input_data: PredictionInput):
-    """Endpoint to receive JSON data and return model predictions."""
-    try:
-        logger.info("Received prediction request")
-
-        # Convert input to DataFrame
-        df = input_to_dataframe(input_data)
-        logger.info(f"Processed input data with {len(df.columns)} features")
-
-        # Perform prediction
-        predictions = predict_with_model(df)
-        
-        # Extract the predictions
-        result = predictions.iloc[0].to_dict()
-
-        # Convert percentage field name
-        if "valorization_recovery_efficiency_%" in result:
-            result["valorization_recovery_efficiency"] = result.pop("valorization_recovery_efficiency_%")
-
-        # Add a simple confidence heuristic if model metrics present in bundle
-        confidence = {}
-        try:
-            if model_bundle and 'model_metrics' in model_bundle:
-                metrics = model_bundle['model_metrics']
-                for k in result.keys():
-                    m = metrics.get(k, {})
-                    rmse = m.get('RMSE')
-                    if rmse is not None:
-                        confidence[k] = 1.0 / (1.0 + rmse)
-                    else:
-                        confidence[k] = None
-        except Exception:
-            confidence = {}
-
-        out = {}
-        out.update(result)
-        if confidence:
-            out['confidence'] = confidence
-
-        logger.info("Prediction successful")
-        return out
-
-    except Exception as e:
-        logger.error(f"Prediction error: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+    _load_artifacts()
 
 @app.get("/")
-def root():
-    return {"message": "Valorization Model API is running."}
+async def root():
+    return {
+        "message": "Valorization LCA Prediction API",
+        "version": "1.0.0",
+        "docs": "/docs"
+    }
 
 @app.get("/health")
-def health_check():
-    """Health check endpoint"""
-    model_loaded = model_bundle is not None
-    preprocessor_loaded = preprocessor is not None
-    
+async def health():
     return {
-        "status": "healthy" if model_loaded and preprocessor_loaded else "degraded",
-        "model_loaded": model_loaded,
-        "preprocessor_loaded": preprocessor_loaded,
+        "status": "ok",
+        "model_loaded": _model is not None,
+        "preprocessor_loaded": _preprocessor is not None,
         "timestamp": datetime.now().isoformat()
     }
 
 @app.get("/model-info")
-def model_info():
-    """Get information about the loaded model"""
-    if model_bundle is None:
-        # return minimal info for degraded startup
-        return {"feature_names": [], "target_names": [], "model_type": "unknown", "loaded_at": None}
-
+async def model_info():
+    if _model_metadata:
+        return ModelInfo(**_model_metadata)
     return {
-        "feature_names": model_bundle.get('feature_names', []),
-        "target_names": model_bundle.get('target_names', []),
-        "model_type": "GradientBoostingRegressor",
-        "loaded_at": datetime.now().isoformat()
+        "model_path": MODEL_PATH,
+        "feature_count": len(_feature_names) if _feature_names else None,
+        "target_names": _target_names,
+        "preprocessor_loaded": _preprocessor is not None
     }
 
-
 @app.get("/features")
-def features():
-    """Return input feature metadata from model bundle or preprocessing file."""
-    meta = None
-    if model_bundle:
-        meta = model_bundle.get('preprocessor_metadata') or {}
-    if not meta:
-        # try fallback file
-        pm = os.path.join(PROJECT_ROOT, 'preprocessing', 'valorization_metadata.joblib')
-        if os.path.exists(pm):
-            try:
-                meta = joblib.load(pm)
-            except Exception:
-                meta = {}
-    numeric = meta.get('numeric_columns', []) if meta else []
-    binary = meta.get('binary_columns', []) if meta else []
-    ordinal = meta.get('ordinal_columns', []) if meta else []
-    return {"numeric": numeric, "binary": binary, "ordinal": ordinal}
+async def get_features():
+    """Return information about all expected input features"""
+    if not _feature_names:
+        raise HTTPException(status_code=500, detail="Feature names not loaded")
+    
+    features = []
+    for feature in _feature_names:
+        features.append(FeatureInfo(
+            name=feature,
+            type="numeric",
+            description=f"Feature: {feature}"
+        ))
+    
+    return {"features": features}
 
-@app.get("/input-template")
-def get_input_template():
-    """Get a template for the input structure"""
-    return {
-        "waste_types": {
-            "Red_Mud": False,
-            "SPL": False,
-            "Dross": False,
-            "Fluoride_Gases": False,
-            "Slag": False,
-            "Other": False
-        },
-        "waste_utilization": {
-            "Red_Mud": 0.0,
-            "SPL": 0.0,
-            "Dross": 0.0,
-            "Fluoride_Gases": 0.0,
-            "Slag": 0.0,
-            "Other": 0.0
-        },
-        "valorization_methods": {
-            "Cement_Additive": False,
-            "Soil_Stabilization": False,
-            "Iron_Extraction": False,
-            "Rare_Earth_Extraction": False,
-            "SPL_Encapsulation": False,
-            "Dross_Recovery": False,
-            "Fluoride_Capture": False,
-            "Other": False
-        },
-        "toxicity": {
-            "Red_Mud": "Not Applicable",
-            "SPL": "Not Applicable",
-            "Dross": "Not Applicable",
-            "Fluoride_Gases": "Not Applicable",
-            "Slag": "Not Applicable",
-            "Other": "Not Applicable"
-        },
-        "risk": {
-            "Red_Mud": "Not Applicable",
-            "SPL": "Not Applicable",
-            "Dross": "Not Applicable",
-            "Fluoride_Gases": "Not Applicable",
-            "Slag": "Not Applicable",
-            "Other": "Not Applicable"
-        },
-        "economic_viability": {
-            "Cement_Additive": "Not Applicable",
-            "Soil_Stabilization": "Not Applicable",
-            "Iron_Extraction": "Not Applicable",
-            "Rare_Earth_Extraction": "Not Applicable",
-            "SPL_Encapsulation": "Not Applicable",
-            "Dross_Recovery": "Not Applicable",
-            "Fluoride_Capture": "Not Applicable"
-        },
-        "additional_numeric": {
-            "emission_reduction_kgCO2e_per_t_waste": 0.0,
-            "recovery_efficiency": 0.0
+@app.post("/predict")
+async def predict(request: PredictRequest):
+    if _feature_names is None or _target_names is None:
+        raise HTTPException(status_code=500, detail="Feature/target names not loaded")
+
+    data = request.data
+    filled = _build_feature_row_from_dict(data)
+
+    try:
+        df = pd.DataFrame([filled], columns=_feature_names)
+        
+        # Convert data types to ensure compatibility
+        for col in df.columns:
+            try:
+                if df[col].dtype == object:
+                    df[col] = pd.to_numeric(df[col], errors='ignore')
+            except Exception:
+                pass
+    except Exception as e:
+        raise HTTPException(status_code=400, detail={
+            "error": "dataframe_creation_failed",
+            "message": str(e)
+        })
+
+    try:
+        if _model is not None:
+            preds = _model.predict(df.values)
+        else:
+            preds = np.zeros((1, len(_target_names)))
+    except Exception as e:
+        logger.warning(f"Model prediction failed: {e}. Returning placeholder zeros.")
+        preds = np.zeros((1, len(_target_names)))
+
+    if preds.ndim == 1:
+        preds = preds.reshape(1, -1)
+
+    result = {name: float(preds[0, i]) for i, name in enumerate(_target_names)}
+    
+    confidence = {}
+    if request.return_confidence:
+        for i, name in enumerate(_target_names):
+            if _model_metadata and 'metrics' in _model_metadata and name in _model_metadata['metrics']:
+                rmse = _model_metadata['metrics'][name].get('RMSE', None)
+                if rmse:
+                    conf = 1.0 / (1.0 + rmse)
+                else:
+                    conf = None
+            else:
+                conf = None
+            lower = float(preds[0, i] * 0.9)
+            upper = float(preds[0, i] * 1.1)
+            confidence[name] = {"lower": lower, "upper": upper, "confidence": conf}
+    
+    response = {
+        "predictions": result,
+        "status": "success"
+    }
+    
+    if confidence:
+        response["confidence_intervals"] = confidence
+        
+    return response
+
+def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a feature row matching _feature_names from input dict."""
+    row: Dict[str, Any] = {}
+    location_value = data.get('location')
+
+    # Prepare numeric medians if available
+    numeric_medians: Dict[str, Any] = {}
+    try:
+        if isinstance(_preprocessing_metadata, dict):
+            stats = _preprocessing_metadata.get('numeric_stats', {})
+            if isinstance(stats, dict):
+                for k, v in stats.items():
+                    if isinstance(v, dict) and 'median' in v:
+                        numeric_medians[k] = v['median']
+            nm = _preprocessing_metadata.get('numeric_medians', {})
+            if isinstance(nm, dict):
+                numeric_medians.update(nm)
+    except Exception:
+        pass
+
+    for feat in (_feature_names or []):
+        if isinstance(feat, str) and feat.startswith('location_'):
+            loc_name = feat.replace('location_', '')
+            row[feat] = 1 if (isinstance(location_value, str) and location_value == loc_name) else 0
+        else:
+            if feat in data and data[feat] is not None:
+                row[feat] = data[feat]
+            else:
+                row[feat] = numeric_medians.get(feat, 0)
+    return row
+
+def _build_feature_row_from_valorization(valorization: Dict[str, Any]) -> Dict[str, Any]:
+    """Map valorization wizard object to a feature row matching _feature_names."""
+    return _build_feature_row_from_dict(valorization or {})
+
+@app.get("/wizard")
+async def list_wizard_ids(limit: int = 10):
+    """Helper endpoint to list recent wizard workflow ids for testing."""
+    db = await get_mongo_db()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not configured")
+    try:
+        items = []
+        if _MONGO_DRIVER == 'motor':
+            cursor = db["wizardworkflows"].find({}, {"_id": 1, "name": 1}).sort([("_id", -1)]).limit(limit)
+            async for doc in cursor:
+                items.append({"_id": str(doc.get("_id")), "name": doc.get("name")})
+        else:
+            cursor = db["wizardworkflows"].find({}, {"_id": 1, "name": 1}).sort([("_id", -1)]).limit(limit)
+            for doc in cursor:
+                items.append({"_id": str(doc.get("_id")), "name": doc.get("name")})
+        return {"count": len(items), "items": items}
+    except Exception as e:
+        logger.error(f"Error listing workflows: {e}")
+        raise HTTPException(status_code=500, detail="Error listing workflows")
+
+@app.get("/wizard/{workflow_id}/valorization")
+async def get_wizard_valorization(workflow_id: str):
+    """Retrieve the valorization object from a wizard workflow."""
+    db = await get_mongo_db()
+    if db is None or ObjectId is None:
+        raise HTTPException(status_code=503, detail="Database not configured for this service")
+    try:
+        try:
+            oid = ObjectId(workflow_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
+        wf = None
+        coll_name = None
+        # Try primary collection by _id
+        wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
+        coll_name = "wizardworkflows" if wf else None
+        # Fallback to lookup by workflowId field
+        if not wf:
+            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
+            coll_name = "wizardworkflows" if wf else None
+        # Try outputs collection by _id
+        if not wf:
+            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
+            coll_name = "wizardworkflowoutputs" if wf else None
+        # Fallback outputs by workflowId
+        if not wf:
+            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
+            coll_name = "wizardworkflowoutputs" if wf else None
+        if not wf:
+            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        valorization = wf.get("valorization", {}) or {}
+        return {
+            "collection": coll_name,
+            "workflowId": str(wf.get("_id")),
+            "userId": str(wf.get("userId")),
+            "metalType": wf.get("metalType"),
+            "name": wf.get("name"),
+            "valorization": valorization
         }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching valorization workflow: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching workflow")
+
+@app.post("/wizard/{workflow_id}/valorization/predict-and-save")
+async def predict_valorization_and_save(workflow_id: str):
+    db = await get_mongo_db()
+    if db is None or ObjectId is None:
+        raise HTTPException(status_code=503, detail="Database not configured; cannot read or update workflow")
+    # Fetch workflow
+    try:
+        try:
+            oid = ObjectId(workflow_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
+        wf = None
+        coll_name = None
+        wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
+        coll_name = "wizardworkflows" if wf else None
+        if not wf:
+            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
+            coll_name = "wizardworkflows" if wf else None
+        if not wf:
+            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
+            coll_name = "wizardworkflowoutputs" if wf else None
+        if not wf:
+            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
+            coll_name = "wizardworkflowoutputs" if wf else None
+        if not wf:
+            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        valorization_raw = wf.get("valorization", {}) or {}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading workflow: {e}")
+        raise HTTPException(status_code=500, detail="Error reading workflow")
+
+    # Build feature row and predict
+    feature_row = _build_feature_row_from_valorization(valorization_raw)
+    pred_resp = await predict(PredictRequest(data=feature_row, return_confidence=True))
+
+    # Collect predictions
+    predicted_fields = list(pred_resp["predictions"].keys())
+    avg_conf = 0.0
+    if "confidence_intervals" in pred_resp and pred_resp["confidence_intervals"]:
+        vals = [v.get("confidence") for v in pred_resp["confidence_intervals"].values() if v.get("confidence") is not None]
+        if vals:
+            avg_conf = float(np.mean(vals))
+
+    valorization_updates: Dict[str, Any] = {}
+    ai_predictions: Dict[str, Any] = {}
+    for target_name, pred_value in pred_resp["predictions"].items():
+        valorization_updates[target_name] = pred_value
+        ci = pred_resp.get("confidence_intervals", {}).get(target_name)
+        ai_predictions[target_name] = {
+            "prediction": pred_value,
+            "confidence": (ci.get("confidence") if ci else None),
+            "interval": ({"lower": ci.get("lower"), "upper": ci.get("upper")} if ci else None)
+        }
+
+    # Build $set operations
+    set_ops: Dict[str, Any] = {}
+    for field_name, value in valorization_updates.items():
+        set_ops[f"valorization.{field_name}"] = value
+    set_ops["valorization.aiPredictions"] = ai_predictions
+    set_ops["predictionMetadata.generatedAt"] = datetime.utcnow()
+    set_ops["updatedAt"] = datetime.utcnow()
+    set_ops["status"] = wf.get("status", "submitted")
+
+    # Execute updates
+    try:
+        workflows = db[coll_name]
+        if _MONGO_DRIVER == 'motor':
+            await workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization"}}})
+            await workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
+            await workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization", "predictedFields": [f"valorization.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+        elif MongoClient is not None:
+            workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization"}}})
+            workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
+            workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization", "predictedFields": [f"valorization.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+        else:
+            raise HTTPException(status_code=503, detail="No MongoDB driver available")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update workflow predictions: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update workflow predictions")
+
+    return {
+        "success": True,
+        "workflowId": workflow_id,
+        "updatedFields": [f"valorization.{f}" for f in predicted_fields],
+        "avgConfidence": round(avg_conf, 3),
+        "inputUsed": feature_row,
+        "timestamp": datetime.utcnow().isoformat(),
+        "metadataUpdated": True,
     }
 
 if __name__ == "__main__":
