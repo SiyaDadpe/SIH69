@@ -47,43 +47,43 @@ router.get('/operations/stage/:stage', getOperationsByStage);
 router.get('/operations/:id', getOperation);
 
 /**
- * Workflow Routes
+ * Workflow Routes - All protected with authentication
  */
 
 // Create new workflow
-router.post('/workflows', validateWorkflowCreation, createWorkflow);
+router.post('/workflows', authenticate, validateWorkflowCreation, createWorkflow);
 
 // Get all workflows for user
-router.get('/workflows', getUserWorkflows);
+router.get('/workflows', authenticate, getUserWorkflows);
 
 // Get single workflow
-router.get('/workflows/:id', getWorkflow);
+router.get('/workflows/:id', authenticate, getWorkflow);
 
 // Add operation to workflow
-router.post('/workflows/:id/operations', validateOperationAddition, addOperationToWorkflow);
+router.post('/workflows/:id/operations', authenticate, validateOperationAddition, addOperationToWorkflow);
 
 // Update operation in workflow
-router.put('/workflows/:id/operations/:stageId/:operationIndex', updateOperationInWorkflow);
+router.put('/workflows/:id/operations/:stageId/:operationIndex', authenticate, updateOperationInWorkflow);
 
 // Remove operation from workflow
-router.delete('/workflows/:id/operations/:stageId/:operationIndex', removeOperationFromWorkflow);
+router.delete('/workflows/:id/operations/:stageId/:operationIndex', authenticate, removeOperationFromWorkflow);
 
 // Calculate impact for workflow
-router.post('/workflows/:id/calculate', validateCalculationRequest, calculateWorkflowImpact);
+router.post('/workflows/:id/calculate', authenticate, validateCalculationRequest, calculateWorkflowImpact);
 
 // Generate report for workflow (preview only)
-router.get('/workflows/:id/report', generateWorkflowReport);
+router.get('/workflows/:id/report', authenticate, generateWorkflowReport);
 
 // Generate and save full Report document from workflow
-router.post('/workflows/:id/generate-report', generateAndSaveReport);
+router.post('/workflows/:id/generate-report', authenticate, generateAndSaveReport);
 
 // Update workflow details
-router.put('/workflows/:id', validateWorkflowUpdate, updateWorkflow);
+router.put('/workflows/:id', authenticate, validateWorkflowUpdate, updateWorkflow);
 
 // Delete workflow
-router.delete('/workflows/:id', deleteWorkflow);
+router.delete('/workflows/:id', authenticate, deleteWorkflow);
 
 // Clone workflow
-router.post('/workflows/:id/clone', validateCloneRequest, cloneWorkflow);
+router.post('/workflows/:id/clone', authenticate, validateCloneRequest, cloneWorkflow);
 
 module.exports = router;

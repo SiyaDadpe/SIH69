@@ -86,17 +86,13 @@ const getOperationsByStage = asyncHandler(async (req, res) => {
 /**
  * @desc    Create new canvas workflow
  * @route   POST /api/canvas/workflows
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication)
  */
 const createWorkflow = asyncHandler(async (req, res) => {
-  const { name, description, metalType, userId } = req.body;
+  const { name, description, metalType } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID is required in request body'
-    });
-  }
+  // Use authenticated user's ID
+  const userId = req.user._id;
 
   const workflow = await CanvasWorkflow.createEmpty(userId, metalType, name);
 
@@ -113,20 +109,16 @@ const createWorkflow = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get all workflows for user
+ * @desc    Get all workflows for authenticated user
  * @route   GET /api/canvas/workflows
- * @access  Public (no authentication required)
- * Query params: userId, status
+ * @access  Private (requires authentication)
+ * Query params: status (optional)
  */
 const getUserWorkflows = asyncHandler(async (req, res) => {
-  const { userId, status } = req.query;
+  const { status } = req.query;
 
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID is required as query parameter'
-    });
-  }
+  // Use authenticated user's ID
+  const userId = req.user._id;
 
   const workflows = await CanvasWorkflow.getByUser(userId, status);
 
@@ -140,10 +132,13 @@ const getUserWorkflows = asyncHandler(async (req, res) => {
 /**
  * @desc    Get single workflow
  * @route   GET /api/canvas/workflows/:id
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const getWorkflow = asyncHandler(async (req, res) => {
-  const workflow = await CanvasWorkflow.findById(req.params.id);
+  const workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
@@ -161,17 +156,20 @@ const getWorkflow = asyncHandler(async (req, res) => {
 /**
  * @desc    Add operation to workflow stage
  * @route   POST /api/canvas/workflows/:id/operations
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const addOperationToWorkflow = asyncHandler(async (req, res) => {
   const { stageNumber, operationId, quantity = 1, unit = 'tons' } = req.body;
 
-  let workflow = await CanvasWorkflow.findById(req.params.id);
+  let workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to modify it'
     });
   }
 
@@ -225,19 +223,22 @@ const addOperationToWorkflow = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Remove operation from workflow
+ * @desc    Remove operation from workflow stage
  * @route   DELETE /api/canvas/workflows/:id/operations/:stageId/:operationIndex
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const removeOperationFromWorkflow = asyncHandler(async (req, res) => {
-  const { id, stageId, operationIndex } = req.params;
+  const { stageId, operationIndex } = req.params;
 
-  let workflow = await CanvasWorkflow.findById(id);
+  let workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to modify it'
     });
   }
 
@@ -254,18 +255,21 @@ const removeOperationFromWorkflow = asyncHandler(async (req, res) => {
 /**
  * @desc    Update operation quantity/parameters
  * @route   PUT /api/canvas/workflows/:id/operations/:stageId/:operationIndex
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const updateOperationInWorkflow = asyncHandler(async (req, res) => {
   const { id, stageId, operationIndex } = req.params;
   const { quantity, unit } = req.body;
 
-  let workflow = await CanvasWorkflow.findById(id);
+  let workflow = await CanvasWorkflow.findOne({
+    _id: id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to modify it'
     });
   }
 
@@ -294,15 +298,18 @@ const updateOperationInWorkflow = asyncHandler(async (req, res) => {
 /**
  * @desc    Calculate LCA impact for workflow
  * @route   POST /api/canvas/workflows/:id/calculate
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const calculateWorkflowImpact = asyncHandler(async (req, res) => {
-  const workflow = await CanvasWorkflow.findById(req.params.id);
+  const workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to modify it'
     });
   }
 
@@ -343,15 +350,18 @@ const calculateWorkflowImpact = asyncHandler(async (req, res) => {
 /**
  * @desc    Generate comprehensive LCA report (Preview only)
  * @route   GET /api/canvas/workflows/:id/report
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const generateWorkflowReport = asyncHandler(async (req, res) => {
-  const workflow = await CanvasWorkflow.findById(req.params.id).populate('userId', 'name email');
+  const workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  }).populate('userId', 'name email');
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to view it'
     });
   }
 
@@ -366,16 +376,19 @@ const generateWorkflowReport = asyncHandler(async (req, res) => {
 /**
  * @desc    Generate and save full Report document from Canvas workflow
  * @route   POST /api/canvas/workflows/:id/generate-report
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const generateAndSaveReport = asyncHandler(async (req, res) => {
   const { Report } = require('../models');
-  const workflow = await CanvasWorkflow.findById(req.params.id).populate('userId', 'name email');
+  const workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  }).populate('userId', 'name email');
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to view it'
     });
   }
 
@@ -586,17 +599,20 @@ const generateAndSaveReport = asyncHandler(async (req, res) => {
 /**
  * @desc    Update workflow details
  * @route   PUT /api/canvas/workflows/:id
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const updateWorkflow = asyncHandler(async (req, res) => {
   const { name, description, status, isPublic, tags } = req.body;
 
-  let workflow = await CanvasWorkflow.findById(req.params.id);
+  let workflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to modify it'
     });
   }
 
@@ -618,15 +634,18 @@ const updateWorkflow = asyncHandler(async (req, res) => {
 /**
  * @desc    Delete workflow
  * @route   DELETE /api/canvas/workflows/:id
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const deleteWorkflow = asyncHandler(async (req, res) => {
-  const workflow = await CanvasWorkflow.findByIdAndDelete(req.params.id);
+  const workflow = await CanvasWorkflow.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!workflow) {
     return res.status(404).json({
       success: false,
-      message: 'Workflow not found'
+      message: 'Workflow not found or you do not have permission to delete it'
     });
   }
 
@@ -639,26 +658,24 @@ const deleteWorkflow = asyncHandler(async (req, res) => {
 /**
  * @desc    Clone/duplicate a workflow
  * @route   POST /api/canvas/workflows/:id/clone
- * @access  Public (no authentication required)
+ * @access  Private (requires authentication and ownership)
  */
 const cloneWorkflow = asyncHandler(async (req, res) => {
-  const sourceWorkflow = await CanvasWorkflow.findById(req.params.id);
+  const sourceWorkflow = await CanvasWorkflow.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
 
   if (!sourceWorkflow) {
     return res.status(404).json({
       success: false,
-      message: 'Source workflow not found'
+      message: 'Source workflow not found or you do not have permission to clone it'
     });
   }
 
-  const { userId, name } = req.body;
-  
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID is required in request body'
-    });
-  }
+  // Use authenticated user's ID
+  const userId = req.user._id;
+  const { name } = req.body;
 
   const newName = name || `${sourceWorkflow.name} (Copy)`;
 

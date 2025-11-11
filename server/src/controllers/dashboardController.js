@@ -20,15 +20,16 @@ const DASHBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour in ms
  */
 const getDashboard = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const { forceRefresh } = req.query; // Allow force refresh via query param
   
-  console.log(`[Dashboard] Fetching data for user: ${userId}`);
+  console.log(`[Dashboard] Fetching data for user: ${userId}`, { forceRefresh });
 
   // Check cache first (local cache - synchronous operation)
   const cacheKey = `dashboard:${userId}`;
-  const cachedData = getCache(cacheKey);
+  const cachedData = !forceRefresh ? getCache(cacheKey) : null;
   
   if (cachedData) {
-    console.log(`[Dashboard] Returning cached data for user: ${userId || 'ALL'}`);
+    console.log(`[Dashboard] Returning cached data for user: ${userId}`);
     return res.status(200).json({
       success: true,
       data: cachedData.data,
@@ -173,9 +174,22 @@ const getDashboard = asyncHandler(async (req, res) => {
   const benchmarkData = generateMockBenchmark(userCircularityScore);
 
   // --- Response ---
-  console.log(`[Dashboard] Data retrieved successfully for user: ${userId}`);
+  console.log(`[Dashboard] Data retrieved successfully for user: ${userId}`, {
+    totalProjects: kpis.totalProjects,
+    recentProjectsCount: recentProjects.length
+  });
 
   const responseData = {
+    user: {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email
+    },
+    summary: {
+      totalProjects: kpis.totalProjects,
+      completedAssessments: kpis.completedAssessments,
+      trendingScore: kpis.trendingScore
+    },
     kpis,
     recentProjects,
     insights,
