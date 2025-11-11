@@ -14,7 +14,7 @@ const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../
  */
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, organization } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -34,7 +34,7 @@ exports.register = async (req, res, next) => {
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
-      role: role || 'engineer' // Default to 'engineer' role
+      organization
     });
 
     // Generate tokens
@@ -55,7 +55,7 @@ exports.register = async (req, res, next) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          organization: user.organization,
           createdAt: user.createdAt
         },
         accessToken,
@@ -117,7 +117,7 @@ exports.login = async (req, res, next) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          organization: user.organization,
           lastLogin: user.lastLogin
         },
         accessToken,
@@ -205,7 +205,7 @@ exports.getMe = async (req, res, next) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          organization: user.organization,
           createdAt: user.createdAt,
           lastLogin: user.lastLogin
         }

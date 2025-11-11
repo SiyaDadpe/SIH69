@@ -27,7 +27,8 @@ import {
   ChevronDown, 
   Lightbulb,
   CheckCircle2,
-  Award
+  Award,
+  Paintbrush
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSidebar } from '../contexts/SidebarContext';
@@ -223,27 +224,20 @@ const Dashboard = () => {
     );
   }
 
-  // Quick Actions data
+  // Quick Actions data - keeping Wizard and Canvas separate for clarity
   const actions = [
-    {
-      icon: Plus,
-      label: 'New Project',
-      path: '/projects',
-      color: 'bg-[#BA7967]',
-      hoverColor: 'hover:bg-[#3d3635]'
-    },
     {
       icon: Wand2,
       label: 'Open Wizard',
       path: '/wizard',
-      color: 'bg-[#6b5b59]',
+      color: 'bg-[#BA7967]',
       hoverColor: 'hover:bg-[#3d3635]'
     },
     {
       icon: Grid3x3,
       label: 'Go to Canvas',
       path: '/canvas',
-      color: 'bg-[#6b5b59]',
+      color: 'bg-[#BA7967]',
       hoverColor: 'hover:bg-[#3d3635]'
     },
     {
@@ -487,15 +481,34 @@ const Dashboard = () => {
               </table>
 
               {sortedProjects.length === 0 && (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 mb-2">No projects found</div>
-                  <Button 
-                    variant="outline"
-                    onClick={() => window.location.href = '/projects/new'}
-                    className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
-                  >
-                    Create First Project
-                  </Button>
+                <div className="text-center py-12">
+                  <div className="mb-2">
+                    <FolderOpen className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No projects yet</h3>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Projects are automatically created when you complete a wizard workflow
+                  </p>
+                  <p className="text-sm text-gray-500 mb-8">
+                    or you can build one from scratch using the Canvas
+                  </p>
+                  <div className="flex justify-center gap-4">
+                    <Button 
+                      onClick={() => window.location.href = '/wizard'}
+                      className="bg-[#BA7967] text-white hover:bg-[#3d3635] flex items-center gap-2"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      Start Wizard
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.location.href = '/canvas'}
+                      className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white flex items-center gap-2"
+                    >
+                      <Paintbrush className="w-4 h-4" />
+                      Open Canvas
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

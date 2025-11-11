@@ -42,14 +42,14 @@ router.post(
     body('password')
       .notEmpty()
       .withMessage('Password is required')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-    body('role')
-      .optional()
-      .isIn(['engineer', 'manager', 'policymaker', 'researcher'])
-      .withMessage('Role must be one of: engineer, manager, policymaker, researcher'),
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long'),
+    body('organization')
+      .trim()
+      .notEmpty()
+      .withMessage('Organization is required')
+      .isLength({ max: 200 })
+      .withMessage('Organization name cannot exceed 200 characters'),
     validateRequest
   ],
   register

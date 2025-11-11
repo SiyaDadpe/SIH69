@@ -103,8 +103,11 @@ const bulkExportReports = asyncHandler(async (req, res) => {
  * @returns {Object} JSON response with analytics data
  */
 const getReportsAnalytics = asyncHandler(async (req, res) => {
-  // Optional: filter by projectId, status, etc.
-  const filter = {};
+  // Filter by authenticated user
+  const filter = {
+    userId: req.user._id
+  };
+  
   if (req.query.projectId) {
     if (!mongoose.Types.ObjectId.isValid(req.query.projectId)) {
       return res.status(400).json({
@@ -209,7 +212,6 @@ const createReport = asyncHandler(async (req, res) => {
     title,
     description,
     projectId,
-    author,
     status,
     visibility,
     sections,
@@ -217,8 +219,6 @@ const createReport = asyncHandler(async (req, res) => {
     metadata,
     attachments
   } = req.body;
-
-  // NOTE: Workflow enforcement removed for integration/testing. Allow direct report creation.
 
   // Validate projectId if provided
   if (projectId) {
@@ -229,23 +229,33 @@ const createReport = asyncHandler(async (req, res) => {
       });
     }
 
-    const projectExists = await Project.findById(projectId);
+    // Ensure the project belongs to the authenticated user
+    const projectExists = await Project.findOne({
+      _id: projectId,
+      userId: req.user._id
+    });
+    
     if (!projectExists) {
       return res.status(404).json({
         success: false,
-        message: 'Referenced project not found'
+        message: 'Referenced project not found or you do not have access to it'
       });
     }
   }
 
-  // Create report
+  // Create report with authenticated user's ID
   const report = await Report.create({
     title,
     description,
     projectId: projectId || undefined,
-    author: author || { name: 'Anonymous', email: 'anonymous@example.com' },
+    userId: req.user._id, // Set userId from authenticated user
+    author: {
+      userId: req.user._id,
+      name: req.user.name,
+      email: req.user.email
+    },
     status: status || 'draft',
-    visibility: visibility || 'public',
+    visibility: visibility || 'private',
     sections: sections || [],
     tags: tags || [],
     metadata: metadata || {},
@@ -255,8 +265,9 @@ const createReport = asyncHandler(async (req, res) => {
   console.log('[INFO]', 'Report created successfully', {
     reportId: report._id,
     reportTitle: report.title,
-    author: report.author.name,
-    source: metadata.sourceType || 'unknown'
+    userId: req.user._id,
+    userEmail: req.user.email,
+    source: metadata?.sourceType || 'direct'
   });
 
   res.status(201).json({
@@ -292,8 +303,10 @@ const getReports = asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // Max 100 per page
   const skip = (page - 1) * limit;
 
-  // Build filter query
-  const filter = {};
+  // Build filter query - filter by authenticated user
+  const filter = {
+    userId: req.user._id
+  };
 
   // Filter by project ID
   if (req.query.projectId) {
@@ -359,7 +372,7 @@ const getReports = asyncHandler(async (req, res) => {
   const [reports, totalReports] = await Promise.all([
     query
       .populate('projectId', 'name metalType processType circularityScore')
-      .populate('author.userId', 'name email')
+      .populate('userId', 'name email organization')
       .skip(skip)
       .limit(limit)
       .lean(),

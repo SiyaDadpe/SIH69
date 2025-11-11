@@ -16,16 +16,15 @@ const DASHBOARD_CACHE_TTL = 60 * 60 * 1000; // 1 hour in ms
 /**
  * @desc    Get dashboard data with KPIs, recent projects, and insights
  * @route   GET /api/dashboard
- * @access  Public (TEMPORARY - for testing)
+ * @access  Private
  */
 const getDashboard = asyncHandler(async (req, res) => {
-  // TEMPORARY: For testing without auth, get data for all users or first user
-  const userId = req.user?._id || null;
+  const userId = req.user._id;
   
-  console.log(`[Dashboard] Fetching data for user: ${userId || 'ALL USERS (no auth)'}`);
+  console.log(`[Dashboard] Fetching data for user: ${userId}`);
 
   // Check cache first (local cache - synchronous operation)
-  const cacheKey = userId ? `dashboard:${userId}` : 'dashboard:all';
+  const cacheKey = `dashboard:${userId}`;
   const cachedData = getCache(cacheKey);
   
   if (cachedData) {
@@ -47,7 +46,7 @@ const getDashboard = asyncHandler(async (req, res) => {
   // --- KPI Calculations using Aggregation Pipelines ---
 
   // 1. Total Projects, Average Circularity, Total CO2 Saved, Projects This Month, Completed Assessments
-  const matchStage = userId ? { owner: userId } : {};
+  const matchStage = userId ? { userId: userId } : {};
   const kpiAggregation = await Project.aggregate([
     {
       $match: matchStage
@@ -174,7 +173,7 @@ const getDashboard = asyncHandler(async (req, res) => {
   const benchmarkData = generateMockBenchmark(userCircularityScore);
 
   // --- Response ---
-  console.log(`[Dashboard] Data retrieved successfully for user: ${userId || 'ALL'}`);
+  console.log(`[Dashboard] Data retrieved successfully for user: ${userId}`);
 
   const responseData = {
     kpis,
@@ -212,7 +211,7 @@ const getUserInsights = asyncHandler(async (req, res) => {
   console.log(`[Dashboard] Fetching insights for user: ${userId}`);
 
   // Build filter for user's projects
-  const userProjects = await Project.find({ owner: userId }).select('_id').lean();
+  const userProjects = await Project.find({ userId: userId }).select('_id').lean();
   const projectIds = userProjects.map(p => p._id);
 
   const filter = {
@@ -259,7 +258,7 @@ const getMonthlyTrends = asyncHandler(async (req, res) => {
   const trends = await Project.aggregate([
     {
       $match: {
-        owner: userId,
+        userId: userId,
         createdAt: { $gte: startDate }
       }
     },
@@ -336,7 +335,7 @@ const getPerformanceSummary = asyncHandler(async (req, res) => {
   // Aggregation for current vs last month comparison
   const performance = await Project.aggregate([
     {
-      $match: { owner: userId }
+      $match: { userId: userId }
     },
     {
       $facet: {

@@ -112,6 +112,14 @@ const ReportSchema = new Schema({
     ref: 'Project'
     // Index defined separately below
   },
+  // User who created this report
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'User ID is required'],
+    index: true
+  },
+  // Legacy author field - kept for backward compatibility
   author: {
     userId: {
       type: Schema.Types.ObjectId,
