@@ -80,3 +80,5 @@ INTEGRATION_ANALYSIS.md
 .venv/
 .venv-bene310/
 .venv-refining/
+.venv-manu/
+.venv-recycling/
