@@ -21,6 +21,8 @@ import {
   generateStepPrediction, 
   validateRequiredFields 
 } from "@/services/aiPredictionService";
+import { calculateLCA, downloadLCAReport } from "@/services/lcaService";
+import { toast } from "sonner";
 // Removed other data imports to avoid pre-filling from dataset
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -136,7 +138,7 @@ const formSchema = z.object({
   redMudGeneration: z.coerce.number().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -547,9 +549,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
               >
                 <Button
                   type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
+                  className="bg-[#ef5350] hover:bg-[#e57373] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => onCalculateLCA(form.getValues())}
+                  disabled={calculatingLCA}
                 >
-                  Calculate LCA Score
+                  {calculatingLCA ? 'Calculating...' : 'Calculate LCA Score'}
                 </Button>
               </motion.div>
               <Button
@@ -570,7 +574,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const benLocations = [...new Set((Array.isArray(beneficiationData) ? beneficiationData : []).map((d) => d.location))]
     .filter(Boolean)
 
@@ -994,12 +998,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   ease: "easeInOut",
                 }}
               >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
+                <Button type="button" className="bg-[#ef5350] hover:bg-[#e57373] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onCalculateLCA(form.getValues())} disabled={calculatingLCA}>{calculatingLCA ? 'Calculating...' : 'Calculate LCA Score'}</Button>
               </motion.div>
               <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
                 clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
@@ -1027,6 +1026,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [predicting, setPredicting] = useState(false)
   const [predictionError, setPredictionError] = useState(null)
   const [predictionSuccess, setPredictionSuccess] = useState(null)
+  const [calculatingLCA, setCalculatingLCA] = useState(false)
 
   // Load existing workflow data into form values
   React.useEffect(() => {
@@ -1066,6 +1066,145 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const currentStep = steps[activeStep]
   const stepKey = currentStep.key
   const stepValues = formValues[stepKey] || {}
+
+  // Helper function to get stage name from step key
+  const getStageName = (stepKey) => {
+    const stageNames = {
+      mining: "Mining & Extraction",
+      beneficiation: "Beneficiation",
+      refining: "Refining (Bayer Process)",
+      smelting: "Smelting (Hall-Héroult)",
+      manufacturing: "Manufacturing",
+      recycling: "Recycling",
+      valorization: "Valorization"
+    };
+    return stageNames[stepKey] || stepKey;
+  };
+
+  // Define required fields for each stage
+  const getRequiredFieldsByStage = () => {
+    return {
+      mining: {
+        fields: ['applicableProcesses', 'location', 'oreGrade'],
+        labels: {
+          applicableProcesses: 'Mining Process',
+          location: 'Location',
+          oreGrade: 'Ore Grade'
+        }
+      },
+      beneficiation: {
+        fields: ['processes', 'oreFeedRate'],
+        labels: {
+          processes: 'Beneficiation Process',
+          oreFeedRate: 'Ore Feed Rate'
+        }
+      },
+      refining: {
+        fields: ['energyUse', 'waterUse'],
+        labels: {
+          energyUse: 'Energy Use',
+          waterUse: 'Water Use'
+        }
+      },
+      smelting: {
+        fields: ['electricityDemand', 'cellTechnology'],
+        labels: {
+          electricityDemand: 'Electricity Demand',
+          cellTechnology: 'Cell Technology'
+        }
+      },
+      manufacturing: {
+        fields: ['processes', 'scrapRate'],
+        labels: {
+          processes: 'Manufacturing Process',
+          scrapRate: 'Scrap Rate'
+        }
+      },
+      recycling: {
+        fields: ['scrapInputPercent', 'collectionRatePercent'],
+        labels: {
+          scrapInputPercent: 'Scrap Input Percentage',
+          collectionRatePercent: 'Collection Rate'
+        }
+      },
+      valorization: {
+        fields: ['wasteTypes', 'valorizationMethods'],
+        labels: {
+          wasteTypes: 'Waste Types',
+          valorizationMethods: 'Valorization Methods'
+        }
+      }
+    };
+  };
+
+  // Validate required fields for ONLY the current stage
+  const validateRequiredFields = () => {
+    const requiredFieldsByStage = getRequiredFieldsByStage();
+    const missingFieldsByStage = [];
+    
+    // Only validate the current stage
+    const currentStageKey = stepKey;
+    const stepData = formValues[currentStageKey];
+    const requiredConfig = requiredFieldsByStage[currentStageKey];
+    
+    if (!requiredConfig) {
+      // No validation rules for this stage
+      return [];
+    }
+    
+    // Check if this stage has any data at all
+    if (!stepData || Object.keys(stepData).length === 0) {
+      // Stage is completely empty - check if required fields exist
+      const missingFields = requiredConfig.fields.map(fieldName => ({
+        field: fieldName,
+        label: requiredConfig.labels[fieldName] || fieldName
+      }));
+      
+      if (missingFields.length > 0) {
+        return [{
+          stage: currentStageKey,
+          stageName: getStageName(currentStageKey),
+          missingFields: missingFields
+        }];
+      }
+      return [];
+    }
+    
+    // If stage has some data, validate required fields
+    const missingFields = [];
+    
+    requiredConfig.fields.forEach(fieldName => {
+      const value = stepData[fieldName];
+      
+      // Check if field is empty or invalid
+      if (value === undefined || value === null || value === '') {
+        missingFields.push({
+          field: fieldName,
+          label: requiredConfig.labels[fieldName] || fieldName
+        });
+      } else if (Array.isArray(value) && value.length === 0) {
+        missingFields.push({
+          field: fieldName,
+          label: requiredConfig.labels[fieldName] || fieldName
+        });
+      } else if (typeof value === 'number' && isNaN(value)) {
+        missingFields.push({
+          field: fieldName,
+          label: requiredConfig.labels[fieldName] || fieldName
+        });
+      }
+    });
+    
+    if (missingFields.length > 0) {
+      missingFieldsByStage.push({
+        stage: currentStageKey,
+        stageName: getStageName(currentStageKey),
+        missingFields: missingFields
+      });
+    }
+    
+    return missingFieldsByStage;
+  };
 
   // Helper function to save step data to backend
   const handleSaveStep = async (stepName, data) => {
@@ -1210,6 +1349,166 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     return mappedData;
   };
 
+  // Handle Calculate LCA Score
+  const handleCalculateLCA = async (currentFormData = null) => {
+    console.log('📊 [LCA Calculation] Button clicked');
+    console.log('📊 [LCA Calculation] Form values (state):', formValues);
+    console.log('📊 [LCA Calculation] Current form data (passed):', currentFormData);
+    console.log('📊 [LCA Calculation] Workflow ID:', workflowId);
+    console.log('📊 [LCA Calculation] Current Step:', activeStep, '- Step Key:', stepKey);
+    
+    if (!workflowId) {
+      toast.error("No workflow ID available. Please save your workflow first.");
+      return;
+    }
+
+    // If current form data is passed, update formValues with it for validation
+    let dataToValidate = formValues;
+    if (currentFormData) {
+      console.log('📝 [LCA Calculation] Using current form data for validation');
+      dataToValidate = {
+        ...formValues,
+        [stepKey]: currentFormData
+      };
+      // Also update the state so it's available for the API call
+      setFormValues(dataToValidate);
+    }
+
+    // Validate required fields for ONLY the current stage
+    console.log('🔍 [LCA Calculation] Running validation for current stage only:', stepKey);
+    console.log('🔍 [LCA Calculation] Current stage data:', dataToValidate[stepKey]);
+    
+    // Validate using the updated data
+    const requiredFieldsByStage = getRequiredFieldsByStage();
+    const currentStageKey = stepKey;
+    const stepData = dataToValidate[currentStageKey];
+    const requiredConfig = requiredFieldsByStage[currentStageKey];
+    
+    const validationErrors = [];
+    
+    if (requiredConfig) {
+      // Check if this stage has any data at all
+      if (!stepData || Object.keys(stepData).length === 0) {
+        const missingFields = requiredConfig.fields.map(fieldName => ({
+          field: fieldName,
+          label: requiredConfig.labels[fieldName] || fieldName
+        }));
+        
+        if (missingFields.length > 0) {
+          validationErrors.push({
+            stage: currentStageKey,
+            stageName: getStageName(currentStageKey),
+            missingFields: missingFields
+          });
+        }
+      } else {
+        // If stage has some data, validate required fields
+        const missingFields = [];
+        
+        requiredConfig.fields.forEach(fieldName => {
+          const value = stepData[fieldName];
+          
+          // Check if field is empty or invalid
+          if (value === undefined || value === null || value === '') {
+            missingFields.push({
+              field: fieldName,
+              label: requiredConfig.labels[fieldName] || fieldName
+            });
+          } else if (Array.isArray(value) && value.length === 0) {
+            missingFields.push({
+              field: fieldName,
+              label: requiredConfig.labels[fieldName] || fieldName
+            });
+          } else if (typeof value === 'number' && isNaN(value)) {
+            missingFields.push({
+              field: fieldName,
+              label: requiredConfig.labels[fieldName] || fieldName
+            });
+          }
+        });
+        
+        if (missingFields.length > 0) {
+          validationErrors.push({
+            stage: currentStageKey,
+            stageName: getStageName(currentStageKey),
+            missingFields: missingFields
+          });
+        }
+      }
+    }
+    
+    if (validationErrors.length > 0) {
+      console.log('❌ [LCA Calculation] Validation failed for current stage:', validationErrors);
+      
+      // Show error for the current stage's missing fields
+      const firstError = validationErrors[0];
+      const missingFieldsList = firstError.missingFields
+        .map(f => f.label)
+        .join(', ');
+      
+      toast.error(
+        `🚫 Please fill all required fields in ${firstError.stageName} before calculating LCA.`,
+        {
+          description: `Missing: ${missingFieldsList}`,
+          duration: 6000,
+        }
+      );
+      return;
+    }
+
+    console.log('✅ [LCA Calculation] Current stage validation passed');
+    setCalculatingLCA(true);
+
+    try {
+      // Map frontend field names to backend field names for all stages
+      const mappedWizardData = {};
+      const stageNames = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+      
+      stageNames.forEach(stageName => {
+        if (formValues[stageName] && Object.keys(formValues[stageName]).length > 0) {
+          mappedWizardData[stageName] = mapFormDataToBackendFields(stageName, formValues[stageName]);
+          console.log(`📋 [LCA Calculation] Mapped ${stageName}:`, mappedWizardData[stageName]);
+        }
+      });
+
+      // Prepare LCA calculation data with current stage information
+      const lcaData = {
+        workflowId: workflowId,
+        projectName: workflowData?.name || 'Aluminum Production',
+        location: workflowData?.location || formValues.mining?.location || 'Not specified',
+        currentStage: stepKey, // Send current stage to backend
+        wizardData: mappedWizardData
+      };
+
+      console.log('📊 [LCA Calculation] Sending data:', lcaData);
+
+      // Call LCA calculation API
+      const response = await calculateLCA(lcaData);
+
+      if (response.success) {
+        console.log('✅ [LCA Calculation] Success:', response.data);
+
+        // Show success toast
+        const summary = response.data.summary;
+        toast.success('✅ LCA Analysis Report Generated Successfully!', {
+          description: `Circularity Score: ${summary.circularityScore?.toFixed(1)}% | Energy: ${summary.totalEnergy?.toFixed(2)} MJ | CO₂: ${summary.totalCO2?.toFixed(2)} kg`,
+          duration: 8000,
+        });
+
+        // Auto-download the report
+        setTimeout(() => {
+          downloadLCAReport(response.data.pdfUrl, response.data.pdfFilename);
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('❌ [LCA Calculation] Error:', error);
+      
+      toast.error(error.message || "Failed to calculate LCA score. Please try again.");
+    } finally {
+      setCalculatingLCA(false);
+    }
+  };
+
   // Handle AI Prediction
   const handleGenerateAIPrediction = async (stepName, currentFormData) => {
     console.log('🤖 [AI Prediction] Button clicked for step:', stepName);
@@ -1287,6 +1586,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.mining}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('mining', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
           />
         );
       case 'beneficiation':
@@ -1298,6 +1599,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.beneficiation}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('beneficiation', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
           />
         );
       case 'refining':
@@ -1309,6 +1612,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.refining}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('refining', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
           />
         );
       case 'smelting':
@@ -1320,6 +1625,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.smelting}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('smelting', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
           />
         );
       case 'manufacturing':
@@ -1331,6 +1638,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.manufacturing}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('manufacturing', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
           />
         );
       case 'recycling':
@@ -1342,6 +1651,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.recycling}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('recycling', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
           />
         );
       case 'valorization':
@@ -1353,6 +1664,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.valorization}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('valorization', data)}
             predicting={predicting}
+            onCalculateLCA={handleCalculateLCA}
+            calculatingLCA={calculatingLCA}
             onSubmitSuccess={async () => {
               setCompleted(true)
               // Auto-submit workflow after Step 7 completion
@@ -1451,7 +1764,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const processOptions = [
     { id: 'crushing', label: 'Crushing' },
     { id: 'clarification', label: 'Clarification (separating alumina liquor from red mud)' },
@@ -1737,12 +2050,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                   ease: "easeInOut",
                 }}
               >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
+                <Button type="button" className="bg-[#ef5350] hover:bg-[#e57373] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onCalculateLCA(form.getValues())} disabled={calculatingLCA}>{calculatingLCA ? 'Calculating...' : 'Calculate LCA Score'}</Button>
               </motion.div>
               <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
                 clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
@@ -1762,7 +2070,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const processOptions = [
     { id: 'pre_baking_anodes', label: 'Pre-baking anodes (heat treatment)' },
     { id: 'anode_effect_control', label: 'Anode effect control (stability maintenance)' },
@@ -2042,12 +2350,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                   ease: "easeInOut",
                 }}
               >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
+                <Button type="button" className="bg-[#ef5350] hover:bg-[#e57373] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onCalculateLCA(form.getValues())} disabled={calculatingLCA}>{calculatingLCA ? 'Calculating...' : 'Calculate LCA Score'}</Button>
               </motion.div>
               <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
                 clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
@@ -2067,7 +2370,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const processOptions = [
     { id: 'casting', label: 'Casting (ingots, billets - high-temperature energy)' },
     { id: 'extrusion', label: 'Extrusion (tubes, profiles - efficient shaping)' },
@@ -2425,12 +2728,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   ease: "easeInOut",
                 }}
               >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
+                <Button type="button" className="bg-[#ef5350] hover:bg-[#e57373] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onCalculateLCA(form.getValues())} disabled={calculatingLCA}>{calculatingLCA ? 'Calculating...' : 'Calculate LCA Score'}</Button>
               </motion.div>
               <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
                 clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
@@ -2450,7 +2748,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const processOptions = [
     { id: 'collection', label: 'Collection (scrap gathering – manual or automated)' },
     { id: 'cleaning', label: 'Cleaning (removal of coatings, oils)' },
@@ -2818,12 +3116,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                   ease: "easeInOut",
                 }}
               >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
+                <Button type="button" className="bg-[#ef5350] hover:bg-[#e57373] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onCalculateLCA(form.getValues())} disabled={calculatingLCA}>{calculatingLCA ? 'Calculating...' : 'Calculate LCA Score'}</Button>
               </motion.div>
               <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
                 clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
@@ -2843,7 +3136,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, onCalculateLCA, calculatingLCA }) {
   const wasteTypeOptions = [
     { id: 'red_mud', label: 'Red Mud (iron, titanium, rare earths)' },
     { id: 'spl', label: 'Spent Pot Lining (SPL – hazardous cyanide, fluoride)' },
@@ -3441,4 +3734,7 @@ function StepForm({ stepKey, stepTitle, values, onChange, miningOptions }) {
     </Card>
   )
 }
+
+
+
 
