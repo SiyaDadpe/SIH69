@@ -169,7 +169,7 @@ const ExportModal = ({ open, onClose, report, initialFormat = 'pdf' }) => {
             <div className="relative w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
                 <button
                     type="button"
-                    className="absolute right-4 top-4 rounded-full p-2 text-[#6b5b59] transition-colors hover:bg-[#F3F2EC] hover:text-[#3d3635]"
+                    className="absolute right-4 top-4 rounded-full p-2 text-[#6b5b59] transition-colors hover:bg-[#BA7967] hover:text-[#3d3635]"
                     onClick={onClose}
                     aria-label="Close export modal"
                 >
@@ -199,7 +199,7 @@ const ExportModal = ({ open, onClose, report, initialFormat = 'pdf' }) => {
                                         'flex items-center gap-2 border-[#BA7967]/40 text-sm',
                                         activeFormat === tab.key
                                             ? 'bg-[#BA7967] text-white hover:bg-[#3d3635]'
-                                            : 'text-[#3d3635] hover:bg-[#F3F2EC]'
+                                            : 'text-[#3d3635] hover:bg-[#BA7967]'
                                     )}
                                     onClick={() => setActiveFormat(tab.key)}
                                     disabled={isExporting}
@@ -358,7 +358,7 @@ const ExportModal = ({ open, onClose, report, initialFormat = 'pdf' }) => {
                             <Button
                                 type="button"
                                 variant="ghost"
-                                className="text-[#3d3635] hover:bg-[#F3F2EC]"
+                                className="text-[#3d3635] hover:bg-[#BA7967]"
                                 onClick={onClose}
                                 disabled={isExporting}
                             >

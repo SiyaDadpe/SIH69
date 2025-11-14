@@ -402,7 +402,7 @@ const ReportCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] text-xs h-8"
+            className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967] text-xs h-8"
             onClick={() => handleQuickAction('View report')}
           >
             <Eye className="h-3.5 w-3.5 mr-1.5" />
@@ -413,7 +413,7 @@ const ReportCard = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] text-xs h-8"
+                className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967] text-xs h-8"
                 disabled={!resolvedPolicy.canExport}
                 title={!resolvedPolicy.canExport ? `Exports are disabled for ${statusConfig.label} reports.` : undefined}
               >
@@ -441,7 +441,7 @@ const ReportCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] disabled:cursor-not-allowed disabled:opacity-60 text-xs h-8"
+            className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967] disabled:cursor-not-allowed disabled:opacity-60 text-xs h-8"
             onClick={() => handleQuickAction('Compare reports', 'canCompare')}
             disabled={!resolvedPolicy.canCompare}
             title={!resolvedPolicy.canCompare ? `Compare is unavailable while this report is ${statusConfig.label.toLowerCase()}.` : undefined}
@@ -454,7 +454,7 @@ const ReportCard = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC] text-xs h-8"
+                className="flex-1 border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967] text-xs h-8"
               >
                 <MoreHorizontal className="h-3.5 w-3.5 mr-1.5" />
                 More
