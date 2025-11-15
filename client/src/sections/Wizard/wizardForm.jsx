@@ -5,13 +5,6 @@ import * as z from "zod";
 import { motion } from "framer-motion";
 import miningData from "@/data/mining.json";
 import beneficiationData from "@/data/beneficiation.json";
-import Step1 from "@/sections/Wizard/step1";
-import Step2 from "@/sections/Wizard/step2";
-import Step3 from "@/sections/Wizard/step3";
-import Step4 from "@/sections/Wizard/step4";
-import Step5 from "@/sections/Wizard/step5";
-import Step6 from "@/sections/Wizard/step6";
-import Step7 from "@/sections/Wizard/step7";
 import { 
   updateMiningStep, 
   updateBeneficiationStep, 
@@ -115,7 +108,7 @@ const miningProcesses = [
   { id: "manual", label: "Manual Extraction" },
   { id: "electricShovel", label: "Electric Shovel / Excavator" },
   { id: "dieselHaul", label: "Diesel-powered Haul Trucks" },
-  { id: "inSitu", label: "In-situ Leaching (ISL)" },
+  { id: "inSitu", label: "In-situ Leaching (experimental)" },
   { id: "others", label: "Others" },
 ];
 
@@ -1288,7 +1281,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     switch(stepKey) {
       case 'mining':
         return (
-          <Step1
+          <MiningProcessDetails
             onNext={handleNext}
             onSave={(data) => handleSaveStep('mining', data)}
             initialValues={formValues.mining}
@@ -1298,7 +1291,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'beneficiation':
         return (
-          <Step2
+          <BeneficiationDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('beneficiation', data)}
@@ -1309,7 +1302,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'refining':
         return (
-          <Step3
+          <RefiningDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('refining', data)}
@@ -1320,7 +1313,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'smelting':
         return (
-          <Step4
+          <SmeltingDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('smelting', data)}
@@ -1331,7 +1324,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'manufacturing':
         return (
-          <Step5
+          <ManufacturingDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('manufacturing', data)}
@@ -1342,7 +1335,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'recycling':
         return (
-          <Step6
+          <RecyclingDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('recycling', data)}
@@ -1353,7 +1346,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'valorization':
         return (
-          <Step7
+          <ValorizationDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('valorization', data)}

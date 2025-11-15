@@ -884,7 +884,7 @@ const Reports = () => {
                                     'px-4 py-2 text-sm font-medium transition-colors',
                                     activeTab === tab
                                         ? 'bg-[#BA7967] text-white hover:bg-[#3d3635]'
-                                        : 'text-[#3d3635] hover:bg-[#BA7967]'
+                                        : 'text-[#3d3635] hover:bg-[#F3F2EC]'
                                 )}
                             >
                                 {tab}
@@ -894,7 +894,7 @@ const Reports = () => {
 
                     <div className="flex flex-wrap items-center gap-2">
                         <Select value={sortOption} onValueChange={setSortOption}>
-                            <SelectTrigger className="min-w-[180px] border-[#BA7967]/40 text-left text-[#3d3635] hover:bg-[#BA7967]">
+                            <SelectTrigger className="min-w-[180px] border-[#BA7967]/40 text-left text-[#3d3635] hover:bg-[#F3F2EC]">
                                 <SelectValue placeholder="Sort by" />
                             </SelectTrigger>
                             <SelectContent align="end">
@@ -910,7 +910,7 @@ const Reports = () => {
                             variant="ghost"
                             size="icon"
                             className={cn(
-                                'text-[#3d3635] hover:bg-[#BA7967]',
+                                'text-[#3d3635] hover:bg-[#F3F2EC]',
                                 viewMode === 'grid' && 'bg-[#BA7967]/10'
                             )}
                             onClick={() => setViewMode('grid')}
@@ -922,7 +922,7 @@ const Reports = () => {
                             variant="ghost"
                             size="icon"
                             className={cn(
-                                'text-[#3d3635] hover:bg-[#BA7967]',
+                                'text-[#3d3635] hover:bg-[#F3F2EC]',
                                 viewMode === 'list' && 'bg-[#BA7967]/10'
                             )}
                             onClick={() => setViewMode('list')}
@@ -932,7 +932,7 @@ const Reports = () => {
                         </Button>
                         <Button
                             variant="outline"
-                            className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                            className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                             onClick={() => setShowFilters((prev) => !prev)}
                         >
                             <Filter className="h-4 w-4" />
@@ -1100,7 +1100,7 @@ const Reports = () => {
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="outline"
-                                        className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                                        className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                                         onClick={handlePrevPage}
                                         disabled={currentPage === 1}
                                     >
@@ -1108,7 +1108,7 @@ const Reports = () => {
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                                        className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                                         onClick={handleNextPage}
                                         disabled={currentPage === totalPages}
                                     >
@@ -1134,10 +1134,10 @@ const Reports = () => {
                             <Button className="justify-start bg-[#BA7967] text-white hover:bg-[#3d3635]">
                                 Launch Wizard
                             </Button>
-                            <Button variant="outline" className="justify-start border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]">
+                            <Button variant="outline" className="justify-start border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]">
                                 Upload External Report
                             </Button>
-                            <Button variant="outline" className="justify-start border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]">
+                            <Button variant="outline" className="justify-start border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]">
                                 Schedule Review Session
                             </Button>
                         </CardContent>
