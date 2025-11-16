@@ -6,27 +6,6 @@
 import api from './api';
 
 /**
- * Clear all wizard and application data from localStorage
- * This ensures a fresh state for each login session
- */
-const clearWizardData = () => {
-  // Clear wizard workflow
-  localStorage.removeItem('currentWizardWorkflowId');
-  localStorage.removeItem('userId');
-  
-  // Clear canvas state
-  localStorage.removeItem('canvasStateRF');
-  
-  // Clear report filters
-  const reportKeys = Object.keys(localStorage).filter(key => 
-    key.startsWith('reportFilters_') || key === 'defaultReportFilter'
-  );
-  reportKeys.forEach(key => localStorage.removeItem(key));
-  
-  console.log('🧹 Wizard and application data cleared');
-};
-
-/**
  * Register a new user
  * @param {Object} userData - User registration data
  * @param {string} userData.name - Full name
@@ -38,9 +17,6 @@ const clearWizardData = () => {
  */
 export const register = async (userData) => {
   try {
-    // Clear any existing wizard/application data before registration
-    clearWizardData();
-    
     const response = await api.post('/auth/register', userData);
     
     // Store tokens in sessionStorage (clears on browser close)
@@ -48,8 +24,6 @@ export const register = async (userData) => {
       sessionStorage.setItem('accessToken', response.data.data.accessToken);
       sessionStorage.setItem('refreshToken', response.data.data.refreshToken);
       sessionStorage.setItem('user', JSON.stringify(response.data.data.user));
-      
-      console.log('✅ User registered successfully with fresh session');
     }
     
     return response.data;
@@ -80,9 +54,6 @@ export const register = async (userData) => {
  */
 export const login = async (credentials) => {
   try {
-    // Clear any existing wizard/application data from previous sessions
-    clearWizardData();
-    
     const response = await api.post('/auth/login', credentials);
     
     // Store tokens in sessionStorage (clears on browser close)
@@ -90,8 +61,6 @@ export const login = async (credentials) => {
       sessionStorage.setItem('accessToken', response.data.data.accessToken);
       sessionStorage.setItem('refreshToken', response.data.data.refreshToken);
       sessionStorage.setItem('user', JSON.stringify(response.data.data.user));
-      
-      console.log('✅ User logged in successfully with fresh session');
     }
     
     return response.data;
@@ -115,21 +84,12 @@ export const login = async (credentials) => {
 
 /**
  * Logout user
- * Clears all stored tokens, user data, and application state
+ * Clears all stored tokens and user data
  */
 export const logout = () => {
-  // Clear session storage (auth tokens and user data)
   sessionStorage.removeItem('accessToken');
   sessionStorage.removeItem('refreshToken');
   sessionStorage.removeItem('user');
-  
-  // Clear localStorage wizard and application data
-  clearWizardData();
-  
-  console.log('✅ User logged out - all session data cleared');
-  
-  // Redirect to login page
-  window.location.href = '/login';
 };
 
 /**

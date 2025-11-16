@@ -143,7 +143,6 @@ const canvasRoutes = require('./routes/canvasRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const wizardRoutes = require('./routes/wizardRoutes');
 const exportRoutes = require('./routes/exportRoutes');
-const lcaRoutes = require('./routes/lcaRoutes');
 
 app.use('/api/projects', projectRoutes);
 app.use('/api/dashboard', dashboardRoutes);
@@ -154,7 +153,6 @@ app.use('/api/canvas', canvasRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/wizard', wizardRoutes);
 app.use('/api/export', exportRoutes);
-app.use('/api/lca', lcaRoutes);
 
 // Serve uploaded files (mounted at root level for /uploads/:filename route)
 app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));
