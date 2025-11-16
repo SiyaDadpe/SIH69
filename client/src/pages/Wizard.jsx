@@ -1,7 +1,10 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import WizardForm from "@/sections/Wizard/wizardForm"
+import CopperWizardForm from "@/sections/Wizard/wizardForm-cu"
 import ProgressTracker from "@/sections/Wizard/progressTracker"
+import ProgressTrackerCopper from "@/sections/Wizard/progressTracker-cu"
+import MetalSelection from "@/components/MetalSelection"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react"
 import {
@@ -14,6 +17,7 @@ import {
 export default function Wizard() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const [selectedMetal, setSelectedMetal] = useState(null)
   
   const steps = useMemo(() => [
     { title: "Mining", description: "Extract raw materials from ore deposits", key: "mining" },
@@ -25,9 +29,20 @@ export default function Wizard() {
     { title: "Valorization", description: "Create value from by-products and waste", key: "valorization" },
   ], [])
 
+  const copperSteps = useMemo(() => [
+    { title: "Mining", description: "Extract raw materials from ore deposits", key: "mining" },
+    { title: "Beneficiation", description: "Process and concentrate the ore", key: "beneficiation" },
+    { title: "Extraction", description: "Select copper extraction routes and parameters", key: "refining" },
+    { title: "Manufacturing", description: "Transform refined copper into products", key: "manufacturing" },
+    { title: "Use Phase", description: "Monitor copper performance during product use", key: "usePhase" },
+    { title: "Recycling", description: "Recover and reprocess copper waste", key: "recycling" },
+    { title: "Valorization", description: "Create value from by-products and residues", key: "valorization" },
+  ], [])
+
   const [activeStep, setActiveStep] = useState(0)
   const [workflowId, setWorkflowId] = useState(null)
   const [workflowData, setWorkflowData] = useState(null)
+  const [projectBrief, setProjectBrief] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -44,6 +59,7 @@ export default function Wizard() {
       console.log('📂 Loading existing workflow:', id);
       loadWorkflow(id).then(() => {
         setIsInitialized(true)
+        // Metal type will be set from loadWorkflow based on workflow.metalType
       });
     } else {
       // Check if we have a workflow ID in localStorage to reuse
@@ -53,43 +69,42 @@ export default function Wizard() {
         // Verify the workflow exists before navigating
         loadWorkflow(savedWorkflowId).then(() => {
           setIsInitialized(true);
+          // Metal type will be set from loadWorkflow based on workflow.metalType
         }).catch(() => {
-          // If loading fails, clear localStorage and create new workflow
-          console.warn('⚠️ Saved workflow invalid, creating new one');
+          // If loading fails, clear localStorage - show metal selection
+          console.warn('⚠️ Saved workflow invalid, showing metal selection');
           localStorage.removeItem('currentWizardWorkflowId');
-          initializeWorkflow().then(() => {
-            setIsInitialized(true);
-          });
-        });
-      } else {
-        // Auto-create workflow if no ID present
-        console.log('🆕 No existing workflow, creating new one...');
-        initializeWorkflow().then(() => {
           setIsInitialized(true);
         });
+      } else {
+        // Show metal selection screen
+        console.log('🆕 No existing workflow, showing metal selection...');
+        setIsInitialized(true);
       }
     }
   }, [searchParams, isInitialized])
 
-  const initializeWorkflow = async () => {
+  const initializeWorkflow = async (metalType = 'Aluminium', projectMeta = null) => {
     // Prevent duplicate calls
     if (loading || workflowId) {
       console.log('⏭️ Skipping workflow creation - already in progress or exists');
       return;
     }
     
-    console.log('🆕 Creating new wizard workflow...');
+    console.log('🆕 Creating new wizard workflow for:', metalType);
     setLoading(true)
     setError(null)
     try {
       // Get userId from localStorage or auth context
       const userId = localStorage.getItem('userId') || '68f5f9e48a8acc3f27b21ad0'
+      const projectName = projectMeta?.projectName?.trim()
+      const projectDescription = projectMeta?.projectDescription?.trim()
       
       const response = await createWizardWorkflow({
-        name: `LCA Wizard - ${new Date().toLocaleDateString()}`,
-        metalType: 'Aluminium',
+        name: projectName || `LCA Wizard - ${metalType} - ${new Date().toLocaleDateString()}`,
+        metalType: metalType,
         userId: userId,
-        description: 'Wizard-based lifecycle assessment',
+        description: projectDescription || `Wizard-based lifecycle assessment for ${metalType}`,
       })
 
       if (response.success && response.data?.workflow) {
@@ -136,6 +151,15 @@ export default function Wizard() {
         setWorkflowId(id)
         setWorkflowData(response.data.workflow)
         
+        // Set metal type from loaded workflow
+        const metalType = response.data.workflow.metalType;
+        let workflowMetal = 'aluminum';
+        if (metalType) {
+          workflowMetal = metalType.toLowerCase() === 'copper' ? 'copper' : 'aluminum';
+          setSelectedMetal(workflowMetal);
+          console.log('🎯 Metal type from workflow:', workflowMetal);
+        }
+        
         // Save valid workflow to localStorage
         localStorage.setItem('currentWizardWorkflowId', id);
         
@@ -146,7 +170,8 @@ export default function Wizard() {
         
         // Set active step based on workflow progress
         const completedCount = response.data.workflow.completedSteps?.length || 0
-        setActiveStep(Math.min(completedCount, steps.length - 1))
+        const workflowStepsConfig = workflowMetal === 'copper' ? copperSteps : steps
+        setActiveStep(Math.min(completedCount, workflowStepsConfig.length - 1))
       }
     } catch (err) {
       console.error('❌ Error loading workflow:', err);
@@ -221,6 +246,28 @@ export default function Wizard() {
   const isCompleted = completionPercentage === 100
   const isSubmitted = workflowData?.status === 'submitted'
 
+  // Handle metal selection
+  const handleMetalSelection = (selection) => {
+    const metalType = typeof selection === 'string' ? selection : selection?.metal;
+    if (!metalType) return;
+
+    console.log('🎯 Metal selected:', metalType, selection);
+
+    if (selection && typeof selection === 'object' && selection.mode === 'create') {
+      setProjectBrief({
+        name: selection.projectName,
+        description: selection.projectDescription,
+      });
+    } else {
+      setProjectBrief(null);
+    }
+
+    setSelectedMetal(metalType);
+    const normalizedMetal = metalType === 'aluminum' ? 'Aluminium' : 'Copper';
+    const projectMeta = selection && typeof selection === 'object' ? selection : null;
+    initializeWorkflow(normalizedMetal, projectMeta);
+  }
+
   // Handle workflow update from each step
   const handleWorkflowUpdate = (updatedWorkflow) => {
     console.log('📊 [Wizard Page] Workflow updated:', updatedWorkflow);
@@ -244,6 +291,11 @@ export default function Wizard() {
     setTimeout(() => {
       navigate('/dashboard');
     }, 2000);
+  }
+
+  // Show metal selection if no metal is selected and no workflow exists
+  if (!selectedMetal && !workflowId) {
+    return <MetalSelection onSelect={handleMetalSelection} />;
   }
 
   return (
@@ -285,6 +337,14 @@ export default function Wizard() {
                 Progress: {completionPercentage}% • Status: <span className="font-medium capitalize">{workflowData.status}</span>
               </p>
             )}
+            {projectBrief && (
+              <div className="mt-1 text-sm text-gray-600">
+                Project: <span className="font-semibold text-gray-900">{projectBrief.name}</span>
+                {projectBrief.description && (
+                  <span className="text-gray-500"> — {projectBrief.description}</span>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
@@ -294,9 +354,12 @@ export default function Wizard() {
                 onClick={() => {
                   if (confirm('Are you sure you want to start a new workflow? Current progress will be saved but you will create a new workflow.')) {
                     localStorage.removeItem('currentWizardWorkflowId');
-                    console.log('🗑️ Cleared workflow ID - will create new one');
+                    setSelectedMetal(null);
+                    setWorkflowId(null);
+                    setWorkflowData(null);
+                    setProjectBrief(null);
+                    console.log('🗑️ Cleared workflow - returning to metal selection');
                     navigate('/wizard', { replace: true });
-                    window.location.reload();
                   }
                 }}
                 variant="outline"
@@ -336,22 +399,45 @@ export default function Wizard() {
         </div>
       ) : (
         <>
-          <WizardForm 
-            steps={steps} 
-            activeStep={activeStep} 
-            onStepChange={setActiveStep}
-            workflowId={workflowId}
-            workflowData={workflowData}
-            onWorkflowUpdate={handleWorkflowUpdate}
-            onWorkflowSubmitted={handleWorkflowSubmitted}
-          />
-          <ProgressTracker 
-            steps={steps} 
-            currentStep={activeStep} 
-            onStepClick={setActiveStep}
-            completedSteps={workflowData?.completedSteps || []}
-            completionPercentage={completionPercentage}
-          />
+          {selectedMetal === 'copper' ? (
+            <>
+              <CopperWizardForm 
+                steps={copperSteps} 
+                activeStep={activeStep} 
+                onStepChange={setActiveStep}
+                workflowId={workflowId}
+                workflowData={workflowData}
+                onWorkflowUpdate={handleWorkflowUpdate}
+                onWorkflowSubmitted={handleWorkflowSubmitted}
+              />
+              <ProgressTrackerCopper 
+                steps={copperSteps} 
+                currentStep={activeStep} 
+                onStepClick={setActiveStep}
+                completedSteps={workflowData?.completedSteps || []}
+                completionPercentage={completionPercentage}
+              />
+            </>
+          ) : (
+            <>
+              <WizardForm 
+                steps={steps} 
+                activeStep={activeStep} 
+                onStepChange={setActiveStep}
+                workflowId={workflowId}
+                workflowData={workflowData}
+                onWorkflowUpdate={handleWorkflowUpdate}
+                onWorkflowSubmitted={handleWorkflowSubmitted}
+              />
+              <ProgressTracker 
+                steps={steps} 
+                currentStep={activeStep} 
+                onStepClick={setActiveStep}
+                completedSteps={workflowData?.completedSteps || []}
+                completionPercentage={completionPercentage}
+              />
+            </>
+          )}
         </>
       )}
     </div>
