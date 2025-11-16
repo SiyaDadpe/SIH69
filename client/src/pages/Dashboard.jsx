@@ -227,6 +227,7 @@ const Dashboard = () => {
   // Quick Actions data - keeping Wizard and Canvas separate for clarity
   const actions = [
     {
+      id: 'wizard',
       icon: Wand2,
       label: 'Open Wizard',
       path: '/wizard',
@@ -234,6 +235,7 @@ const Dashboard = () => {
       hoverColor: 'hover:bg-[#3d3635]'
     },
     {
+      id: 'canvas',
       icon: Grid3x3,
       label: 'Go to Canvas',
       path: '/canvas',
@@ -241,6 +243,7 @@ const Dashboard = () => {
       hoverColor: 'hover:bg-[#3d3635]'
     },
     {
+      id: 'reports',
       icon: BarChart3,
       label: 'Generate Report',
       path: '/reports',
@@ -252,6 +255,7 @@ const Dashboard = () => {
   // KPIs data
   const kpis = [
     {
+      id: 'total-projects',
       icon: FolderOpen,
       label: 'Total Projects',
       value: dashboardData.kpis?.totalProjects || 0,
@@ -261,6 +265,7 @@ const Dashboard = () => {
       iconColor: 'text-[#BA7967]'
     },
     {
+      id: 'average-circularity',
       icon: Recycle,
       label: 'Average Circularity',
       value: `${(dashboardData.kpis?.averageCircularityScore || 0).toFixed(1)}%`,
@@ -270,6 +275,7 @@ const Dashboard = () => {
       iconColor: 'text-[#6b5b59]'
     },
     {
+      id: 'total-co2-saved',
       icon: Leaf,
       label: 'Total CO₂ Saved',
       value: `${(dashboardData.kpis?.totalCO2Saved || 0).toLocaleString()} kg`,
@@ -348,9 +354,9 @@ const Dashboard = () => {
             <Card className="p-4 sm:p-6 bg-[#F3F2EC]">
               <h2 className="text-lg sm:text-xl font-bold text-[#181814] mb-4 sm:mb-6">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {actions.map((action, index) => (
+                {actions.map((action) => (
                   <Link
-                    key={index}
+                    key={action.id}
                     to={action.path}
                     className={`${action.color} ${action.hoverColor} text-white rounded-lg p-3 sm:p-6 flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all duration-200 transform hover:scale-105 hover:shadow-lg group`}
                   >
@@ -518,8 +524,8 @@ const Dashboard = () => {
         {/* Row 3: KPIs - Section D */}
         <div>
           <div className={`grid gap-4 sm:gap-6 ${sidebarOpen ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
-            {kpis.map((kpi, index) => (
-              <Card key={index} className="p-4 sm:p-6 bg-[#F3F2EC] hover:bg-white/50 transition-colors duration-200">
+            {kpis.map((kpi) => (
+              <Card key={kpi.id} className="p-4 sm:p-6 bg-[#F3F2EC] hover:bg-white/50 transition-colors duration-200">
                 <div className="flex items-start justify-between mb-4">
                   <div className={`p-3 rounded-lg ${kpi.color}`}>
                     <kpi.icon className={`w-6 h-6 ${kpi.iconColor}`} />
