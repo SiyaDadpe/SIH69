@@ -170,21 +170,8 @@ export default function Wizard() {
     } catch (err) {
       console.error('❌ Error loading workflow:', err);
       
-      // Check if it's a timeout error
-      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        console.warn('⏱️ Workflow loading timed out. Creating a new one...');
-        
-        // Clear the potentially corrupted workflow ID from localStorage
-        localStorage.removeItem('currentWizardWorkflowId');
-        
-        // Create a new workflow
-        setError(null); // Clear error before creating new workflow
-        setLoading(false); // Reset loading state before calling initializeWorkflow
-        await initializeWorkflow();
-        shouldRethrow = true;
-      }
       // Check if it's a 404 error (workflow not found)
-      else if (err.response?.status === 404) {
+      if (err.response?.status === 404) {
         console.warn('⚠️ Workflow not found in database. Creating a new one...');
         
         // Clear the invalid workflow ID from localStorage
@@ -195,21 +182,7 @@ export default function Wizard() {
         setLoading(false); // Reset loading state before calling initializeWorkflow
         await initializeWorkflow();
         shouldRethrow = true;
-      } 
-      // Check if it's a network error
-      else if (err.message === 'Network Error' || !err.response) {
-        console.warn('🌐 Network error. Creating a new workflow...');
-        
-        // Clear the workflow ID from localStorage
-        localStorage.removeItem('currentWizardWorkflowId');
-        
-        // Create a new workflow
-        setError(null);
-        setLoading(false);
-        await initializeWorkflow();
-        shouldRethrow = true;
-      }
-      else {
+      } else {
         setError('Failed to load workflow: ' + (err.response?.data?.message || err.message))
         shouldRethrow = true;
       }

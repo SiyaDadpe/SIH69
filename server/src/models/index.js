@@ -20,7 +20,6 @@ const CanvasWorkflow = require('./CanvasWorkflow');
 const Report = require('./Report');
 const WizardWorkflow = require('./WizardWorkflow');
 const WizardWorkflowOutput = require('./WizardWorkflowOutput');
-const CalculateLCA = require('./CalculateLCA');
 
 module.exports = {
   User,
@@ -32,6 +31,5 @@ module.exports = {
   CanvasWorkflow,
   Report,
   WizardWorkflow,
-  WizardWorkflowOutput,
-  CalculateLCA
+  WizardWorkflowOutput
 };
