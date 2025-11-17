@@ -11,8 +11,10 @@ import ReactFlow, {
   Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Plus,
   Trash2,
@@ -48,6 +50,9 @@ import {
   Building2,
   TrendingDown,
   Sparkle,
+  FolderOpen,
+  ChevronDown,
+  ChevronUp,
   Link,
   Eraser,
   Box,
@@ -70,6 +75,8 @@ const palette = {
   neutralDarkText: '#5E5248',
   neutralLightText: '#836F62',
 };
+
+const CANVAS_PROJECT_STORAGE_KEY = 'canvasProjectSummary';
 
 const processIcons = {
   openPitMining: Pickaxe,
@@ -207,6 +214,72 @@ function CanvasFlow() {
   const [rightSidebarWidth, setRightSidebarWidth] = useState(320);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
+  const [projectSummary, setProjectSummary] = useState(null);
+  const [projectNameInput, setProjectNameInput] = useState('');
+  const [projectDescriptionInput, setProjectDescriptionInput] = useState('');
+  const [openProjectsExpanded, setOpenProjectsExpanded] = useState(false);
+  const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const cached = localStorage.getItem(CANVAS_PROJECT_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setProjectSummary(parsed);
+        setProjectNameInput(parsed?.name || '');
+        setProjectDescriptionInput(parsed?.description || '');
+        if (parsed?.metal) {
+          setSelectedMetal(parsed.metal);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load canvas project summary', error);
+    }
+  }, []);
+
+  const handleProjectDetailsSubmit = (event) => {
+    event.preventDefault();
+    if (!projectNameInput.trim()) return;
+    const payload = {
+      name: projectNameInput.trim(),
+      description: projectDescriptionInput.trim(),
+      metal: selectedMetal,
+      updatedAt: new Date().toISOString(),
+    };
+    setProjectSummary(payload);
+    try {
+      localStorage.setItem(CANVAS_PROJECT_STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('Unable to persist canvas project summary', error);
+    }
+  };
+
+  const clearProjectSummary = () => {
+    setProjectSummary(null);
+    setProjectNameInput('');
+    setProjectDescriptionInput('');
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(CANVAS_PROJECT_STORAGE_KEY);
+      }
+    } catch (error) {
+      console.warn('Unable to clear canvas project summary', error);
+    }
+  };
+
+  const recentProjects = useMemo(() => {
+    if (projectSummary?.name) {
+      return [projectSummary];
+    }
+    return [];
+  }, [projectSummary]);
+
+  useEffect(() => {
+    if (projectSummary?.name) {
+      setShowWelcomeOverlay(false);
+    }
+  }, [projectSummary]);
 
   // COPPER FORM DEFAULTS - COMPREHENSIVE
   const copperMiningDefaults = useMemo(() => ({
@@ -2294,14 +2367,226 @@ function CanvasFlow() {
   };
 
   return (
-    <div className="flex h-screen bg-white">
-      {/* LEFT SIDEBAR */}
-      {leftSidebarOpen && (
-        <div
-          className="shrink-0 border-r overflow-y-auto"
-          style={{ width: `${leftSidebarWidth}px`, backgroundColor: palette.sidebar, borderColor: palette.border }}
+    <div className="min-h-screen bg-white flex flex-col relative">
+      <AnimatePresence>
+        {showWelcomeOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.97 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="w-full max-w-5xl rounded-4xl bg-white shadow-2xl border border-[#efe4d5]"
+            >
+              <div className="flex flex-col gap-3 border-b border-[#f2e7da] px-8 pt-8 pb-6 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-[#c27a5f] font-semibold">Canvas starter</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mt-1">How would you like to continue?</h1>
+                  <p className="text-gray-600 mt-2 max-w-2xl">
+                    Launch a fresh canvas or reopen one of your local drafts. Everything here stays in your browser until you
+                    connect a backend.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    className="text-gray-600 hover:text-gray-900"
+                    onClick={() => setShowWelcomeOverlay(false)}
+                  >
+                    Skip for now
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-8 px-8 py-8 lg:grid-cols-2">
+                <div className="rounded-3xl border border-[#f2e7da] bg-linear-to-br from-white to-[#fff8ed] p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.4em] text-[#c27a5f] font-semibold">Create</p>
+                      <CardTitle className="text-3xl">New canvas</CardTitle>
+                    </div>
+                    <span className="text-sm font-medium text-[#c27a5f]">Guided flow</span>
+                  </div>
+                  <CardDescription className="text-base text-gray-600 mb-6">
+                    Name your canvas and jot down a short purpose. We'll pin it to this workspace and keep the context ready for
+                    you.
+                  </CardDescription>
+                  <form className="space-y-5" onSubmit={handleProjectDetailsSubmit}>
+                    <div className="space-y-2">
+                      <label htmlFor="canvas-project-name" className="text-sm font-medium text-gray-700">
+                        Project name
+                      </label>
+                      <Input
+                        id="canvas-project-name"
+                        placeholder="Lifecycle retrofit blueprint"
+                        value={projectNameInput}
+                        onChange={(e) => setProjectNameInput(e.target.value)}
+                        className="h-12 text-base"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="canvas-project-description" className="text-sm font-medium text-gray-700">
+                        Description
+                      </label>
+                      <textarea
+                        id="canvas-project-description"
+                        rows={4}
+                        placeholder="Interactive canvas used during the valorization pilot."
+                        value={projectDescriptionInput}
+                        onChange={(e) => setProjectDescriptionInput(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 px-4 py-3 text-base text-gray-800 transition"
+                      />
+                    </div>
+                    <div className="rounded-2xl border border-dashed border-[#e7d7c5] bg-white/80 p-4 text-sm text-gray-700">
+                      We'll auto-save these details locally and surface them inside the recent projects panel.
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!projectNameInput.trim()}
+                      className="w-full h-12 text-base font-semibold bg-[#c17a64] text-white hover:bg-[#a8654d] disabled:bg-gray-300 disabled:text-gray-500"
+                    >
+                      Pin to canvas
+                    </Button>
+                  </form>
+                </div>
+
+                <div className="rounded-3xl border border-[#f2e7da] bg-white/90 p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-2xl bg-[#fcefe3] text-[#c27a5f] shadow">
+                        <FolderOpen className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.4em] text-[#c27a5f] font-semibold">Open</p>
+                        <h3 className="text-3xl font-semibold text-gray-900">Recent drafts</h3>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-[#c27a5f]">
+                      {recentProjects.length ? `${recentProjects.length} saved` : 'Coming soon'}
+                    </span>
+                  </div>
+
+                  <div className="rounded-3xl border border-dashed border-[#ead9cc] bg-white/80 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setOpenProjectsExpanded((prev) => !prev)}
+                      className="w-full flex items-center justify-between px-6 py-4 text-left"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Local canvas drafts</p>
+                        <p className="text-xs text-gray-500">
+                          {recentProjects.length ? 'Tap to view your latest saved project' : 'No local drafts yet'}
+                        </p>
+                      </div>
+                      {openProjectsExpanded ? (
+                        <ChevronUp className="h-5 w-5 text-[#c27a5f]" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-[#c27a5f]" />
+                      )}
+                    </button>
+                    <div
+                      className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
+                    >
+                      <div className="px-6 pb-6 space-y-3 text-sm">
+                        {recentProjects.length ? (
+                          recentProjects.map((project) => {
+                            const savedAt = project.updatedAt
+                              ? new Date(project.updatedAt).toLocaleDateString()
+                              : 'Just now';
+                            return (
+                              <div
+                                key={`${project.name}-${project.updatedAt}`}
+                                className="rounded-2xl border border-dashed border-[#ead9cc] bg-white/80 px-4 py-3"
+                              >
+                                <p className="font-semibold text-gray-900">{project.name}</p>
+                                {project.description && (
+                                  <p className="text-gray-600 mt-1">{project.description}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-2">
+                                  <Sparkles className="h-3 w-3" />
+                                  Saved {savedAt}
+                                </p>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            Create a project on the left to populate this list.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 mt-6 text-base font-semibold border-dashed border-[#ead9cc] text-[#a5654d] bg-white"
+                    onClick={() => {
+                      setShowWelcomeOverlay(false);
+                      setLeftSidebarOpen(true);
+                    }}
+                  >
+                    Go to canvas library
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!showWelcomeOverlay && (
+        <button
+          type="button"
+          onClick={() => setShowWelcomeOverlay(true)}
+          className="fixed bottom-6 right-6 z-20 inline-flex items-center gap-2 rounded-full bg-[#c17a64] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#c17a64]/40 hover:bg-[#a8654d]"
         >
-          <div className="p-4">
+          <Sparkles className="h-4 w-4" />
+          Canvas starter
+        </button>
+      )}
+
+      {projectSummary?.name && (
+        <div className="px-6 pt-6">
+          <div className="max-w-4xl mx-auto rounded-3xl border border-[#f1e7da] bg-white px-6 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between shadow-sm">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-[#9a7a62] font-semibold">Active canvas</p>
+              <h3 className="text-2xl font-semibold text-gray-900 mt-1">{projectSummary.name}</h3>
+              {projectSummary.description && (
+                <p className="text-gray-600 mt-1">{projectSummary.description}</p>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="px-4 py-2 rounded-full bg-[#F7EFE5] text-sm font-semibold text-[#7d5d46]">
+                Last saved {projectSummary.updatedAt ? new Date(projectSummary.updatedAt).toLocaleString() : 'just now'}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-900"
+                onClick={clearProjectSummary}
+              >
+                Reset details
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+  <div className={`flex flex-1 min-h-0 ${projectSummary?.name ? 'mt-4' : ''}`}>
+        {/* LEFT SIDEBAR */}
+        {leftSidebarOpen && (
+          <div
+            className="shrink-0 border-r overflow-y-auto h-full"
+            style={{ width: `${leftSidebarWidth}px`, backgroundColor: palette.sidebar, borderColor: palette.border }}
+          >
+            <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold" style={{ color: palette.neutralDarkText }}>Metal LCA Canvas</h2>
               <button onClick={() => setLeftSidebarOpen(false)} className="p-1 hover:bg-gray-200 rounded">
@@ -2398,61 +2683,62 @@ function CanvasFlow() {
       )}
 
       {/* Resize Handle - Left */}
-      {leftSidebarOpen && (
-        <div
-          className="w-1 cursor-col-resize hover:bg-blue-500 transition-colors"
-          style={{ backgroundColor: palette.border }}
-          onMouseDown={handleMouseDownLeft}
-        />
-      )}
-
-      {/* MAIN CANVAS */}
-      <div className="flex-1 relative">
-        {!leftSidebarOpen && (
-          <button
-            onClick={() => setLeftSidebarOpen(true)}
-            className="absolute top-4 left-4 z-10 p-2 rounded-md shadow-md"
-            style={{ backgroundColor: palette.accent, color: '#FFFFFF' }}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+        {leftSidebarOpen && (
+          <div
+            className="w-1 cursor-col-resize hover:bg-blue-500 transition-colors"
+            style={{ backgroundColor: palette.border }}
+            onMouseDown={handleMouseDownLeft}
+          />
         )}
 
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onEdgeUpdate={onEdgeUpdate}
-          onEdgeUpdateStart={onEdgeUpdateStart}
-          onEdgeUpdateEnd={onEdgeUpdateEnd}
-          onNodeClick={onNodeClick}
-          nodeTypes={nodeTypes}
-          defaultEdgeOptions={defaultEdgeOptions}
-          fitView
-        >
-          <Background color={palette.border} />
-          <Controls />
-        </ReactFlow>
-      </div>
+        {/* MAIN CANVAS */}
+        <div className="flex-1 relative min-h-0">
+          {!leftSidebarOpen && (
+            <button
+              onClick={() => setLeftSidebarOpen(true)}
+              className="absolute top-4 left-4 z-10 p-2 rounded-md shadow-md"
+              style={{ backgroundColor: palette.accent, color: '#FFFFFF' }}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
 
-      {/* Resize Handle - Right */}
-      {rightSidebarOpen && (
-        <div
-          className="w-1 cursor-col-resize hover:bg-blue-500 transition-colors"
-          style={{ backgroundColor: palette.border }}
-          onMouseDown={handleMouseDownRight}
-        />
-      )}
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onEdgeUpdate={onEdgeUpdate}
+            onEdgeUpdateStart={onEdgeUpdateStart}
+            onEdgeUpdateEnd={onEdgeUpdateEnd}
+            onNodeClick={onNodeClick}
+            nodeTypes={nodeTypes}
+            defaultEdgeOptions={defaultEdgeOptions}
+            fitView
+            style={{ width: '100%', height: '100%' }}
+          >
+            <Background color={palette.border} />
+            <Controls />
+          </ReactFlow>
+        </div>
 
-      {/* RIGHT SIDEBAR - Inspector */}
-      {rightSidebarOpen && (
-        <div
-          className="shrink-0 border-l overflow-y-auto"
-          style={{ width: `${rightSidebarWidth}px`, backgroundColor: palette.sidebar, borderColor: palette.border }}
-        >
-          <div className="p-4">
+        {/* Resize Handle - Right */}
+        {rightSidebarOpen && (
+          <div
+            className="w-1 cursor-col-resize hover:bg-blue-500 transition-colors"
+            style={{ backgroundColor: palette.border }}
+            onMouseDown={handleMouseDownRight}
+          />
+        )}
+
+        {/* RIGHT SIDEBAR - Inspector */}
+        {rightSidebarOpen && (
+          <div
+            className="shrink-0 border-l overflow-y-auto h-full"
+            style={{ width: `${rightSidebarWidth}px`, backgroundColor: palette.sidebar, borderColor: palette.border }}
+          >
+            <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold" style={{ color: palette.neutralDarkText }}>Inspector</h2>
               <button onClick={() => setRightSidebarOpen(false)} className="p-1 hover:bg-gray-200 rounded">
@@ -2489,17 +2775,18 @@ function CanvasFlow() {
             )}
           </div>
         </div>
-      )}
+        )}
 
-      {!rightSidebarOpen && selectedNode && (
-        <button
-          onClick={() => setRightSidebarOpen(true)}
-          className="absolute top-4 right-4 z-10 p-2 rounded-md shadow-md"
-          style={{ backgroundColor: palette.accent, color: '#FFFFFF' }}
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-      )}
+        {!rightSidebarOpen && selectedNode && (
+          <button
+            onClick={() => setRightSidebarOpen(true)}
+            className="absolute top-4 right-4 z-10 p-2 rounded-md shadow-md"
+            style={{ backgroundColor: palette.accent, color: '#FFFFFF' }}
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

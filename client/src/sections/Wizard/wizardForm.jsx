@@ -2,16 +2,9 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import miningData from "@/data/mining.json";
 import beneficiationData from "@/data/beneficiation.json";
-import Step1 from "@/sections/Wizard/step1";
-import Step2 from "@/sections/Wizard/step2";
-import Step3 from "@/sections/Wizard/step3";
-import Step4 from "@/sections/Wizard/step4";
-import Step5 from "@/sections/Wizard/step5";
-import Step6 from "@/sections/Wizard/step6";
-import Step7 from "@/sections/Wizard/step7";
 import { 
   updateMiningStep, 
   updateBeneficiationStep, 
@@ -41,6 +34,17 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const HEADING_TEXT = "text-[22px] sm:text-[24px] md:text-[26px]"; // Step titles
 const GROUP_HEADING_TEXT = "text-[16px] sm:text-[18px]"; // Section/group labels
 const OPTION_TEXT = "text-[13px] sm:text-[14px]"; // Card options and radio labels
+
+const stepVariants = {
+  initial: { opacity: 0, y: 24, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -18, scale: 0.98 },
+};
+
+const cardHoverTransition = {
+  scale: 1.01,
+  boxShadow: "0 20px 50px rgba(0,0,0,0.12)",
+};
 // Reusable card-style checkbox option for multi-select lists
 function CardCheckbox({ id, label, checked, onChange }) {
   const labelId = `${id}-label`
@@ -57,11 +61,13 @@ function CardCheckbox({ id, label, checked, onChange }) {
           onChange(!checked)
         }
       }}
-      className={[
-        "group cursor-pointer rounded-lg border p-3 shadow-sm transition-colors duration-200 ease-in-out focus:outline-none",
+  className={[
+        "group cursor-pointer rounded-xl border p-3 shadow-sm transition-all duration-200 ease-out focus:outline-none",
         "focus-visible:ring-2 focus-visible:ring-[#BA7967] focus-visible:ring-offset-2",
-        checked ? "bg-[#6B5B59] text-white border-transparent" : "bg-white text-gray-900 border-gray-300 hover:bg-gray-50",
-      ].join(" ")}
+        checked
+          ? "bg-linear-to-br from-[#6B5B59] to-[#3f3634] text-white border-transparent shadow-md -translate-y-0.5"
+          : "bg-white text-gray-900 border-gray-200 hover:border-[#BA7967]/60 hover:bg-[#f8f4f0]",
+  ].join(" ")}
       id={id}
     >
       <div className="flex items-start gap-3">
@@ -89,17 +95,132 @@ function CardRadio({ id, label, selected, onSelect }) {
           onSelect()
         }
       }}
-      className={[
-        "group cursor-pointer rounded-lg border p-3 shadow-sm transition-colors duration-200 ease-in-out focus:outline-none",
+  className={[
+        "group cursor-pointer rounded-xl border p-3 shadow-sm transition-all duration-200 ease-out focus:outline-none",
         "focus-visible:ring-2 focus-visible:ring-[#BA7967] focus-visible:ring-offset-2",
-        selected ? "bg-[#6B5B59] text-white border-transparent" : "bg-white text-gray-900 border-gray-300 hover:bg-gray-50",
-      ].join(" ")}
+        selected
+          ? "bg-linear-to-br from-[#6B5B59] to-[#3f3634] text-white border-transparent shadow-md -translate-y-0.5"
+          : "bg-white text-gray-900 border-gray-200 hover:border-[#BA7967]/60 hover:bg-[#f8f4f0]",
+  ].join(" ")}
       id={id}
     >
       <div className="flex items-start gap-3">
         {/* Hidden native radio for AT context; state managed by RHF */}
         <input type="radio" className="sr-only" aria-hidden="true" tabIndex={-1} checked={!!selected} readOnly />
         <div id={labelId} className={`font-medium leading-snug ${OPTION_TEXT}`}>{label}</div>
+      </div>
+    </div>
+  )
+}
+
+function StepSection({
+  stepNumber,
+  badgeLabel,
+  title,
+  description,
+  children,
+  onPredict,
+  predicting,
+  footer,
+}) {
+  return (
+    <motion.div
+      variants={stepVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative"
+    >
+  <Card className="w-full rounded-3xl border border-[#e7dfd2] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] shadow-xl">
+        <div className="pointer-events-none absolute inset-0 opacity-40" style={{
+          background: "radial-gradient(circle at 20% 20%, rgba(186,121,103,0.15), transparent 45%)",
+        }} />
+        <CardHeader className="relative border-b border-[#e3d4c8] pb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-[#6B5B59] shadow-sm">
+                <span className="inline-flex h-2 w-2 rounded-full bg-[#BA7967] animate-pulse" />
+                {`Step ${stepNumber} • ${badgeLabel}`}
+              </div>
+              <CardTitle className={`${HEADING_TEXT} mt-3 text-gray-900`}>{title}</CardTitle>
+              <CardDescription className="mt-1 text-sm text-gray-600">{description}</CardDescription>
+            </div>
+            {onPredict && (
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  type="button"
+                  className="bg-[#BA7967] text-white shadow-sm transition-all duration-200 hover:bg-[#a86b5c] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={onPredict}
+                  disabled={predicting}
+                >
+                  <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
+                    🤖
+                  </span>
+                  {predicting ? "Predicting..." : "Generate AI Predictions"}
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="relative z-10">{children}</CardContent>
+        {footer && (
+          <CardFooter className="relative z-10 flex flex-col gap-4 border-t border-[#e3d4c8] pt-6">
+            {footer}
+          </CardFooter>
+        )}
+      </Card>
+    </motion.div>
+  )
+}
+
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true }) {
+  const handleForwardClick = () => {
+    if (typeof onForward === 'function') {
+      onForward()
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full">
+      {onBack && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          className="relative overflow-hidden rounded-full border-gray-300 px-6 py-2 text-[#6B5B59] transition-colors duration-200 hover:border-[#6B5B59]"
+        >
+          <span className="mr-2">←</span>
+          Previous
+        </Button>
+      )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {showLca && (
+          <motion.div
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            whileHover={{ scale: 1.04 }}
+          >
+            <Button
+              type="button"
+              className="relative overflow-hidden bg-linear-to-r from-[#ef5350] to-[#ff8a65] text-white shadow-md transition-all duration-200 hover:from-[#e53935] hover:to-[#ff7043]"
+            >
+              <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200 hover:opacity-100" />
+              <span className="relative">Calculate LCA Score</span>
+            </Button>
+          </motion.div>
+        )}
+        <motion.div whileHover={{ scale: 1.03 }}>
+          <Button
+            type="button"
+            onClick={handleForwardClick}
+            disabled={forwardDisabled}
+            className="relative overflow-hidden rounded-full bg-[#BA7967] px-6 py-2 text-white shadow-md transition-all duration-200 hover:bg-[#a86b5c] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {forwardLabel}
+            {forwardLabel && <span className="ml-2">→</span>}
+          </Button>
+        </motion.div>
       </div>
     </div>
   )
@@ -115,7 +236,7 @@ const miningProcesses = [
   { id: "manual", label: "Manual Extraction" },
   { id: "electricShovel", label: "Electric Shovel / Excavator" },
   { id: "dieselHaul", label: "Diesel-powered Haul Trucks" },
-  { id: "inSitu", label: "In-situ Leaching (ISL)" },
+  { id: "inSitu", label: "In-situ Leaching (experimental)" },
   { id: "others", label: "Others" },
 ];
 
@@ -231,38 +352,46 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
   const applicableProcesses = watch("applicableProcesses");
 
+  const footerContent = (
+    <>
+      {saveSuccess && (
+        <div className="w-full rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 shadow-sm flex items-center gap-2">
+          <span className="text-lg">✅</span>
+          <span>Data saved successfully!</span>
+        </div>
+      )}
+      {saveError && (
+        <div className="w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm flex items-center gap-2">
+          <span className="text-lg">⚠️</span>
+          <span>{saveError}</span>
+        </div>
+      )}
+      {!isValid && Object.keys(errors).length > 0 && (
+        <div className="w-full rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+          ℹ️ Please fill required fields: {Object.keys(errors).join(', ')}
+        </div>
+      )}
+      <StepFooterActions
+        onForward={handleSubmit(onSubmit)}
+        forwardDisabled={!isValid || isSaving}
+        forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+      />
+    </>
+  );
+
   return (
     <FormProvider {...form}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <StepSection
+        stepNumber={1}
+        badgeLabel="Mining"
+        title="Mining Process Details"
+        description="Enter the details of the mining process. Fields marked with * are required."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
       >
-  <Card className="w-full bg-[#F3F2EC] gap-y-10">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 1: Mining Process Details</CardTitle>
-                <CardDescription className="text-center">
-                  Enter the details of the mining process. Fields marked with * are
-                  required.
-                </CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button 
-                  type="button" 
-                  className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" 
-                  onClick={() => onGenerateAIPrediction?.(form.getValues())}
-                  disabled={predicting}
-                >
-                  {predicting ? 'Predicting...' : 'Generate AI Predictions'}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                   control={control}
                   name="applicableProcesses"
@@ -520,57 +649,9 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                     </FormItem>
                   )}
                 />
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3">
-            {saveSuccess && (
-              <div className="w-full text-green-600 text-sm p-3 bg-green-50 rounded border border-green-200 flex items-center gap-2">
-                <span className="text-lg">✅</span>
-                <span>Data saved successfully!</span>
-              </div>
-            )}
-            {saveError && (
-              <div className="w-full text-red-600 text-sm p-3 bg-red-50 rounded border border-red-200 flex items-center gap-2">
-                <span className="text-lg">⚠️</span>
-                <span>{saveError}</span>
-              </div>
-            )}
-            {!isValid && Object.keys(errors).length > 0 && (
-              <div className="w-full text-orange-600 text-sm p-3 bg-orange-50 rounded border border-orange-200">
-                ℹ️ Please fill required fields: {Object.keys(errors).join(', ')}
-              </div>
-            )}
-            <div className="flex gap-x-3 w-full justify-end">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
-              </motion.div>
-              <Button
-                type="submit"
-                onClick={handleSubmit(onSubmit)}
-                disabled={!isValid || isSaving}
-                className={isSaving ? 'opacity-50 cursor-not-allowed' : ''}
-              >
-                {isSaving ? '💾 Saving...' : 'Next'}
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   );
 }
@@ -648,24 +729,27 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     onNext?.()
   }
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={!isValid}
+    />
+  );
+
   return (
     <FormProvider {...form}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card className="w-full bg-[#F3F2EC]">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 2: Beneficiation</CardTitle>
-                <CardDescription className="text-center">Provide beneficiation process details. Fields marked with * are required.</CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <StepSection
+        stepNumber={2}
+        badgeLabel="Beneficiation"
+        title="Beneficiation"
+        description="Provide beneficiation process details. Fields marked with * are required."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* 1. Select Applicable Processes */}
                 <FormField
                   control={control}
@@ -977,50 +1061,9 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                     )}
                   />
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-              paddingLeft: '2rem'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span className="pl-4">Previous</span>
-            </Button>
-            <div className="flex gap-x-3">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
-              </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                paddingRight: '2rem'
-              }}>
-                <span className="pr-4">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   )
 }
@@ -1288,7 +1331,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     switch(stepKey) {
       case 'mining':
         return (
-          <Step1
+          <MiningProcessDetails
             onNext={handleNext}
             onSave={(data) => handleSaveStep('mining', data)}
             initialValues={formValues.mining}
@@ -1298,7 +1341,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'beneficiation':
         return (
-          <Step2
+          <BeneficiationDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('beneficiation', data)}
@@ -1309,7 +1352,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'refining':
         return (
-          <Step3
+          <RefiningDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('refining', data)}
@@ -1320,7 +1363,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'smelting':
         return (
-          <Step4
+          <SmeltingDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('smelting', data)}
@@ -1331,7 +1374,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'manufacturing':
         return (
-          <Step5
+          <ManufacturingDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('manufacturing', data)}
@@ -1342,7 +1385,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'recycling':
         return (
-          <Step6
+          <RecyclingDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('recycling', data)}
@@ -1353,7 +1396,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       case 'valorization':
         return (
-          <Step7
+          <ValorizationDetails
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('valorization', data)}
@@ -1520,24 +1563,27 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     onNext?.()
   }
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={!isValid}
+    />
+  )
+
   return (
     <FormProvider {...form}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card className="w-full bg-[#F3F2EC]">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 3: Refining</CardTitle>
-                <CardDescription className="text-center">Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required.</CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <StepSection
+        stepNumber={3}
+        badgeLabel="Refining"
+        title="Refining"
+        description="Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* 1. Processes */}
                 <FormField
                   control={control}
@@ -1720,50 +1766,9 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                     </FormItem>
                   )} />
                 )}
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-              paddingLeft: '2rem'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span className="pl-4">Previous</span>
-            </Button>
-            <div className="flex gap-x-3">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
-              </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                paddingRight: '2rem'
-              }}>
-                <span className="pr-4">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   )
 }
@@ -1827,24 +1832,27 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     onNext?.()
   }
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={!isValid}
+    />
+  )
+
   return (
     <FormProvider {...form}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card className="w-full bg-[#F3F2EC]">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 4: Smelting</CardTitle>
-                <CardDescription className="text-center">Select processes, variants, and enter required energy and emissions data. Fields marked with * are required.</CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <StepSection
+        stepNumber={4}
+        badgeLabel="Smelting"
+        title="Smelting"
+        description="Select processes, variants, and enter required energy and emissions data. Fields marked with * are required."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* 1. Processes */}
                 <FormField control={control} name="processes" render={() => (
                   <FormItem>
@@ -2025,50 +2033,9 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                     </FormItem>
                   )} />
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-              paddingLeft: '2rem'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span className="pl-4">Previous</span>
-            </Button>
-            <div className="flex gap-x-3">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
-              </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                paddingRight: '2rem'
-              }}>
-                <span className="pr-4">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   )
 }
@@ -2160,24 +2127,27 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
   const transportMode = watch('transportMode')
   const onSubmit = (data) => { onSave?.(data); onNext?.() }
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={!isValid}
+    />
+  )
+
   return (
     <FormProvider {...form}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card className="w-full bg-[#F3F2EC]">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 5: Manufacturing</CardTitle>
-                <CardDescription className="text-center">Select processes, then fill in required logistics and casting details as applicable.</CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <StepSection
+        stepNumber={5}
+        badgeLabel="Manufacturing"
+        title="Manufacturing"
+        description="Select processes, then fill in required logistics and casting details as applicable."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* 1. Select Applicable Processes */}
                 <FormField control={control} name="processes" render={() => (
                   <FormItem>
@@ -2408,50 +2378,9 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                     </FormItem>
                   )} />
                 )}
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-              paddingLeft: '2rem'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span className="pl-4">Previous</span>
-            </Button>
-            <div className="flex gap-x-3">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
-              </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                paddingRight: '2rem'
-              }}>
-                <span className="pr-4">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   )
 }
@@ -2527,24 +2456,27 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
   const selectedSorting = watch('sortingMethods')
   const onSubmit = (data) => { onSave?.(data); onNext?.() }
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={!isValid}
+    />
+  )
+
   return (
     <FormProvider {...form}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card className="w-full bg-[#F3F2EC]">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 6: Recycling</CardTitle>
-                <CardDescription className="text-center">Define processes, variants, and core metrics for recycling.</CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <StepSection
+        stepNumber={6}
+        badgeLabel="Recycling"
+        title="Recycling"
+        description="Define processes, variants, and core metrics for recycling."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* 1. Select Applicable Processes */}
                 <FormField control={control} name="processes" render={() => (
                   <FormItem>
@@ -2801,50 +2733,9 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                     </FormItem>
                   )} />
                 )}
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-              paddingLeft: '2rem'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span className="pl-4">Previous</span>
-            </Button>
-            <div className="flex gap-x-3">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Button
-                  type="button"
-                  className="bg-[#ef5350] hover:bg-[#e57373] text-white"
-                >
-                  Calculate LCA Score
-                </Button>
-              </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                paddingRight: '2rem'
-              }}>
-                <span className="pr-4">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   )
 }
@@ -2945,24 +2836,29 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     }
   }
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={!isValid}
+      forwardLabel="Submit"
+      showLca={false}
+    />
+  )
+
   return (
     <FormProvider {...form}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <Card className="w-full bg-[#F3F2EC]">
-          <CardHeader>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-              <div className="col-start-2 text-center">
-                <CardTitle className={`${HEADING_TEXT} text-center`}>Step 7: Valorization</CardTitle>
-                <CardDescription className="text-center">Waste types, valorization methods, utilization metrics, risks, and viability.</CardDescription>
-              </div>
-              <div className="col-start-3 justify-self-end sticky top-4">
-                <Button type="button" className="bg-[#BA7967] hover:bg-[#a86b5c] text-white disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => onGenerateAIPrediction?.(form.getValues())} disabled={predicting}>{predicting ? 'Predicting...' : 'Generate AI Predictions'}</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <StepSection
+        stepNumber={7}
+        badgeLabel="Valorization"
+        title="Valorization"
+        description="Waste types, valorization methods, utilization metrics, risks, and viability."
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 {/* 1. Waste Types and Valorization Processes */}
                 <div className="space-y-6">
                   <FormField control={control} name="wasteTypes" render={() => (
@@ -3293,44 +3189,9 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                     ))}
                   </div>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="button" onClick={onBack} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-              clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-              paddingLeft: '2rem'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span className="pl-4">Previous</span>
-            </Button>
-            <div className="flex gap-x-3">
-              <motion.div
-                animate={{
-                  scale: [1, 1.01, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-              </motion.div>
-              <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!isValid} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-                clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-                paddingRight: '2rem'
-              }}>
-                <span className="pr-4">Submit</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   )
 }

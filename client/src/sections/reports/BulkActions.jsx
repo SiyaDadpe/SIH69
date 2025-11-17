@@ -68,7 +68,7 @@ const BulkActions = ({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="border border-transparent text-[#3d3635] hover:bg-[#BA7967]"
+                    className="border border-transparent text-[#3d3635] hover:bg-[#F3F2EC]"
                     onClick={onSelectAll}
                     disabled={allSelected || totalCount === 0}
                 >
@@ -79,7 +79,7 @@ const BulkActions = ({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="border border-transparent text-[#3d3635] hover:bg-[#BA7967]"
+                    className="border border-transparent text-[#3d3635] hover:bg-[#F3F2EC]"
                     onClick={onClearSelection}
                     disabled={!hasSelection}
                 >
@@ -100,7 +100,7 @@ const BulkActions = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                    className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                     onClick={() => onBulkExport?.('excel-multi')}
                     disabled={disableExports}
                 >

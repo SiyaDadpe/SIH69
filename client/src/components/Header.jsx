@@ -51,12 +51,12 @@ const Header = () => {
         <div className="flex items-center gap-2">
           {/* Logo Icon */}
           <div className="w-8 h-8 bg-[#BA7967] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">CR</span>
+            <span className="text-white font-bold text-sm">AL</span>
           </div>
           {/* Logo Text - Hide on small screens */}
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-[#BA7967]">CircularityRP</h1>
-            <p className="text-xs text-gray-500 -mt-1">Resource Platform</p>
+            <h1 className="text-xl font-bold text-[#BA7967]">ALvance</h1>
+            <p className="text-xs text-gray-500 -mt-1">LCA Platform</p>
           </div>
         </div>
       </div>
