@@ -97,26 +97,7 @@ export default function Sidebar() {
                   )}
                 </NavLink>
               </li>
-              <li>
-                <NavLink
-                  to="/projects"
-                  className={({ isActive: active }) =>
-                    cn(
-                      baseItemClass,
-                      (active || isActive("/projects")) && activeItemClass,
-                      !sidebarOpen && "justify-center"
-                    )
-                  }
-                  title={!sidebarOpen ? "Projects" : undefined}
-                >
-                  {({ isActive: active }) => (
-                    <>
-                      <Folder className={cn("size-4 flex-shrink-0", active || isActive("/projects") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
-                      {sidebarOpen && <span>Projects</span>}
-                    </>
-                  )}
-                </NavLink>
-              </li>
+
               <li>
                 <NavLink
                   to="/canvas"

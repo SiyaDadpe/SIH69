@@ -61,7 +61,7 @@ const MultiSelectField = ({
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
-                        className="mt-2 w-full justify-between rounded-lg border-[#BA7967]/40 bg-white text-left font-normal text-[#3d3635] hover:bg-[#BA7967]"
+                        className="mt-2 w-full justify-between rounded-lg border-[#BA7967]/40 bg-white text-left font-normal text-[#3d3635] hover:bg-[#F3F2EC]"
                     >
                         <span className="truncate">{displayValue}</span>
                         <ChevronDown className="ml-2 h-4 w-4 text-[#BA7967]" />
@@ -353,7 +353,7 @@ const FiltersPanel = ({
                         ref={advBtnRef}
                         variant="outline"
                         className={cn(
-                            'h-11 rounded-xl border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]',
+                            'h-11 rounded-xl border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]',
                             showAdvanced && 'bg-[#F3F2EC]'
                         )}
                         onClick={() => setShowAdvanced((value) => !value)}
@@ -363,7 +363,7 @@ const FiltersPanel = ({
                     </Button>
                     <Button
                         variant="ghost"
-                        className="h-11 rounded-xl text-[#BA7967] hover:bg-[#BA7967]"
+                        className="h-11 rounded-xl text-[#BA7967] hover:bg-[#F3F2EC]"
                         onClick={onClear}
                     >
                         Clear
@@ -393,7 +393,7 @@ const FiltersPanel = ({
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className="mt-2 w-full justify-between rounded-lg border-[#BA7967]/40 bg-white text-left font-normal text-[#3d3635] hover:bg-[#BA7967]"
+                                        className="mt-2 w-full justify-between rounded-lg border-[#BA7967]/40 bg-white text-left font-normal text-[#3d3635] hover:bg-[#F3F2EC]"
                                     >
                                         {fromLabel}
                                         <CalendarIcon className="h-4 w-4 text-[#BA7967]" />
@@ -428,7 +428,7 @@ const FiltersPanel = ({
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className="mt-2 w-full justify-between rounded-lg border-[#BA7967]/40 bg-white text-left font-normal text-[#3d3635] hover:bg-[#BA7967]"
+                                        className="mt-2 w-full justify-between rounded-lg border-[#BA7967]/40 bg-white text-left font-normal text-[#3d3635] hover:bg-[#F3F2EC]"
                                     >
                                         {toLabel}
                                         <CalendarIcon className="h-4 w-4 text-[#BA7967]" />
@@ -556,7 +556,7 @@ const FiltersPanel = ({
                                 />
                                 <Button
                                     variant="outline"
-                                    className="h-10 rounded-lg border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                                    className="h-10 rounded-lg border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                                     onClick={() => addTag(tagInput)}
                                 >
                                     <Plus className="mr-2 h-4 w-4" />
@@ -612,7 +612,7 @@ const FiltersPanel = ({
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                                className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                                 onClick={() => {
                                     setSaveError('');
                                     setSaveAsShared(false);
@@ -661,7 +661,7 @@ const FiltersPanel = ({
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#BA7967]"
+                                                className="border-[#BA7967]/40 text-[#3d3635] hover:bg-[#F3F2EC]"
                                                 onClick={() => onLoadSavedFilter?.(preset.id)}
                                             >
                                                 Load
@@ -669,7 +669,7 @@ const FiltersPanel = ({
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="text-[#3d3635] hover:bg-[#BA7967]"
+                                                className="text-[#3d3635] hover:bg-[#F3F2EC]"
                                                 onClick={() => handleShare(preset)}
                                             >
                                                 <Share2 className="mr-2 h-4 w-4" />
@@ -682,7 +682,7 @@ const FiltersPanel = ({
                                                     'text-[#3d3635]',
                                                     defaultFilterId === preset.id
                                                         ? 'bg-[#BA7967] hover:bg-[#a06858]'
-                                                        : 'hover:bg-[#BA7967]'
+                                                        : 'hover:bg-[#F3F2EC]'
                                                 )}
                                                 onClick={() => onSetDefaultFilter?.(preset.id)}
                                             >

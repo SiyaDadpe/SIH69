@@ -12,3 +12,11 @@ class Config:
         'water_use': ('Boulay et al. 2011', 'water use', 'water use'),
         'land_use': ('IPCC 2013', 'land use', 'land use')
     }
+
+    # MongoDB integration
+    MONGO_URI = os.getenv("MONGO_URI", "")
+    MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "LCA")
+    MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "wizardworkflowoutputs")
+    # Gemini LLM integration
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")

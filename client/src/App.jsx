@@ -6,12 +6,12 @@ import Signup from './pages/Signup';
 import Landing from './pages/Landing';
 import Wizard from './pages/Wizard';
 import Reports from './pages/Reports';
-import Projects from './pages/Projects';
+
 import Canvas from './pages/Canvas';
 import Analytics from './pages/Analytics';
 import MainLayout from './layouts/MainLayout';
 import RouteError from './components/RouteError';
-// import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -38,9 +38,9 @@ function App() {
     {
       path: "/",
       element: (
-        // <ProtectedRoute>
+        <ProtectedRoute>
           <MainLayout />
-        // </ProtectedRoute>
+         </ProtectedRoute>
       ),
       errorElement: <RouteError />,
       children: [
@@ -49,11 +49,7 @@ function App() {
           element: <Dashboard />,
           errorElement: <RouteError />
         },
-        {
-          path: "projects",
-          element: <Projects />,
-          errorElement: <RouteError />
-        },
+        
         {
           path: "wizard",
           element: <Wizard />,

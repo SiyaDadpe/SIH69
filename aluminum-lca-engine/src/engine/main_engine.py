@@ -16,6 +16,9 @@ import brightway2 as bw
 from .database_manager import AluminumDatabaseManager
 from .calculator import AluminumLCACalculator
 from ..models.parameter_manager import ParameterManager
+from ..models.wizard_input_mapper import map_wizard_to_engine_params
+from .compact_output import build_compact_output
+from .llm_recommendations import generate_llm_recommendations
 
 
 class AluminumLCAEngine:
@@ -79,7 +82,9 @@ class AluminumLCAEngine:
             'scenario_name': scenario_name,
             'product': product,
             'impacts': results,
-            'contributions': contributions
+            'contributions': contributions,
+            'parameters': parameters,
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
         }
     
     # ---------- Batch processing ----------
@@ -109,7 +114,8 @@ class AluminumLCAEngine:
                 traceback.print_exc()
                 results[scenario_name] = {
                     'scenario_name': scenario_name,
-                    'error': str(e)
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat() + 'Z'
                 }
         
         print(f"\n{'='*60}")
@@ -173,7 +179,8 @@ class AluminumLCAEngine:
                       results: Dict[str, Any], 
                       format: str = 'excel', 
                       filename: Optional[str] = None,
-                      output_dir: Optional[Path] = None) -> Path:
+                      output_dir: Optional[Path] = None,
+                      include_parameters: bool = True) -> Path:
         """Export results to various formats.
         
         Args:
@@ -201,7 +208,7 @@ class AluminumLCAEngine:
         
         elif format == 'json':
             output_path = output_dir / f"{filename}.json"
-            self._export_json(results, output_path)
+            self._export_json(results, output_path, include_parameters=include_parameters)
         
         else:
             raise ValueError(f"Unsupported export format: {format}")
@@ -245,29 +252,46 @@ class AluminumLCAEngine:
                 impacts_df = pd.DataFrame(impacts_data)
                 impacts_df.to_excel(writer, sheet_name='Impact Details', index=False)
     
-    def _export_json(self, results: Dict[str, Any], output_path: Path):
-        """Export to JSON format."""
-        serializable_results = {}
-        
+    def _serialize_results(self, results: Dict[str, Any], include_parameters: bool = True) -> Dict[str, Any]:
+        serializable: Dict[str, Any] = {}
         for scenario, result in results.items():
             if 'error' in result:
-                serializable_results[scenario] = {
-                    'error': result['error']
+                serializable[scenario] = {
+                    'error': result['error'],
+                    'timestamp': result.get('timestamp') or datetime.utcnow().isoformat() + 'Z'
                 }
-            else:
-                serializable_results[scenario] = {
-                    'scenario_name': result['scenario_name'],
-                    'product_code': result['product'].get('code') if result.get('product') else None,
-                    'impacts': {
-                        method: {
-                            'score': float(data['score']) if not pd.isna(data['score']) else None,
-                            'unit': data['unit']
-                        }
-                        for method, data in result['impacts'].items()
-                    },
-                    'contributions': result.get('contributions', {})
+                continue
+            product = result.get('product')
+            impacts_out: Dict[str, Any] = {}
+            placeholders_used = False
+            for method, data in (result.get('impacts') or {}).items():
+                score_val = data.get('score')
+                try:
+                    score_val = None if (score_val is None or pd.isna(score_val)) else float(score_val)
+                except Exception:
+                    score_val = None
+                if data.get('lca_object') is None:
+                    placeholders_used = True
+                impacts_out[method] = {
+                    'score': score_val,
+                    'unit': data.get('unit'),
                 }
-        
+            entry: Dict[str, Any] = {
+                'scenario_name': result.get('scenario_name'),
+                'product_code': product.get('code') if product else None,
+                'impacts': impacts_out,
+                'contributions': result.get('contributions', {}),
+                'timestamp': result.get('timestamp') or datetime.utcnow().isoformat() + 'Z',
+                'placeholders_used': placeholders_used,
+                'methods_used': list(impacts_out.keys()),
+            }
+            if include_parameters and 'parameters' in result:
+                entry['parameters'] = result['parameters']
+            serializable[scenario] = entry
+        return serializable
+
+    def _export_json(self, results: Dict[str, Any], output_path: Path, include_parameters: bool = True):
+        serializable_results = self._serialize_results(results, include_parameters=include_parameters)
         with open(output_path, 'w') as f:
             json.dump(serializable_results, f, indent=2)
     
@@ -289,3 +313,52 @@ class AluminumLCAEngine:
             parameters = self.param_manager.default_parameters
         
         return self.analyze_single_scenario(scenario_name, parameters)
+
+    # ---------- Wizard JSON convenience ----------
+    def analyze_wizard_document(self, doc: Dict[str, Any], scenario_name: str = "Wizard Scenario") -> Dict[str, Any]:
+        """Accept a Wizard/Mongo-style JSON document, map it, and analyze.
+
+        Args:
+            doc: Wizard-style input dict
+            scenario_name: Name to tag in results
+
+        Returns:
+            Single scenario analysis result dict
+        """
+        params = map_wizard_to_engine_params(doc)
+        # Merge with defaults to keep unspecified stages sensible
+        merged = self.param_manager.create_scenario_from_user_input(params)
+        return self.analyze_single_scenario(scenario_name, merged)
+
+    def analyze_to_json(self, scenarios: Dict[str, Dict[str, Any]], include_parameters: bool = True) -> Dict[str, Any]:
+        raw = self.batch_analysis(scenarios)
+        return self._serialize_results(raw, include_parameters=include_parameters)
+
+    # ---------- Compact output (single scenario) ----------
+    def compact_analysis(self, scenario_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Run a single scenario and return compact aggregated JSON structure."""
+        serialized = self._serialize_results({scenario_name: self.analyze_single_scenario(scenario_name, parameters)})
+        return build_compact_output(serialized[scenario_name])
+
+    def compact_wizard_document(self, doc: Dict[str, Any], scenario_name: str = "Wizard Scenario") -> Dict[str, Any]:
+        params = map_wizard_to_engine_params(doc)
+        merged = self.param_manager.create_scenario_from_user_input(params)
+        return self.compact_analysis(scenario_name, merged)
+
+    def compact_wizard_with_llm(self, doc: Dict[str, Any], scenario_name: str = "Wizard Scenario", include_rule_based: bool = True) -> Dict[str, Any]:
+        """Return compact output merged with LLM recommendations.
+
+        Structure:
+        {
+          "compact": <compact_doc>,
+          "llm": { model, success, recommendations, raw_output },
+          "rule_based": [...] (optional)
+        }
+        """
+        compact_doc = self.compact_wizard_document(doc, scenario_name)
+        llm = generate_llm_recommendations(compact_doc)
+        result = {"compact": compact_doc, "llm": llm}
+        if include_rule_based and llm.get("success") is False:
+            # Provide underlying rule-based separately only if LLM failed
+            result["rule_based"] = compact_doc.get("recommendations", [])
+        return result
