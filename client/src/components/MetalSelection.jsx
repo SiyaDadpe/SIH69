@@ -550,7 +550,7 @@ export default function MetalSelection({ onSelect }) {
   );
 
   return (
-    <div ref={containerRef} className="relative min-h-screen w-full overflow-hidden bg-gray-50">
+    <div ref={containerRef} className="relative min-h-screen w-full overflow-hidden bg-[#F3F2EC]">
       <div className="fixed inset-0 w-full h-full z-0 opacity-30">
         <Plasma
           color="#e0e7ff"
