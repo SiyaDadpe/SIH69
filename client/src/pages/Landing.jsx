@@ -231,6 +231,12 @@ export default function Landing() {
             >
               Projects
             </button>
+            <button 
+              onClick={() => navigate('/docs')}
+              className="text-white hover:text-black hover:bg-[#BA7967] transition-all px-4 py-2 rounded-full font-medium cursor-none"
+            >
+              Docs
+            </button>
           </div>
 
           {/* GitHub Button - Solid Rounded Box */}
@@ -467,6 +473,11 @@ export default function Landing() {
                 <li>
                   <button onClick={() => navigate('/reports')} className="text-white/70 hover:text-[#BA7967] transition-colors text-sm cursor-none">
                     Reports
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/docs')} className="text-white/70 hover:text-[#BA7967] transition-colors text-sm cursor-none">
+                    Docs
                   </button>
                 </li>
               </ul>
