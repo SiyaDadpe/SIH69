@@ -1,0 +1,36 @@
+{
+    "training_date": "2025-11-11T22:18:36.836985",
+    "model_type": "GradientBoostingRegressor",
+    "feature_names": [
+        "year",
+        "location_Chhattisgarh",
+        "location_Gujarat",
+        "location_Jharkhand",
+        "location_Maharashtra",
+        "location_Odisha",
+        "smelting_variant_Pre_baked_anodes",
+        "smelting_variant_Soderberg_anodes",
+        "smelting_variant_Inert_anodes_exp",
+        "smelting_variant_Renewable_powered",
+        "smelting_variant_Dynamic_load_mgmt"
+    ],
+    "target_names": [
+        "smelting_energy_kWh_per_t_al",
+        "smelting_energy_MJ_per_t_al",
+        "smelting_co2_kg_per_t_al",
+        "smelting_pfc_kg_per_t_al",
+        "smelting_so2_kg_per_t_al",
+        "smelting_nox_kg_per_t_al",
+        "smelting_fluoride_recovery_%",
+        "smelting_thermal_recovery_%"
+    ],
+    "dataset_size": 1000,
+    "test_size": 0.2,
+    "random_state": 42,
+    "hyperparameters_tuned": false,
+    "model_performance": {
+        "best_target": "smelting_co2_kg_per_t_al",
+        "worst_target": "smelting_fluoride_recovery_%",
+        "avg_r2": 0.33307671375650055
+    }
+}

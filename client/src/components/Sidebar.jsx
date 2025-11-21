@@ -1,0 +1,242 @@
+"use client"
+
+import { useState } from "react"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
+import { cn } from "@/lib/utils"
+import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2, ChevronLeft, ChevronRight, BrainCircuitIcon } from "lucide-react"
+import { useSidebar } from "@/contexts/SidebarContext"
+import { getCurrentUser, logout } from "@/services/authService"
+import { toast } from "sonner"
+
+const HEADER_HEIGHT = 10
+
+export default function Sidebar() {
+  const { sidebarOpen, toggleSidebar } = useSidebar()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Consider a link active when the current location starts with its path (for nested routes)
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
+
+  // Styling helpers for sidebar items
+  const baseItemClass = "group flex items-center gap-3 rounded-md px-3 py-2 text-foreground transition hover:bg-muted"
+  const activeItemClass = "bg-muted font-semibold"
+
+  const currentUser = getCurrentUser()
+  const initials = (currentUser?.name || "User")
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
+
+  const handleLogout = () => {
+    logout()
+    toast.success("Logged out successfully")
+    setTimeout(() => {
+      navigate("/signup")
+    }, 1500)
+  }
+
+  return (
+    <>
+      {/* Toggle Button - Always visible */}
+      <button
+        onClick={toggleSidebar}
+        className={cn(
+          "fixed top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border shadow-lg transition-all duration-300 hover:bg-white hover:shadow-xl",
+          sidebarOpen ? "left-[220px]" : "left-4"
+        )}
+        aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {sidebarOpen ? (
+          <ChevronLeft className="h-5 w-5 text-gray-600" />
+        ) : (
+          <ChevronRight className="h-5 w-5 text-gray-600" />
+        )}
+      </button>
+
+      <aside
+        className={cn(
+          "fixed bottom-0 left-0 top-0 z-30 border-r text-card-foreground transition-all duration-300 ease-out",
+          sidebarOpen ? "w-[260px] translate-x-0" : "w-16 translate-x-0"
+        )}
+        aria-label="Sidebar navigation"
+  style={{ paddingTop: HEADER_HEIGHT, backgroundColor: "#F3F2EC" }}
+      >
+        <nav className="flex h-full flex-col">
+          <div className={cn(
+            "px-3 transition-all duration-300",
+            sidebarOpen ? "py-4" : "py-16"
+          )}>
+            {sidebarOpen && (
+              <div className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Menu
+              </div>
+            )}
+            <ul className="space-y-1">
+              <li>
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/dashboard")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Dashboard" : undefined}
+                  end
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <LayoutDashboard className={cn("size-4 flex-shrink-0", active || isActive("/dashboard") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Dashboard</span>}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/canvas"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/canvas")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Canvas" : undefined}
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <Paintbrush className={cn("size-4 flex-shrink-0", active || isActive("/canvas") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Canvas</span>}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/wizard"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/wizard")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Wizard" : undefined}
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <Wand2 className={cn("size-4 flex-shrink-0", active || isActive("/wizard") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Wizard</span>}
+                    </>
+                  )}
+                </NavLink>
+                </li>
+                <li>
+                <NavLink
+                  to="/analytics"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/analytics")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Analytics" : undefined}
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <BrainCircuitIcon className={cn("size-4 flex-shrink-0", active || isActive("/analytics") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Analytics</span>}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/reports"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/reports")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Reports" : undefined}
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <FileBarChart className={cn("size-4 flex-shrink-0", active || isActive("/reports") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Reports</span>}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            </ul>
+          </div>
+
+          <div className="mt-auto px-3 py-4">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-md border bg-card px-3 py-2 text-left shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring",
+                  !sidebarOpen && "justify-center"
+                )}
+                title={!sidebarOpen ? currentUser?.name || "User" : undefined}
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary flex-shrink-0">
+                  {initials || <User2 className="size-4" />}
+                </div>
+                {sidebarOpen && (
+                  <>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{currentUser?.name || "User"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{currentUser?.email}</p>
+                    </div>
+                    <ChevronsUpDown className="size-4 text-muted-foreground" />
+                  </>
+                )}
+              </button>
+
+              {menuOpen && sidebarOpen && (
+                <div className="absolute bottom-14 left-0 right-0 z-50 overflow-hidden rounded-md border bg-popover shadow-lg">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium">{currentUser?.name}</p>
+                    <p className="text-xs text-muted-foreground">{currentUser?.organization}</p>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                  >
+                    <LogOut className="size-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+              
+              {/* Collapsed state logout button */}
+              {!sidebarOpen && (
+                <button
+                  onClick={handleLogout}
+                  className="mt-2 flex w-full items-center justify-center rounded-md px-3 py-2 text-foreground transition hover:bg-muted"
+                  title="Logout"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </nav>
+      </aside>
+    </>
+  )
+}

@@ -1,0 +1,36 @@
+{
+    "training_date": "2025-09-14T12:30:11.696965",
+    "model_type": "GradientBoostingRegressor",
+    "feature_names": [
+        "refining_digestion_temperature_C",
+        "refining_digestion_pressure_bar",
+        "refining_caustic_concentration_gL",
+        "refining_process_intensity_factor",
+        "refining_tech_improvement_factor",
+        "refining_operational_variability",
+        "location_Chhattisgarh",
+        "location_Gujarat",
+        "location_Jharkhand",
+        "location_Maharashtra",
+        "location_Odisha",
+        "toxicity_Red_Mud",
+        "refining_variant_High_pressure_digestion",
+        "refining_variant_Multi_stage_clarification",
+        "refining_variant_Heat_recovery_loops",
+        "refining_variant_Green_additives",
+        "refining_variant_Automation_sensors"
+    ],
+    "target_names": [
+        "refining_energy_MJ_per_t_alumina",
+        "refining_water_m3_per_t_alumina",
+        "refining_red_mud_kg_per_t_alumina",
+        "refining_caustic_soda_kg_per_t_alumina",
+        "refining_lime_kg_per_t_alumina",
+        "refining_so2_kg_per_t_alumina",
+        "refining_nox_kg_per_t_alumina",
+        "refining_dust_kg_per_t_alumina"
+    ],
+    "dataset_size": 1000,
+    "test_size": 0.2,
+    "random_state": 42
+}

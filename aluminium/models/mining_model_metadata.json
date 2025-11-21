@@ -1,0 +1,34 @@
+{
+    "training_date": "2025-11-10T00:15:46.485424",
+    "model_type": "GradientBoostingRegressor",
+    "feature_names": [
+        "mining_ore_grade_percent",
+        "mining_overburden_ratio",
+        "mining_water_m3_per_t_ore",
+        "mining_method_Drilling & Blasting",
+        "mining_method_Hydraulic",
+        "mining_method_Manual",
+        "mining_method_Open Pit",
+        "mining_method_Strip",
+        "mining_equipment_type_Diesel",
+        "mining_equipment_type_Electric",
+        "mining_equipment_type_Hybrid",
+        "location_Chhattisgarh",
+        "location_Gujarat",
+        "location_Jharkhand",
+        "location_Maharashtra",
+        "location_Odisha",
+        "mining_land_use_impact",
+        "year"
+    ],
+    "target_names": [
+        "mining_energy_MJ_per_t_ore",
+        "mining_co2_kg_per_t_ore",
+        "mining_sox_kg_per_t_ore",
+        "mining_nox_kg_per_t_ore",
+        "mining_pm_kg_per_t_ore"
+    ],
+    "dataset_size": 1000,
+    "test_size": 0.2,
+    "random_state": 42
+}

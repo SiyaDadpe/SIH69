@@ -1,0 +1,42 @@
+[
+  {
+    "id": "proj-001",
+    "project_name": "Odisha Alumina 2025",
+    "user": "u-001",
+    "circularity_score": 72,
+    "environmental_score": 81,
+    "description": "Master document linking all process stages and storing final computed scores."
+  },
+  {
+    "id": "proj-002",
+    "project_name": "Western Corridor Smelting Upgrade",
+    "user": "u-002",
+    "circularity_score": 65,
+    "environmental_score": 76,
+    "description": "Master document linking all process stages and storing final computed scores."
+  },
+  {
+    "id": "proj-003",
+    "project_name": "Green Casting Initiative",
+    "user": "u-003",
+    "circularity_score": 84,
+    "environmental_score": 79,
+    "description": "Master document linking all process stages and storing final computed scores."
+  },
+  {
+    "id": "proj-004",
+    "project_name": "Urban Scrap Recovery Program",
+    "user": "u-004",
+    "circularity_score": 90,
+    "environmental_score": 88,
+    "description": "Master document linking all process stages and storing final computed scores."
+  },
+  {
+    "id": "proj-005",
+    "project_name": "Tailings to Geopolymers Pilot",
+    "user": "u-005",
+    "circularity_score": 77,
+    "environmental_score": 83,
+    "description": "Master document linking all process stages and storing final computed scores."
+  }
+]

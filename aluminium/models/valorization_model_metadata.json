@@ -1,0 +1,69 @@
+{
+    "training_date": "2025-11-11T22:37:27.930742",
+    "model_type": "GradientBoostingRegressor",
+    "features": [
+        "waste_utilization_Red_Mud_%",
+        "waste_utilization_SPL_%",
+        "waste_utilization_Dross_%",
+        "waste_utilization_Fluoride_Gases_%",
+        "waste_utilization_Slag_%",
+        "valorization_method_Cement_Additive",
+        "valorization_method_Soil_Stabilization",
+        "valorization_method_Iron_Extraction",
+        "valorization_method_Rare_Earth_Extraction",
+        "valorization_method_SPL_Encapsulation",
+        "valorization_method_Dross_Recovery",
+        "valorization_method_Fluoride_Capture",
+        "toxicity_Red_Mud",
+        "toxicity_SPL",
+        "toxicity_Dross",
+        "toxicity_Fluoride_Gases",
+        "toxicity_Slag",
+        "groundwater_risk_Red_Mud",
+        "groundwater_risk_SPL",
+        "groundwater_risk_Dross",
+        "groundwater_risk_Fluoride_Gases",
+        "groundwater_risk_Slag"
+    ],
+    "targets": [
+        "valorization_emission_reduction_kgCO2e_per_t_waste",
+        "valorization_recovery_efficiency_%"
+    ],
+    "dataset_size": 1000,
+    "test_size": 0.2,
+    "random_state": 42,
+    "preprocessing_metadata": {
+        "binary_columns": [
+            "valorization_method_Cement_Additive",
+            "valorization_method_Soil_Stabilization",
+            "valorization_method_Iron_Extraction",
+            "valorization_method_Rare_Earth_Extraction",
+            "valorization_method_SPL_Encapsulation",
+            "valorization_method_Dross_Recovery",
+            "valorization_method_Fluoride_Capture"
+        ],
+        "numeric_columns": [
+            "waste_utilization_Red_Mud_%",
+            "waste_utilization_SPL_%",
+            "waste_utilization_Dross_%",
+            "waste_utilization_Fluoride_Gases_%",
+            "waste_utilization_Slag_%"
+        ],
+        "ordinal_columns": [
+            "toxicity_Red_Mud",
+            "toxicity_SPL",
+            "toxicity_Dross",
+            "toxicity_Fluoride_Gases",
+            "toxicity_Slag",
+            "groundwater_risk_Red_Mud",
+            "groundwater_risk_SPL",
+            "groundwater_risk_Dross",
+            "groundwater_risk_Fluoride_Gases",
+            "groundwater_risk_Slag"
+        ],
+        "target_columns": [
+            "valorization_emission_reduction_kgCO2e_per_t_waste",
+            "valorization_recovery_efficiency_%"
+        ]
+    }
+}

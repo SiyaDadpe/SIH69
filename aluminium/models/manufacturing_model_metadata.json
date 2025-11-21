@@ -1,0 +1,33 @@
+{
+    "training_date": "2025-11-11T21:33:16.861147",
+    "model_type": "GradientBoostingRegressor",
+    "feature_names": [
+        "manufacturing_transport_distance_km",
+        "manufacturing_transport_mode_Mixed",
+        "manufacturing_transport_mode_Rail",
+        "manufacturing_transport_mode_Road",
+        "manufacturing_transport_mode_Sea",
+        "use_phase_sector_Aerospace",
+        "use_phase_sector_Automotive",
+        "use_phase_sector_Construction",
+        "use_phase_sector_Consumer_Goods",
+        "use_phase_sector_Packaging",
+        "use_phase_corrosion_impact",
+        "manufacturing_process_Casting",
+        "manufacturing_process_Rolling",
+        "manufacturing_process_Extrusion",
+        "manufacturing_process_Forging",
+        "manufacturing_process_Surface_Treatment",
+        "manufacturing_process_Joining",
+        "manufacturing_process_Design_for_Recycling"
+    ],
+    "target_names": [
+        "manufacturing_energy_MJ_per_t_product",
+        "manufacturing_scrap_rate_%",
+        "manufacturing_recycled_content_%",
+        "manufacturing_transport_emissions_kgCO2e_per_t"
+    ],
+    "dataset_size": 1000,
+    "test_size": 0.2,
+    "random_state": 42
+}

@@ -1,0 +1,9 @@
+{
+  "dataLastUpdated": "2025-10-08T20:00:00Z",
+  "newFeatures": [
+    { "id": "f-101", "title": "Scenario Wizard", "description": "Model process changes with guided steps.", "releasedAt": "2025-10-01T00:00:00Z" },
+    { "id": "f-102", "title": "Benchmark Compare", "description": "Compare your scores to industry medians.", "releasedAt": "2025-09-15T00:00:00Z" }
+  ],
+  "maintenanceSchedule": "2025-10-12T02:00:00Z",
+  "apiStatus": "operational"
+}
