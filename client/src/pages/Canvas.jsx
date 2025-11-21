@@ -2367,14 +2367,14 @@ function CanvasFlow() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col relative">
+    <div className="h-full bg-white flex flex-col relative">
       <AnimatePresence>
         {showWelcomeOverlay && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           >
             <motion.div
               initial={{ opacity: 0, y: 40, scale: 0.95 }}

@@ -320,13 +320,12 @@ export default function Wizard() {
     }, 2000);
   }
 
-  // Show metal selection if no metal is selected and no workflow exists
-  if (!selectedMetal && !workflowId) {
-    return <MetalSelection onSelect={handleMetalSelection} />;
-  }
+  const showMetalSelection = !selectedMetal && !workflowId;
 
   return (
-    <div className="relative min-h-screen">
+    <div className={`relative min-h-screen ${showMetalSelection ? 'overflow-hidden' : ''}`}>
+      {showMetalSelection && <MetalSelection onSelect={handleMetalSelection} />}
+
       {/* Notifications */}
       {error && (
         <div className="fixed top-4 right-4 z-50 max-w-md bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg animate-in slide-in-from-top">

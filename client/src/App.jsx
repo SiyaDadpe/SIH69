@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Landing from './pages/Landing';
 import Wizard from './pages/Wizard';
 import Reports from './pages/Reports';
+import Docs from './pages/Docs';
 
 import Canvas from './pages/Canvas';
 import Analytics from './pages/Analytics';
@@ -33,6 +34,11 @@ function App() {
       element: <Signup />,
       errorElement: <RouteError />
     },
+    {
+      path: "/docs",
+      element: <Docs />,
+      errorElement: <RouteError />
+    },
     
     // Routes with sidebar - wrapped in MainLayout (Protected)
     {
@@ -40,7 +46,7 @@ function App() {
       element: (
         <ProtectedRoute>
           <MainLayout />
-         </ProtectedRoute>
+          </ProtectedRoute>
       ),
       errorElement: <RouteError />,
       children: [

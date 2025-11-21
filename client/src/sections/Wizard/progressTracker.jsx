@@ -20,8 +20,8 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
   const isStepCompleted = (idx) => completedSteps.includes(idx)
 
   return (
-    <aside className="hidden md:block fixed inset-y-0 right-0 z-30 w-80 border-l bg-[#F3F2EC] p-6 overflow-hidden">
-      <div className="mb-4">
+    <aside className="hidden md:flex md:flex-col fixed inset-y-0 right-0 z-30 w-80 border-l bg-[#F3F2EC] overflow-hidden">
+      <div className="p-6 pb-4 flex-shrink-0">
         <h3 className="text-lg sm:text-xl font-bold text-[#181814]">Progress</h3>
         <div className="mt-2 flex items-center gap-2">
           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -33,7 +33,8 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
         </div>
       </div>
       
-      <ol className="relative min-h-full">
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <ol className="relative min-h-full">
         <div className="absolute left-[1.75rem] top-0 bottom-0 w-[2px] bg-gray-200" aria-hidden="true" />
         {items.map((step, idx) => {
           const completed = isStepCompleted(idx)
@@ -72,6 +73,7 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
           )
         })}
       </ol>
+      </div>
 
       <style>{`
         @keyframes floatStrong { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
