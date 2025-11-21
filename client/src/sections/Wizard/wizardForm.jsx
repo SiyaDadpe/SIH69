@@ -5,9 +5,9 @@ import * as z from "zod";
 import { AnimatePresence, motion } from "framer-motion";
 import miningData from "@/data/mining.json";
 import beneficiationData from "@/data/beneficiation.json";
-import { 
-  updateMiningStep, 
-  updateBeneficiationStep, 
+import {
+  updateMiningStep,
+  updateBeneficiationStep,
   updateRefiningStep,
   updateSmeltingStep,
   updateManufacturingStep,
@@ -17,9 +17,10 @@ import {
   saveAndCompleteStep,
   submitWizardWorkflow
 } from "@/services/wizardService";
-import { 
-  generateStepPrediction, 
-  validateRequiredFields 
+import {
+  generateStepPrediction,
+  validateRequiredFields,
+  getPredictionInfo
 } from "@/services/aiPredictionService";
 // Removed other data imports to avoid pre-filling from dataset
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,13 +62,13 @@ function CardCheckbox({ id, label, checked, onChange }) {
           onChange(!checked)
         }
       }}
-  className={[
+      className={[
         "group cursor-pointer rounded-xl border p-3 shadow-sm transition-all duration-200 ease-out focus:outline-none",
         "focus-visible:ring-2 focus-visible:ring-[#BA7967] focus-visible:ring-offset-2",
         checked
           ? "bg-linear-to-br from-[#6B5B59] to-[#3f3634] text-white border-transparent shadow-md -translate-y-0.5"
           : "bg-white text-gray-900 border-gray-200 hover:border-[#BA7967]/60 hover:bg-[#f8f4f0]",
-  ].join(" ")}
+      ].join(" ")}
       id={id}
     >
       <div className="flex items-start gap-3">
@@ -95,13 +96,13 @@ function CardRadio({ id, label, selected, onSelect }) {
           onSelect()
         }
       }}
-  className={[
+      className={[
         "group cursor-pointer rounded-xl border p-3 shadow-sm transition-all duration-200 ease-out focus:outline-none",
         "focus-visible:ring-2 focus-visible:ring-[#BA7967] focus-visible:ring-offset-2",
         selected
           ? "bg-linear-to-br from-[#6B5B59] to-[#3f3634] text-white border-transparent shadow-md -translate-y-0.5"
           : "bg-white text-gray-900 border-gray-200 hover:border-[#BA7967]/60 hover:bg-[#f8f4f0]",
-  ].join(" ")}
+      ].join(" ")}
       id={id}
     >
       <div className="flex items-start gap-3">
@@ -132,7 +133,7 @@ function StepSection({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="relative"
     >
-  <Card className="w-full rounded-3xl border border-[#e7dfd2] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] shadow-xl">
+      <Card className="w-full rounded-3xl border border-[#e7dfd2] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] shadow-xl">
         <div className="pointer-events-none absolute inset-0 opacity-40" style={{
           background: "radial-gradient(circle at 20% 20%, rgba(186,121,103,0.15), transparent 45%)",
         }} />
@@ -243,9 +244,9 @@ const miningProcesses = [
 const locations = [...new Set(miningData.map((d) => d.location))];
 const equipmentTypes = ["Diesel", "Electric", "Hybrid"];
 const biodiversityImpacts = [
-    { id: "low", label: "Low – Minimal disruption, already cleared land" },
-    { id: "moderate", label: "Moderate – Some clearing required, limited wildlife impact" },
-    { id: "high", label: "High – Large-scale forest clearing, high ecological loss" },
+  { id: "low", label: "Low – Minimal disruption, already cleared land" },
+  { id: "moderate", label: "Moderate – Some clearing required, limited wildlife impact" },
+  { id: "high", label: "High – Large-scale forest clearing, high ecological loss" },
 ];
 
 const formSchema = z.object({
@@ -268,7 +269,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues || {
@@ -293,35 +294,35 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
     console.log('📏 Number of fields:', Object.keys(data).length);
     console.log('✅ Form is valid:', isValid);
     console.log('❌ Form errors:', Object.keys(errors));
-    
+
     // Don't validate - let form validation handle it
     // Just save whatever data we have
-    
+
     setIsSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
-    
+
     try {
       console.log('💾 [Mining Form] Calling onSave function...');
       console.log('💾 [Mining Form] onSave exists?', typeof onSave);
-      
+
       if (!onSave) {
         console.error('❌ [Mining Form] onSave function is not provided!');
         setSaveError('Save function not available');
         setIsSaving(false);
         return;
       }
-      
+
       // Call onSave and WAIT for it to complete
       console.log('💾 [Mining Form] Executing onSave with data...');
       await onSave(data);
       console.log('✅ [Mining Form] onSave completed successfully');
-      
+
       setSaveSuccess(true);
-      
+
       // Small delay to show success message
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       console.log('➡️  [Mining Form] Calling onNext to move to next step...');
       if (onNext) {
         onNext();
@@ -329,7 +330,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
       } else {
         console.error('❌ [Mining Form] onNext function is not provided!');
       }
-      
+
       console.log('='.repeat(80));
       console.log('✅ [Mining Form] FORM SUBMISSION COMPLETED');
       console.log('='.repeat(80));
@@ -392,263 +393,341 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
-                  control={control}
-                  name="applicableProcesses"
-                  render={() => (
-                    <FormItem>
-                      <div className="mb-4">
-                        <FormLabel className={GROUP_HEADING_TEXT}>
-                          Select Applicable Processes*
-                        </FormLabel>
-                        <FormDescription>
-                          Select all the processes that apply.
-                        </FormDescription>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {miningProcesses.map((item) => (
-                          <FormField key={item.id} control={control} name="applicableProcesses" render={({ field }) => (
-                            <CardCheckbox
-                              id={`mining-proc-${item.id}`}
-                              label={item.label}
-                              checked={field.value?.includes(item.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(item.id); else next.delete(item.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={control}
+              name="applicableProcesses"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className={GROUP_HEADING_TEXT}>
+                      Select Applicable Processes*
+                    </FormLabel>
+                    <FormDescription>
+                      Select all the processes that apply.
+                    </FormDescription>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {miningProcesses.map((item) => (
+                      <FormField key={item.id} control={control} name="applicableProcesses" render={({ field }) => (
+                        <CardCheckbox
+                          id={`mining-proc-${item.id}`}
+                          label={item.label}
+                          checked={field.value?.includes(item.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(item.id); else next.delete(item.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                {applicableProcesses?.includes("others") && (
-                  <FormField
-                    control={control}
-                    name="others"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Please specify" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {applicableProcesses?.includes("others") && (
+              <FormField
+                control={control}
+                name="others"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Please specify" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+            )}
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField
-                    control={control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Location*</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a location" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Year of Operation</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 2023" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={control}
-                    name="oreGrade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Ore Grade (%)*</FormLabel>
-                        <FormControl>
-                          <div className="space-y-2">
-                            <Slider
-                              value={[typeof field.value === 'number' ? field.value : 0]}
-                              onValueChange={(v) => field.onChange(v[0])}
-                              min={0}
-                              max={100}
-                              step={1}
-                            />
-                            <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={control}
-                    name="overburdenRatio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={`flex items-center ${GROUP_HEADING_TEXT}`}>
-                          Overburden Ratio
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="ml-2 cursor-help text-muted-foreground">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Volume of waste removed per volume of ore</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <hr className="my-4 border-gray-200" />
-
-                <FormField
-                  control={control}
-                  name="typeOfEquipment"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Type of Equipment</FormLabel>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField
+                control={control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Location*</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {equipmentTypes.map((type) => (
-                            <CardRadio
-                              key={type}
-                              id={`equip-${type}`}
-                              label={type}
-                              selected={field.value === type.toLowerCase()}
-                              onSelect={() =>
-                                field.onChange(
-                                  field.value === type.toLowerCase()
-                                    ? undefined
-                                    : type.toLowerCase()
-                                )
-                              }
-                            />
-                          ))}
-                        </div>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        {locations.map((location) => (
+                          <SelectItem key={location} value={location}>
+                            {location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <hr className="my-4 border-gray-200" />
+              <FormField
+                control={control}
+                name="year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Year of Operation</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 2023" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField
-                    control={control}
-                    name="waterUsage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Water Usage (m³ per tonne of ore)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 0.5" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <FormField
+                control={control}
+                name="oreGrade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Ore Grade (%)*</FormLabel>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <Slider
+                          value={[typeof field.value === 'number' ? field.value : 0]}
+                          onValueChange={(v) => field.onChange(v[0])}
+                          min={0}
+                          max={100}
+                          step={1}
+                        />
+                        <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <FormField
-                    control={control}
-                    name="redMudGeneration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={`flex items-center ${GROUP_HEADING_TEXT}`}>
-                          Red Mud Generation (kg per tonne of ore)
-                           <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="ml-2 cursor-help text-muted-foreground">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  Depends on ore composition and extraction
-                                  process
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <FormField
+                control={control}
+                name="overburdenRatio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={`flex items-center ${GROUP_HEADING_TEXT}`}>
+                      Overburden Ratio
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="ml-2 cursor-help text-muted-foreground">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Volume of waste removed per volume of ore</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                <FormField
-                  control={control}
-                  name="biodiversityImpact"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Land Use / Biodiversity Impact</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {biodiversityImpacts.map((impact) => (
-                            <CardRadio
-                              key={impact.id}
-                              id={`bio-${impact.id}`}
-                              label={impact.label}
-                              selected={field.value === impact.id}
-                              onSelect={() =>
-                                field.onChange(
-                                  field.value === impact.id ? undefined : impact.id
-                                )
-                              }
-                            />
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={control}
+              name="typeOfEquipment"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Type of Equipment</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {equipmentTypes.map((type) => (
+                        <CardRadio
+                          key={type}
+                          id={`equip-${type}`}
+                          label={type}
+                          selected={field.value === type.toLowerCase()}
+                          onSelect={() =>
+                            field.onChange(
+                              field.value === type.toLowerCase()
+                                ? undefined
+                                : type.toLowerCase()
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <hr className="my-4 border-gray-200" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField
+                control={control}
+                name="waterUsage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Water Usage (m³ per tonne of ore)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 0.5" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="redMudGeneration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={`flex items-center ${GROUP_HEADING_TEXT}`}>
+                      Red Mud Generation (kg per tonne of ore)
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="ml-2 cursor-help text-muted-foreground">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Depends on ore composition and extraction
+                              process
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <hr className="my-4 border-gray-200" />
+
+            <FormField
+              control={control}
+              name="biodiversityImpact"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Land Use / Biodiversity Impact</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {biodiversityImpacts.map((impact) => (
+                        <CardRadio
+                          key={impact.id}
+                          id={`bio-${impact.id}`}
+                          label={impact.label}
+                          selected={field.value === impact.id}
+                          onSelect={() =>
+                            field.onChange(
+                              field.value === impact.id ? undefined : impact.id
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <hr className="my-4 border-gray-200" />
+
+            <h3 className="text-lg font-semibold mb-4">AI Predicted Values</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+              <FormField
+                control={control}
+                name="mining_energy_MJ_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Energy (MJ per tonne)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="mining_co2_kg_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>CO₂ (kg per tonne)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="mining_sox_kg_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>SOx (kg per tonne)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="mining_nox_kg_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>NOx (kg per tonne)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="mining_pm_kg_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Particulate Matter (PM)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+            </div>
           </form>
         </Form>
       </StepSection>
@@ -750,317 +829,317 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 1. Select Applicable Processes */}
-                <FormField
-                  control={control}
-                  name="processes"
-                  render={() => (
-                    <FormItem>
-                      <div className="mb-4">
-                        <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes*</FormLabel>
-                        <FormDescription>Choose all processes that apply.</FormDescription>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {processes.map((p) => (
-                          <FormField key={p.id} control={control} name="processes" render={({ field }) => (
-                            <CardCheckbox
-                              id={`beneficiation-proc-${p.id}`}
-                              label={p.label}
-                              checked={field.value?.includes(p.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(p.id); else next.delete(p.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* 1. Select Applicable Processes */}
+            <FormField
+              control={control}
+              name="processes"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes*</FormLabel>
+                    <FormDescription>Choose all processes that apply.</FormDescription>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {processes.map((p) => (
+                      <FormField key={p.id} control={control} name="processes" render={({ field }) => (
+                        <CardCheckbox
+                          id={`beneficiation-proc-${p.id}`}
+                          label={p.label}
+                          checked={field.value?.includes(p.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(p.id); else next.delete(p.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                {selectedProcesses?.includes("others") && (
-                  <FormField
-                    control={control}
-                    name="processOthers"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Specify other beneficiation processes" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {selectedProcesses?.includes("others") && (
+              <FormField
+                control={control}
+                name="processOthers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Specify other beneficiation processes" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+            )}
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                {/* 2. Operation Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField
-                    control={control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Location*</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a location" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {benLocations.map((loc) => (
-                              <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* 2. Operation Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField
+                control={control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Location*</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {benLocations.map((loc) => (
+                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <FormField
-                    control={control}
-                    name="oreFeedRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Ore Feed Rate (t/h)*</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" placeholder="e.g., 200" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <FormField
+                control={control}
+                name="oreFeedRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Ore Feed Rate (t/h)*</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" placeholder="e.g., 200" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <FormField
-                    control={control}
-                    name="waterConsumption"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Water Consumption (m³ per tonne of ore)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.1" placeholder="e.g., 1.2" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <FormField
+                control={control}
+                name="waterConsumption"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Water Consumption (m³ per tonne of ore)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" step="0.1" placeholder="e.g., 1.2" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <FormField
-                    control={control}
-                    name="electricityUse"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Electricity Use (kWh per tonne of ore)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.1" placeholder="e.g., 18.5" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <FormField
+                control={control}
+                name="electricityUse"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Electricity Use (kWh per tonne of ore)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" step="0.1" placeholder="e.g., 18.5" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* 3. Recovery and Crushing */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField
+                control={control}
+                name="beneficiationEfficiency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Beneficiation Efficiency (%)</FormLabel>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <Slider
+                          value={[typeof field.value === 'number' ? field.value : 0]}
+                          onValueChange={(v) => field.onChange(v[0])}
+                          min={0}
+                          max={100}
+                          step={1}
+                        />
+                        <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-2">
+                <FormLabel className={GROUP_HEADING_TEXT}>Crushing</FormLabel>
+                <FormDescription>Select stages involved.</FormDescription>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {crushingOptions.map((c) => (
+                    <FormField key={c.id} control={control} name="crushingSelections" render={({ field }) => (
+                      <CardCheckbox
+                        id={`ben-crush-${c.id}`}
+                        label={c.label}
+                        checked={field.value?.includes(c.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(c.id); else next.delete(c.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
                 </div>
+                <FormMessage />
+              </div>
+            </div>
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                {/* 3. Recovery and Crushing */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField
-                    control={control}
-                    name="beneficiationEfficiency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Beneficiation Efficiency (%)</FormLabel>
-                        <FormControl>
-                          <div className="space-y-2">
-                            <Slider
-                              value={[typeof field.value === 'number' ? field.value : 0]}
-                              onValueChange={(v) => field.onChange(v[0])}
-                              min={0}
-                              max={100}
-                              step={1}
-                            />
-                            <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* 4. Chemical Agents */}
+            <FormField
+              control={control}
+              name="chemicalAgents"
+              render={() => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Chemical Agents</FormLabel>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                    {[
+                      { id: "flocculants", label: "Flocculants" },
+                      { id: "dispersants", label: "Dispersants" },
+                      { id: "coagulants", label: "Coagulants" },
+                      { id: "none", label: "None / Natural separation" },
+                      { id: "others", label: "Others" },
+                    ].map((chem) => (
+                      <FormField key={chem.id} control={control} name="chemicalAgents" render={({ field }) => (
+                        <CardCheckbox
+                          id={`chem-${chem.id}`}
+                          label={chem.label}
+                          checked={field.value?.includes(chem.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(chem.id); else next.delete(chem.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                  <div className="space-y-2">
-                    <FormLabel className={GROUP_HEADING_TEXT}>Crushing</FormLabel>
-                    <FormDescription>Select stages involved.</FormDescription>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {crushingOptions.map((c) => (
-                        <FormField key={c.id} control={control} name="crushingSelections" render={({ field }) => (
-                          <CardCheckbox
-                            id={`ben-crush-${c.id}`}
-                            label={c.label}
-                            checked={field.value?.includes(c.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(c.id); else next.delete(c.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
+            {selectedChemicals?.includes("others") && (
+              <FormField
+                control={control}
+                name="chemicalOthers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Chemical Agents</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Specify other chemical agents used" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* 5. Waste and Pollution Management */}
+            <FormField
+              control={control}
+              name="tailings"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Waste Tailings & Slurry Management</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {tailingsOptions.map((opt) => (
+                        <CardRadio
+                          key={opt.id}
+                          id={`tail-${opt.id}`}
+                          label={opt.label}
+                          selected={field.value === opt.id}
+                          onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                        />
                       ))}
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {selectedTailings === "others" && (
+              <FormField
+                control={control}
+                name="tailingsOthers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Tailings Management</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Specify other tailings management methods" {...field} />
+                    </FormControl>
                     <FormMessage />
-                  </div>
-                </div>
+                  </FormItem>
+                )}
+              />
+            )}
 
-                <hr className="my-4 border-gray-200" />
-
-                {/* 4. Chemical Agents */}
-                <FormField
-                  control={control}
-                  name="chemicalAgents"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Chemical Agents</FormLabel>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                        {[
-                          { id: "flocculants", label: "Flocculants" },
-                          { id: "dispersants", label: "Dispersants" },
-                          { id: "coagulants", label: "Coagulants" },
-                          { id: "none", label: "None / Natural separation" },
-                          { id: "others", label: "Others" },
-                        ].map((chem) => (
-                          <FormField key={chem.id} control={control} name="chemicalAgents" render={({ field }) => (
-                            <CardCheckbox
-                              id={`chem-${chem.id}`}
-                              label={chem.label}
-                              checked={field.value?.includes(chem.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(chem.id); else next.delete(chem.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField
+                control={control}
+                name="noiseLevel"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className={GROUP_HEADING_TEXT}>Noise Pollution Level</FormLabel>
+                    <FormControl>
+                      <div className="grid grid-cols-3 gap-3">
+                        {levelOptions.map((opt) => (
+                          <CardRadio
+                            key={opt.id}
+                            id={`noise-${opt.id}`}
+                            label={opt.label}
+                            selected={field.value === opt.id}
+                            onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                          />
                         ))}
                       </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {selectedChemicals?.includes("others") && (
-                  <FormField
-                    control={control}
-                    name="chemicalOthers"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Chemical Agents</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Specify other chemical agents used" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
 
-                <hr className="my-4 border-gray-200" />
-
-                {/* 5. Waste and Pollution Management */}
-                <FormField
-                  control={control}
-                  name="tailings"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Waste Tailings & Slurry Management</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {tailingsOptions.map((opt) => (
-                            <CardRadio
-                              key={opt.id}
-                              id={`tail-${opt.id}`}
-                              label={opt.label}
-                              selected={field.value === opt.id}
-                              onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                            />
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {selectedTailings === "others" && (
-                  <FormField
-                    control={control}
-                    name="tailingsOthers"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Tailings Management</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Specify other tailings management methods" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <FormField
+                control={control}
+                name="dustLevel"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className={GROUP_HEADING_TEXT}>Dust Pollution Level</FormLabel>
+                    <FormControl>
+                      <div className="grid grid-cols-3 gap-3">
+                        {levelOptions.map((opt) => (
+                          <CardRadio
+                            key={opt.id}
+                            id={`dust-${opt.id}`}
+                            label={opt.label}
+                            selected={field.value === opt.id}
+                            onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                          />
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField
-                    control={control}
-                    name="noiseLevel"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel className={GROUP_HEADING_TEXT}>Noise Pollution Level</FormLabel>
-                        <FormControl>
-                          <div className="grid grid-cols-3 gap-3">
-                            {levelOptions.map((opt) => (
-                              <CardRadio
-                                key={opt.id}
-                                id={`noise-${opt.id}`}
-                                label={opt.label}
-                                selected={field.value === opt.id}
-                                onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                              />
-                            ))}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={control}
-                    name="dustLevel"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel className={GROUP_HEADING_TEXT}>Dust Pollution Level</FormLabel>
-                        <FormControl>
-                          <div className="grid grid-cols-3 gap-3">
-                            {levelOptions.map((opt) => (
-                              <CardRadio
-                                key={opt.id}
-                                id={`dust-${opt.id}`}
-                                label={opt.label}
-                                selected={field.value === opt.id}
-                                onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                              />
-                            ))}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              />
+            </div>
           </form>
         </Form>
       </StepSection>
@@ -1124,12 +1203,12 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     console.log('💾 [handleSaveStep] Data received:', data);
     console.log('💾 [handleSaveStep] Data keys:', Object.keys(data));
     console.log('💾 [handleSaveStep] Data size:', Object.keys(data).length);
-    
+
     if (!workflowId) {
       console.error('❌ [handleSaveStep] No workflow ID available');
       return;
     }
-    
+
     setSaving(true);
     try {
       // Map step names to API functions
@@ -1142,20 +1221,20 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         recycling: updateRecyclingStep,
         valorization: updateValorizationStep,
       };
-      
+
       const updateFn = stepFunctions[stepName];
       console.log('💾 [handleSaveStep] Update function found:', !!updateFn);
-      
+
       if (updateFn) {
         // Save the step data
         console.log('💾 [handleSaveStep] Calling API function...');
         const response = await updateFn(workflowId, data);
         console.log('💾 [handleSaveStep] API Response:', response);
-        
+
         if (response.success && response.data?.workflow) {
           onWorkflowUpdate?.(response.data.workflow);
           console.log('✅ [handleSaveStep] Workflow updated successfully');
-          
+
           // Mark step as complete
           try {
             console.log('💾 [handleSaveStep] Marking step as complete...');
@@ -1171,7 +1250,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       } else {
         console.error('❌ [handleSaveStep] No update function found for step:', stepName);
       }
-      
+
       // Save to local state
       setFormValues((p) => ({ ...p, [stepName]: data }));
       console.log('💾 [handleSaveStep] Saved to local state');
@@ -1231,7 +1310,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     Object.entries(stepMappings).forEach(([frontendField, backendField]) => {
       if (formData[frontendField] !== undefined) {
         let value = formData[frontendField];
-        
+
         // Handle special conversions
         if (frontendField === 'applicableProcesses' && Array.isArray(value)) {
           // Convert array to first element or joined string
@@ -1247,9 +1326,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           // Keep arrays as-is for other fields
           value = value.length > 0 ? value : [];
         }
-        
+
         mappedData[backendField] = value;
-        
+
         // Remove the old field name if different
         if (frontendField !== backendField) {
           delete mappedData[frontendField];
@@ -1264,22 +1343,22 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const handleGenerateAIPrediction = async (stepName, currentFormData) => {
     console.log('🤖 [AI Prediction] Button clicked for step:', stepName);
     console.log('🤖 [AI Prediction] Current form data (frontend):', currentFormData);
-    
+
     if (!workflowId) {
       setPredictionError('No workflow ID available. Please create a workflow first.');
       return;
     }
-    
+
     // Clear previous messages
     setPredictionError(null);
     setPredictionSuccess(null);
-    
+
     // Map frontend field names to backend field names
     const mappedData = mapFormDataToBackendFields(stepName, currentFormData);
     console.log('🔄 [AI Prediction] Mapped data (backend format):', mappedData);
     console.log('🔄 [AI Prediction] Mapped keys:', Object.keys(mappedData).join(', '));
-    console.log('🔄 [AI Prediction] Mapped values:', Object.entries(mappedData).map(([k,v]) => `${k}=${JSON.stringify(v)}`).join(', '));
-    
+    console.log('🔄 [AI Prediction] Mapped values:', Object.entries(mappedData).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', '));
+
     // Validate required fields with mapped data
     const validation = validateRequiredFields(stepName, mappedData);
     if (!validation.valid) {
@@ -1288,33 +1367,44 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       setTimeout(() => setPredictionError(null), 5000);
       return;
     }
-    
+
     setPredicting(true);
-    
+
     try {
       // Call AI prediction API with mapped data
       const response = await generateStepPrediction(workflowId, stepName, mappedData);
-      
+
       if (response.success && response.data?.combinedData) {
         console.log('✅ [AI Prediction] Predictions received:', response.data.combinedData);
         console.log('📊 [AI Prediction] Metadata:', response.data.predictionMetadata);
-        
+
         // Map the response back to frontend field names for form population
-        const frontendData = { ...currentFormData, ...response.data.combinedData };
-        
+        // const frontendData = { ...currentFormData, ...response.data.combinedData };
+        const info = getPredictionInfo(stepName);
+        const predictableFields = info?.predictableFields || [];
+
+        // 2. Merge only predicted fields
+        const mergedData = { ...currentFormData };
+
+        predictableFields.forEach(field => {
+          if (response.data.combinedData.hasOwnProperty(field)) {
+            mergedData[field] = response.data.combinedData[field];
+          }
+        });
+
         // Update form values with predicted data
         setFormValues((prev) => ({
           ...prev,
-          [stepName]: frontendData
+          [stepName]: mergedData
         }));
-        
+
         // Show success message
         const predictedCount = response.data.predictionMetadata.predictedCount;
         const confidence = (response.data.predictionMetadata.confidence * 100).toFixed(1);
         setPredictionSuccess(`🎉 Generated ${predictedCount} predictions with ${confidence}% confidence`);
-        
+
         console.log('✅ [AI Prediction] Form values updated successfully');
-        
+
         // Clear success message after 5 seconds
         setTimeout(() => setPredictionSuccess(null), 5000);
       }
@@ -1328,7 +1418,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   };
 
   const renderStep = () => {
-    switch(stepKey) {
+    switch (stepKey) {
       case 'mining':
         return (
           <MiningProcessDetails
@@ -1424,12 +1514,12 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         );
       default:
         return (
-      <StepForm
-        stepKey={stepKey}
-        stepTitle={currentStep.title}
-        values={stepValues}
-        onChange={(field, value) => handleValueChange(stepKey, field, value)}
-      />
+          <StepForm
+            stepKey={stepKey}
+            stepTitle={currentStep.title}
+            values={stepValues}
+            onChange={(field, value) => handleValueChange(stepKey, field, value)}
+          />
         );
     }
   }
@@ -1450,7 +1540,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           </div>
         </div>
       )}
-      
+
       {predictionSuccess && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 animate-in slide-in-from-top">
           <div className="flex items-start gap-2">
@@ -1464,7 +1554,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           </div>
         </div>
       )}
-      
+
       {renderStep()}
       {!(stepKey === 'mining' || stepKey === 'beneficiation' || stepKey === 'refining' || stepKey === 'smelting' || stepKey === 'manufacturing' || stepKey === 'recycling' || stepKey === 'valorization') && (
         <div className="mt-6 flex justify-between">
@@ -1584,188 +1674,188 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 1. Processes */}
-                <FormField
-                  control={control}
-                  name="processes"
-                  render={() => (
-                    <FormItem>
-                      <div className="mb-4">
-                        <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
-                        <FormDescription>Choose all that apply.</FormDescription>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {processOptions.map((opt) => (
-                          <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
-                            <CardCheckbox
-                              id={`ref-proc-${opt.id}`}
-                              label={opt.label}
-                              checked={field.value?.includes(opt.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(opt.id); else next.delete(opt.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* 1. Processes */}
+            <FormField
+              control={control}
+              name="processes"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
+                    <FormDescription>Choose all that apply.</FormDescription>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {processOptions.map((opt) => (
+                      <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
+                        <CardCheckbox
+                          id={`ref-proc-${opt.id}`}
+                          label={opt.label}
+                          checked={field.value?.includes(opt.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(opt.id); else next.delete(opt.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                {selectedProcesses?.includes('others') && (
-                  <FormField control={control} name="processOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
-                      <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+            {selectedProcesses?.includes('others') && (
+              <FormField control={control} name="processOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
+                  <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                {/* 2. Variants / Enhancements */}
-                <FormField
-                  control={control}
-                  name="variants"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Variants / Enhancements</FormLabel>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                        {variantOptions.map((opt) => (
-                          <FormField key={opt.id} control={control} name="variants" render={({ field }) => (
-                            <CardCheckbox
-                              id={`ref-var-${opt.id}`}
-                              label={opt.label}
-                              checked={field.value?.includes(opt.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(opt.id); else next.delete(opt.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* 2. Variants / Enhancements */}
+            <FormField
+              control={control}
+              name="variants"
+              render={() => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Variants / Enhancements</FormLabel>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                    {variantOptions.map((opt) => (
+                      <FormField key={opt.id} control={control} name="variants" render={({ field }) => (
+                        <CardCheckbox
+                          id={`ref-var-${opt.id}`}
+                          label={opt.label}
+                          checked={field.value?.includes(opt.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(opt.id); else next.delete(opt.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                {selectedVariants?.includes('others') && (
-                  <FormField control={control} name="variantOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Variant / Enhancement</FormLabel>
-                      <FormControl><Input placeholder="Specify other variant" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+            {selectedVariants?.includes('others') && (
+              <FormField control={control} name="variantOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Variant / Enhancement</FormLabel>
+                  <FormControl><Input placeholder="Specify other variant" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                {/* 3. Resource Consumption */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="energyUse" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Energy Use (kWh or MJ per tonne of alumina)*</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 12000" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+            {/* 3. Resource Consumption */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="energyUse" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Energy Use (kWh or MJ per tonne of alumina)*</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 12000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                  <FormField control={control} name="waterUse" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Water Use (m³ per tonne of alumina)*</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 2.5" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+              <FormField control={control} name="waterUse" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Water Use (m³ per tonne of alumina)*</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 2.5" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                  <FormField control={control} name="redMudGen" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Red Mud Generation (kg per tonne of alumina)*</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 1000" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+              <FormField control={control} name="redMudGen" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Red Mud Generation (kg per tonne of alumina)*</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 1000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                  <FormField control={control} name="causticSoda" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Caustic soda (kg/t)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 90" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+              <FormField control={control} name="causticSoda" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Caustic soda (kg/t)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 90" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                  <FormField control={control} name="limeAdditives" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Lime / other additives (kg/t)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 40" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+              <FormField control={control} name="limeAdditives" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Lime / other additives (kg/t)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 40" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                {/* 4. Emissions and Toxicity */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <FormField control={control} name="so2" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>SO₂ emissions (kg per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.7" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={control} name="nox" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>NOₓ emissions (kg per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.9" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={control} name="dust" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Dust emissions (kg per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.2" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+            {/* 4. Emissions and Toxicity */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <FormField control={control} name="so2" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>SO₂ emissions (kg per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.7" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="nox" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>NOₓ emissions (kg per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.9" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="dust" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Dust emissions (kg per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.2" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
 
-                <FormField control={control} name="toxicity" render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel className={GROUP_HEADING_TEXT}>Toxicity Indicators of Red Mud</FormLabel>
-                    <FormControl>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {toxicityOptions.map((opt) => (
-                          <CardRadio
-                            key={opt.id}
-                            id={`tox-${opt.id}`}
-                            label={opt.label}
-                            selected={field.value === opt.id}
-                            onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                          />
-                        ))}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+            <FormField control={control} name="toxicity" render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel className={GROUP_HEADING_TEXT}>Toxicity Indicators of Red Mud</FormLabel>
+                <FormControl>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {toxicityOptions.map((opt) => (
+                      <CardRadio
+                        key={opt.id}
+                        id={`tox-${opt.id}`}
+                        label={opt.label}
+                        selected={field.value === opt.id}
+                        onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                      />
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-                {toxicity === 'Others' && (
-                  <FormField control={control} name="toxicityOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Specify Toxicity</FormLabel>
-                      <FormControl><Input placeholder="Describe toxicity indicator" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+            {toxicity === 'Others' && (
+              <FormField control={control} name="toxicityOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Specify Toxicity</FormLabel>
+                  <FormControl><Input placeholder="Describe toxicity indicator" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
           </form>
         </Form>
       </StepSection>
@@ -1806,7 +1896,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     variantOthers: z.string().optional(),
     electricityDemand: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
     co2Emissions: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    cellTechnology: z.enum(["Pre-baked","Soderberg","Inert Anode"], { required_error: 'Select a cell technology' }),
+    cellTechnology: z.enum(["Pre-baked", "Soderberg", "Inert Anode"], { required_error: 'Select a cell technology' }),
     pfcEmissions: z.coerce.number().min(0).optional(),
     so2: z.coerce.number().min(0).optional(),
     nox: z.coerce.number().min(0).optional(),
@@ -1853,186 +1943,186 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 1. Processes */}
-                <FormField control={control} name="processes" render={() => (
-                  <FormItem>
-                    <div className="mb-4">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
-                      <FormDescription>Choose all that apply.</FormDescription>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {processOptions.map((opt) => (
-                        <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
-                          <CardCheckbox
-                            id={`sml-proc-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
+            {/* 1. Processes */}
+            <FormField control={control} name="processes" render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
+                  <FormDescription>Choose all that apply.</FormDescription>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {processOptions.map((opt) => (
+                    <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
+                      <CardCheckbox
+                        id={`sml-proc-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            {selectedProcesses?.includes('others') && (
+              <FormField control={control} name="processOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
+                  <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* 2. Variants / Enhancements */}
+            <FormField control={control} name="variants" render={() => (
+              <FormItem>
+                <FormLabel className={GROUP_HEADING_TEXT}>Variants / Enhancements</FormLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {variantOptions.map((opt) => (
+                    <FormField key={opt.id} control={control} name="variants" render={({ field }) => (
+                      <CardCheckbox
+                        id={`sml-var-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            {selectedVariants?.includes('others') && (
+              <FormField control={control} name="variantOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Variant / Enhancement</FormLabel>
+                  <FormControl><Input placeholder="Specify other variant" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* 3. Core Technology and Resource Demand */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="electricityDemand" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Electricity Demand (kWh per tonne of aluminium)*</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 14000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="co2Emissions" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>CO₂ Emissions (kg per tonne of aluminium)*</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 2000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="cellTechnology" render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Cell Technology*</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {cellTechOptions.map((opt) => (
+                        <CardRadio
+                          key={opt.id}
+                          id={`cell-${opt.id}`}
+                          label={opt.label}
+                          selected={field.value === opt.id}
+                          onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                        />
                       ))}
                     </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                {selectedProcesses?.includes('others') && (
-                  <FormField control={control} name="processOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
-                      <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+              <FormField control={control} name="pfcEmissions" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>PFC Emissions - Perfluorocarbon (kg per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.8" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
 
-                <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200" />
 
-                {/* 2. Variants / Enhancements */}
-                <FormField control={control} name="variants" render={() => (
-                  <FormItem>
-                    <FormLabel className={GROUP_HEADING_TEXT}>Variants / Enhancements</FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                      {variantOptions.map((opt) => (
-                        <FormField key={opt.id} control={control} name="variants" render={({ field }) => (
-                          <CardCheckbox
-                            id={`sml-var-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
-                      ))}
+            {/* 4. Emissions and Efficiency Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="so2" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>SO₂ Emissions (kg per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 1.1" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="nox" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>NOₓ Emissions (kg per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 1.6" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="fluorideRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Recovery Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
                     </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                {selectedVariants?.includes('others') && (
-                  <FormField control={control} name="variantOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Variant / Enhancement</FormLabel>
-                      <FormControl><Input placeholder="Specify other variant" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-
-                <hr className="my-4 border-gray-200" />
-
-                {/* 3. Core Technology and Resource Demand */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="electricityDemand" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Electricity Demand (kWh per tonne of aluminium)*</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 14000" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="co2Emissions" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>CO₂ Emissions (kg per tonne of aluminium)*</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 2000" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="cellTechnology" render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Cell Technology*</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {cellTechOptions.map((opt) => (
-                            <CardRadio
-                              key={opt.id}
-                              id={`cell-${opt.id}`}
-                              label={opt.label}
-                              selected={field.value === opt.id}
-                              onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                            />
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="pfcEmissions" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>PFC Emissions - Perfluorocarbon (kg per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.8" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-
-                <hr className="my-4 border-gray-200" />
-
-                {/* 4. Emissions and Efficiency Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="so2" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>SO₂ Emissions (kg per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 1.1" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="nox" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>NOₓ Emissions (kg per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 1.6" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="fluorideRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Recovery Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="thermalRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Thermal Energy Recovery Potential (% of total energy)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+              <FormField control={control} name="thermalRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Thermal Energy Recovery Potential (% of total energy)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
           </form>
         </Form>
       </StepSection>
@@ -2059,7 +2149,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     { id: 'continuous', label: 'Continuous Casting' },
   ]
 
-  const transportModes = ['Road','Rail','Sea','Air','Mixed','Others']
+  const transportModes = ['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']
 
   const sectors = [
     { id: 'automotive', label: 'Automotive' },
@@ -2085,12 +2175,12 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     energyUsePerStep: z.coerce.number().min(0).optional(),
     fabricationEmissions: z.coerce.number().min(0).optional(),
     transportDistance: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    transportMode: z.enum(['Road','Rail','Sea','Air','Mixed','Others']).optional(),
+    transportMode: z.enum(['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']).optional(),
     transportModeOthers: z.string().optional(),
     transportEmissionsPerTkm: z.coerce.number().min(0).optional(),
     lightweightingSectors: z.array(z.string()).default([]),
     lightweightingOthers: z.string().optional(),
-    corrosionImpact: z.enum(['minimal','moderate','severe','others']).optional(),
+    corrosionImpact: z.enum(['minimal', 'moderate', 'severe', 'others']).optional(),
     corrosionOthers: z.string().optional(),
   }).superRefine((val, ctx) => {
     // Casting sub-selection is required only if Casting is selected
@@ -2148,236 +2238,236 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 1. Select Applicable Processes */}
-                <FormField control={control} name="processes" render={() => (
-                  <FormItem>
-                    <div className="mb-4">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {processOptions.map((opt) => (
-                        <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
-                          <CardCheckbox
-                            id={`mfg-proc-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                {selectedProcesses?.includes('others') && (
-                  <FormField control={control} name="processOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
-                      <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-
-                {/* 2. Process Details and Metrics */}
-                {selectedProcesses?.includes('casting') && (
-                  <FormField control={control} name="castingProcesses" render={() => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Manufacturing Process - Casting*</FormLabel>
-                      <div className="flex flex-wrap gap-4 mt-2">
-                        {castingOptions.map((opt) => (
-                          <FormField key={opt.id} control={control} name="castingProcesses" render={({ field }) => (
-                            <CardCheckbox
-                              id={`mfg-cast-${opt.id}`}
-                              label={opt.label}
-                              checked={field.value?.includes(opt.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(opt.id); else next.delete(opt.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="scrapRate" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Scrap Rate (% of material lost)*</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="recycledContent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Recycled Content (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="energyUsePerStep" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Energy Use per Process Step (MJ/t or kWh/t)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 980" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="fabricationEmissions" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Emissions from Fabrication (kg CO₂e per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 120" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+            {/* 1. Select Applicable Processes */}
+            <FormField control={control} name="processes" render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
                 </div>
-
-                {/* 3. Logistics and Transport */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="transportDistance" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Transport Distance (km)*</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 120" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="transportMode" render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Transport Mode</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {transportModes.map((m) => (
-                            <CardRadio
-                              key={m}
-                              id={`transport-${m}`}
-                              label={m}
-                              selected={field.value === m}
-                              onSelect={() => field.onChange(field.value === m ? undefined : m)}
-                            />
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  {transportMode === 'Others' && (
-                    <FormField control={control} name="transportModeOthers" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Transport Mode</FormLabel>
-                        <FormControl><Input placeholder="Specify other transport mode" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {processOptions.map((opt) => (
+                    <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
+                      <CardCheckbox
+                        id={`mfg-proc-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
                     )} />
-                  )}
-
-                  <FormField control={control} name="transportEmissionsPerTkm" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Transport Emissions (kg CO₂e per tonne-km)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.08" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  ))}
                 </div>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-                {/* 4. Product End-Use Impact */}
-                <FormField control={control} name="lightweightingSectors" render={() => (
-                  <FormItem>
-                    <FormLabel className={GROUP_HEADING_TEXT}>Lightweighting (select applicable sectors)</FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                      {sectors.map((opt) => (
-                        <FormField key={opt.id} control={control} name="lightweightingSectors" render={({ field }) => (
-                          <CardCheckbox
-                            id={`mfg-sector-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
+            {selectedProcesses?.includes('others') && (
+              <FormField control={control} name="processOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
+                  <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+
+            {/* 2. Process Details and Metrics */}
+            {selectedProcesses?.includes('casting') && (
+              <FormField control={control} name="castingProcesses" render={() => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Manufacturing Process - Casting*</FormLabel>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {castingOptions.map((opt) => (
+                      <FormField key={opt.id} control={control} name="castingProcesses" render={({ field }) => (
+                        <CardCheckbox
+                          id={`mfg-cast-${opt.id}`}
+                          label={opt.label}
+                          checked={field.value?.includes(opt.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(opt.id); else next.delete(opt.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="scrapRate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Scrap Rate (% of material lost)*</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="recycledContent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Recycled Content (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="energyUsePerStep" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Energy Use per Process Step (MJ/t or kWh/t)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 980" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="fabricationEmissions" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Emissions from Fabrication (kg CO₂e per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 120" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* 3. Logistics and Transport */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="transportDistance" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Transport Distance (km)*</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 120" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="transportMode" render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Transport Mode</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {transportModes.map((m) => (
+                        <CardRadio
+                          key={m}
+                          id={`transport-${m}`}
+                          label={m}
+                          selected={field.value === m}
+                          onSelect={() => field.onChange(field.value === m ? undefined : m)}
+                        />
                       ))}
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              {transportMode === 'Others' && (
+                <FormField control={control} name="transportModeOthers" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Transport Mode</FormLabel>
+                    <FormControl><Input placeholder="Specify other transport mode" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
+              )}
 
-                {selectedSectors?.includes('others') && (
-                  <FormField control={control} name="lightweightingOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Sector</FormLabel>
-                      <FormControl><Input placeholder="Specify other sector" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+              <FormField control={control} name="transportEmissionsPerTkm" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Transport Emissions (kg CO₂e per tonne-km)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.08" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
 
-                <FormField control={control} name="corrosionImpact" render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel className={GROUP_HEADING_TEXT}>Corrosion Behavior Impact</FormLabel>
-                    <FormControl>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {corrosionOptions.map((opt) => (
-                          <CardRadio
-                            key={opt.id}
-                            id={`cor-${opt.id}`}
-                            label={opt.label}
-                            selected={field.value === opt.id}
-                            onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                          />
-                        ))}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+            {/* 4. Product End-Use Impact */}
+            <FormField control={control} name="lightweightingSectors" render={() => (
+              <FormItem>
+                <FormLabel className={GROUP_HEADING_TEXT}>Lightweighting (select applicable sectors)</FormLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {sectors.map((opt) => (
+                    <FormField key={opt.id} control={control} name="lightweightingSectors" render={({ field }) => (
+                      <CardCheckbox
+                        id={`mfg-sector-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-                {watch('corrosionImpact') === 'others' && (
-                  <FormField control={control} name="corrosionOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Corrosion Impact</FormLabel>
-                      <FormControl><Input placeholder="Describe corrosion behavior" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+            {selectedSectors?.includes('others') && (
+              <FormField control={control} name="lightweightingOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Sector</FormLabel>
+                  <FormControl><Input placeholder="Specify other sector" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+
+            <FormField control={control} name="corrosionImpact" render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel className={GROUP_HEADING_TEXT}>Corrosion Behavior Impact</FormLabel>
+                <FormControl>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {corrosionOptions.map((opt) => (
+                      <CardRadio
+                        key={opt.id}
+                        id={`cor-${opt.id}`}
+                        label={opt.label}
+                        selected={field.value === opt.id}
+                        onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                      />
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            {watch('corrosionImpact') === 'others' && (
+              <FormField control={control} name="corrosionOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Corrosion Impact</FormLabel>
+                  <FormControl><Input placeholder="Describe corrosion behavior" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
           </form>
         </Form>
       </StepSection>
@@ -2423,7 +2513,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
     variantOthers: z.string().optional(),
     scrapInputPercent: z.coerce.number().min(0).max(100, { message: '0 - 100 required' }),
     collectionRatePercent: z.coerce.number().min(0).max(100, { message: '0 - 100 required' }),
-    recyclingMethod: z.enum(['closed-loop','open-loop','mixed'], { required_error: 'Select a primary recycling method' }),
+    recyclingMethod: z.enum(['closed-loop', 'open-loop', 'mixed'], { required_error: 'Select a primary recycling method' }),
     recoveryYieldPercent: z.coerce.number().min(0).max(100).optional(),
     recyclingEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
     closedLoopPercent: z.coerce.number().min(0).max(100).optional(),
@@ -2477,262 +2567,262 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 1. Select Applicable Processes */}
-                <FormField control={control} name="processes" render={() => (
-                  <FormItem>
-                    <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                      {processOptions.map((opt) => (
-                        <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
-                          <CardCheckbox
-                            id={`rcy-proc-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                {selectedProcesses?.includes('others') && (
-                  <FormField control={control} name="processOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
-                      <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-
-                {/* 2. Variants / Enhancements */}
-                <FormField control={control} name="variants" render={() => (
-                  <FormItem>
-                    <FormLabel className={GROUP_HEADING_TEXT}>Variants / Enhancements</FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                      {variantOptions.map((opt) => (
-                        <FormField key={opt.id} control={control} name="variants" render={({ field }) => (
-                          <CardCheckbox
-                            id={`rcy-var-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                {selectedVariants?.includes('others') && (
-                  <FormField control={control} name="variantOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Variant</FormLabel>
-                      <FormControl><Input placeholder="Specify other variant" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
-
-                {/* 3. Core Metrics and Yield */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="scrapInputPercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Scrap Input Percentage (% of total feedstock)*</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="collectionRatePercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Collection Rate (% of available scrap collected)*</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="recyclingMethod" render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={GROUP_HEADING_TEXT}>Recycling Methods*</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {methodOptions.map((opt) => (
-                            <CardRadio
-                              key={opt.id}
-                              id={`recycle-method-${opt.id}`}
-                              label={opt.label}
-                              selected={field.value === opt.id}
-                              onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
-                            />
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="recoveryYieldPercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Recovery Yield (% of aluminium recovered)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="recyclingEfficiencyPercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Recycling Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="closedLoopPercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Closed-loop Recycling Percentage (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="openLoopPercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Open-loop Recycling Percentage (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+            {/* 1. Select Applicable Processes */}
+            <FormField control={control} name="processes" render={() => (
+              <FormItem>
+                <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes</FormLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {processOptions.map((opt) => (
+                    <FormField key={opt.id} control={control} name="processes" render={({ field }) => (
+                      <CardCheckbox
+                        id={`rcy-proc-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
                 </div>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-                {/* 4. Energy, Emissions, and Sorting */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="furnaceEnergyDemand" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Furnace Energy Demand (kWh or MJ per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 1100" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+            {selectedProcesses?.includes('others') && (
+              <FormField control={control} name="processOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Process</FormLabel>
+                  <FormControl><Input placeholder="Specify other process" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
 
-                  <FormField control={control} name="emissionSavings" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Emission Savings (kg CO₂e avoided per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 11800" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+            {/* 2. Variants / Enhancements */}
+            <FormField control={control} name="variants" render={() => (
+              <FormItem>
+                <FormLabel className={GROUP_HEADING_TEXT}>Variants / Enhancements</FormLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {variantOptions.map((opt) => (
+                    <FormField key={opt.id} control={control} name="variants" render={({ field }) => (
+                      <CardCheckbox
+                        id={`rcy-var-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
                 </div>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-                <FormField control={control} name="sortingMethods" render={() => (
-                  <FormItem>
-                    <FormLabel className={GROUP_HEADING_TEXT}>Sorting Methods</FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                      {sortingOptions.map((opt) => (
-                        <FormField key={opt.id} control={control} name="sortingMethods" render={({ field }) => (
-                          <CardCheckbox
-                            id={`rcy-sort-${opt.id}`}
-                            label={opt.label}
-                            checked={field.value?.includes(opt.id)}
-                            onChange={(checked) => {
-                              const next = new Set(field.value || [])
-                              if (checked) next.add(opt.id); else next.delete(opt.id)
-                              field.onChange(Array.from(next))
-                            }}
-                          />
-                        )} />
+            {selectedVariants?.includes('others') && (
+              <FormField control={control} name="variantOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Variant</FormLabel>
+                  <FormControl><Input placeholder="Specify other variant" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
+
+            {/* 3. Core Metrics and Yield */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="scrapInputPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Scrap Input Percentage (% of total feedstock)*</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="collectionRatePercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Collection Rate (% of available scrap collected)*</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="recyclingMethod" render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className={GROUP_HEADING_TEXT}>Recycling Methods*</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {methodOptions.map((opt) => (
+                        <CardRadio
+                          key={opt.id}
+                          id={`recycle-method-${opt.id}`}
+                          label={opt.label}
+                          selected={field.value === opt.id}
+                          onSelect={() => field.onChange(field.value === opt.id ? undefined : opt.id)}
+                        />
                       ))}
                     </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                {selectedSorting?.includes('others') && (
-                  <FormField control={control} name="sortingOthers" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Other Sorting Method</FormLabel>
-                      <FormControl><Input placeholder="Specify other sorting method" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                )}
+              <FormField control={control} name="recoveryYieldPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Recovery Yield (% of aluminium recovered)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="recyclingEfficiencyPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Recycling Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="closedLoopPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Closed-loop Recycling Percentage (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="openLoopPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Open-loop Recycling Percentage (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* 4. Energy, Emissions, and Sorting */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="furnaceEnergyDemand" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Furnace Energy Demand (kWh or MJ per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 1100" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="emissionSavings" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Emission Savings (kg CO₂e avoided per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 11800" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            <FormField control={control} name="sortingMethods" render={() => (
+              <FormItem>
+                <FormLabel className={GROUP_HEADING_TEXT}>Sorting Methods</FormLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {sortingOptions.map((opt) => (
+                    <FormField key={opt.id} control={control} name="sortingMethods" render={({ field }) => (
+                      <CardCheckbox
+                        id={`rcy-sort-${opt.id}`}
+                        label={opt.label}
+                        checked={field.value?.includes(opt.id)}
+                        onChange={(checked) => {
+                          const next = new Set(field.value || [])
+                          if (checked) next.add(opt.id); else next.delete(opt.id)
+                          field.onChange(Array.from(next))
+                        }}
+                      />
+                    )} />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            {selectedSorting?.includes('others') && (
+              <FormField control={control} name="sortingOthers" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Other Sorting Method</FormLabel>
+                  <FormControl><Input placeholder="Specify other sorting method" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
           </form>
         </Form>
       </StepSection>
@@ -2762,8 +2852,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     { id: 'others', label: 'Others' },
   ]
 
-  const riskLevels = ['low','moderate','high','others']
-  const econLevels = ['low','moderate','high']
+  const riskLevels = ['low', 'moderate', 'high', 'others']
+  const econLevels = ['low', 'moderate', 'high']
 
   const schema = z.object({
     wasteTypes: z.array(z.string()).min(1, { message: 'Select at least one waste type' }),
@@ -2786,25 +2876,25 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     fluorideRecovery: z.coerce.number().min(0).max(100).optional(),
     slagRecovery: z.coerce.number().min(0).max(100).optional(),
 
-    toxicityRedMud: z.enum(['low','moderate','high','others']).optional(),
-    toxicitySPL: z.enum(['low','moderate','high','others']).optional(),
-    toxicityDross: z.enum(['low','moderate','high','others']).optional(),
-    toxicityFluoride: z.enum(['low','moderate','high','others']).optional(),
-    toxicitySlag: z.enum(['low','moderate','high','others']).optional(),
+    toxicityRedMud: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    toxicitySPL: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    toxicityDross: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    toxicityFluoride: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    toxicitySlag: z.enum(['low', 'moderate', 'high', 'others']).optional(),
 
-    groundwaterRedMud: z.enum(['low','moderate','high','others']).optional(),
-    groundwaterSPL: z.enum(['low','moderate','high','others']).optional(),
-    groundwaterDross: z.enum(['low','moderate','high','others']).optional(),
-    groundwaterFluoride: z.enum(['low','moderate','high','others']).optional(),
-    groundwaterSlag: z.enum(['low','moderate','high','others']).optional(),
+    groundwaterRedMud: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    groundwaterSPL: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    groundwaterDross: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    groundwaterFluoride: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    groundwaterSlag: z.enum(['low', 'moderate', 'high', 'others']).optional(),
 
-    econCementAdditive: z.enum(['low','moderate','high']).optional(),
-    econSoilStabilization: z.enum(['low','moderate','high']).optional(),
-    econIronExtraction: z.enum(['low','moderate','high']).optional(),
-    econRareEarthExtraction: z.enum(['low','moderate','high']).optional(),
-    econSPLEncapsulation: z.enum(['low','moderate','high']).optional(),
-    econDrossRecovery: z.enum(['low','moderate','high']).optional(),
-    econFluorideCapture: z.enum(['low','moderate','high']).optional(),
+    econCementAdditive: z.enum(['low', 'moderate', 'high']).optional(),
+    econSoilStabilization: z.enum(['low', 'moderate', 'high']).optional(),
+    econIronExtraction: z.enum(['low', 'moderate', 'high']).optional(),
+    econRareEarthExtraction: z.enum(['low', 'moderate', 'high']).optional(),
+    econSPLEncapsulation: z.enum(['low', 'moderate', 'high']).optional(),
+    econDrossRecovery: z.enum(['low', 'moderate', 'high']).optional(),
+    econFluorideCapture: z.enum(['low', 'moderate', 'high']).optional(),
   }).superRefine((val, ctx) => {
     if (val.wasteTypes?.includes('others') && !val.wasteTypeOthers?.trim()) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please specify other waste type', path: ['wasteTypeOthers'] })
@@ -2828,7 +2918,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       // Save the valorization step data
       await onSave?.(data)
       console.log('✅ Valorization step saved successfully')
-      
+
       // Trigger workflow submission callback
       onSubmitSuccess?.()
     } catch (e) {
@@ -2859,336 +2949,336 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                {/* 1. Waste Types and Valorization Processes */}
-                <div className="space-y-6">
-                  <FormField control={control} name="wasteTypes" render={() => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Waste Types*</FormLabel>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                        {wasteTypeOptions.map((opt) => (
-                          <FormField key={opt.id} control={control} name="wasteTypes" render={({ field }) => (
-                            <CardCheckbox
-                              id={`val-waste-${opt.id}`}
-                              label={opt.label}
-                              checked={field.value?.includes(opt.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(opt.id); else next.delete(opt.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  {selectedWaste?.includes('others') && (
-                    <FormField control={control} name="wasteTypeOthers" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Waste Type</FormLabel>
-                        <FormControl><Input placeholder="Specify other waste type" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  )}
-
-                  <FormField control={control} name="valorizationMethods" render={() => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Valorization Methods*</FormLabel>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                        {methodOptions.map((opt) => (
-                          <FormField key={opt.id} control={control} name="valorizationMethods" render={({ field }) => (
-                            <CardCheckbox
-                              id={`val-method-${opt.id}`}
-                              label={opt.label}
-                              checked={field.value?.includes(opt.id)}
-                              onChange={(checked) => {
-                                const next = new Set(field.value || [])
-                                if (checked) next.add(opt.id); else next.delete(opt.id)
-                                field.onChange(Array.from(next))
-                              }}
-                            />
-                          )} />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  {selectedMethods?.includes('others') && (
-                    <FormField control={control} name="methodsOthers" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={GROUP_HEADING_TEXT}>Other Valorization Method</FormLabel>
-                        <FormControl><Input placeholder="Specify other method" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  )}
-                </div>
-
-                {/* 2. Utilization and Efficiency Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="wasteUtilizationOverallPercent" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Waste Utilization Percentages (%)*</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider
-                            value={[typeof field.value === 'number' ? field.value : 0]}
-                            onValueChange={(v) => field.onChange(v[0])}
-                            min={0}
-                            max={100}
-                            step={1}
-                          />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="emissionReductionsPerTonne" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Emission Reductions via Substitution (kg CO₂e per tonne)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 210" {...field} value={field.value ?? ''} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="redMudUtilized" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Red Mud Waste Utilized (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="splUtilized" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>SPL Waste Utilized (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="drossUtilized" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Dross Waste Utilized (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="fluorideUtilized" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Gases Waste Utilized (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={control} name="slagUtilized" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Slag Waste Utilized (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-
-                {/* 3. Recovery Efficiency */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <FormField control={control} name="redMudRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Red Mud Recovery Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={control} name="splRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>SPL Recovery Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={control} name="drossRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Dross Recovery Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={control} name="fluorideRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Gases Recovery Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={control} name="slagRecovery" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={GROUP_HEADING_TEXT}>Slag Recovery Efficiency (%)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
-                          <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-
-                {/* 4. Toxicity and Environmental Risk */}
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-medium mb-2">Toxicity Level (Low / Moderate / High / Others)</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {[
-                        { name: 'toxicityRedMud', label: 'Red Mud Toxicity Level' },
-                        { name: 'toxicitySPL', label: 'SPL Toxicity Level' },
-                        { name: 'toxicityDross', label: 'Dross Toxicity Level' },
-                        { name: 'toxicityFluoride', label: 'Fluoride Gases Toxicity Level' },
-                        { name: 'toxicitySlag', label: 'Slag Toxicity Level' },
-                      ].map((f) => (
-                        <FormField key={f.name} control={control} name={f.name} render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>{f.label}</FormLabel>
-                            <FormControl>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {riskLevels.map((lvl) => (
-                                  <CardRadio
-                                    key={lvl}
-                                    id={`${f.name}-${lvl}`}
-                                    label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
-                                    selected={field.value === lvl}
-                                    onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
-                                  />
-                                ))}
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Groundwater Risk (Low / Moderate / High / Others)</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {[
-                        { name: 'groundwaterRedMud', label: 'Red Mud Groundwater Risk' },
-                        { name: 'groundwaterSPL', label: 'SPL Groundwater Risk' },
-                        { name: 'groundwaterDross', label: 'Dross Groundwater Risk' },
-                        { name: 'groundwaterFluoride', label: 'Fluoride Gases Groundwater Risk' },
-                        { name: 'groundwaterSlag', label: 'Slag Groundwater Risk' },
-                      ].map((f) => (
-                        <FormField key={f.name} control={control} name={f.name} render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>{f.label}</FormLabel>
-                            <FormControl>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {riskLevels.map((lvl) => (
-                                  <CardRadio
-                                    key={lvl}
-                                    id={`${f.name}-${lvl}`}
-                                    label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
-                                    selected={field.value === lvl}
-                                    onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
-                                  />
-                                ))}
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 5. Economic Viability */}
-                <div className="space-y-6">
-                  <h4 className="font-medium">Economic Viability (Low / Moderate / High)</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[
-                      { name: 'econCementAdditive', label: 'Cement Additive Economic Viability' },
-                      { name: 'econSoilStabilization', label: 'Soil Stabilization Economic Viability' },
-                      { name: 'econIronExtraction', label: 'Iron Extraction Economic Viability' },
-                      { name: 'econRareEarthExtraction', label: 'Rare Earth Extraction Economic Viability' },
-                      { name: 'econSPLEncapsulation', label: 'SPL Encapsulation Economic Viability' },
-                      { name: 'econDrossRecovery', label: 'Dross Recovery Economic Viability' },
-                      { name: 'econFluorideCapture', label: 'Fluoride Capture Economic Viability' },
-                    ].map((f) => (
-                      <FormField key={f.name} control={control} name={f.name} render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel>{f.label}</FormLabel>
-                          <FormControl>
-                            <div className="grid grid-cols-3 gap-3">
-                              {econLevels.map((lvl) => (
-                                <CardRadio
-                                  key={lvl}
-                                  id={`${f.name}-${lvl}`}
-                                  label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
-                                  selected={field.value === lvl}
-                                  onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
-                                />
-                              ))}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+            {/* 1. Waste Types and Valorization Processes */}
+            <div className="space-y-6">
+              <FormField control={control} name="wasteTypes" render={() => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Waste Types*</FormLabel>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                    {wasteTypeOptions.map((opt) => (
+                      <FormField key={opt.id} control={control} name="wasteTypes" render={({ field }) => (
+                        <CardCheckbox
+                          id={`val-waste-${opt.id}`}
+                          label={opt.label}
+                          checked={field.value?.includes(opt.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(opt.id); else next.delete(opt.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
                       )} />
                     ))}
                   </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {selectedWaste?.includes('others') && (
+                <FormField control={control} name="wasteTypeOthers" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Waste Type</FormLabel>
+                    <FormControl><Input placeholder="Specify other waste type" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+
+              <FormField control={control} name="valorizationMethods" render={() => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Valorization Methods*</FormLabel>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                    {methodOptions.map((opt) => (
+                      <FormField key={opt.id} control={control} name="valorizationMethods" render={({ field }) => (
+                        <CardCheckbox
+                          id={`val-method-${opt.id}`}
+                          label={opt.label}
+                          checked={field.value?.includes(opt.id)}
+                          onChange={(checked) => {
+                            const next = new Set(field.value || [])
+                            if (checked) next.add(opt.id); else next.delete(opt.id)
+                            field.onChange(Array.from(next))
+                          }}
+                        />
+                      )} />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {selectedMethods?.includes('others') && (
+                <FormField control={control} name="methodsOthers" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Other Valorization Method</FormLabel>
+                    <FormControl><Input placeholder="Specify other method" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
+            </div>
+
+            {/* 2. Utilization and Efficiency Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="wasteUtilizationOverallPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Waste Utilization Percentages (%)*</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="emissionReductionsPerTonne" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Emission Reductions via Substitution (kg CO₂e per tonne)</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 210" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="redMudUtilized" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Red Mud Waste Utilized (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="splUtilized" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>SPL Waste Utilized (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="drossUtilized" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Dross Waste Utilized (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="fluorideUtilized" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Gases Waste Utilized (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="slagUtilized" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Slag Waste Utilized (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* 3. Recovery Efficiency */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FormField control={control} name="redMudRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Red Mud Recovery Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="splRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>SPL Recovery Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="drossRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Dross Recovery Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="fluorideRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Gases Recovery Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={control} name="slagRecovery" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Slag Recovery Efficiency (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider value={[typeof field.value === 'number' ? field.value : 0]} onValueChange={(v) => field.onChange(v[0])} min={0} max={100} step={1} />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* 4. Toxicity and Environmental Risk */}
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-medium mb-2">Toxicity Level (Low / Moderate / High / Others)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { name: 'toxicityRedMud', label: 'Red Mud Toxicity Level' },
+                    { name: 'toxicitySPL', label: 'SPL Toxicity Level' },
+                    { name: 'toxicityDross', label: 'Dross Toxicity Level' },
+                    { name: 'toxicityFluoride', label: 'Fluoride Gases Toxicity Level' },
+                    { name: 'toxicitySlag', label: 'Slag Toxicity Level' },
+                  ].map((f) => (
+                    <FormField key={f.name} control={control} name={f.name} render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>{f.label}</FormLabel>
+                        <FormControl>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {riskLevels.map((lvl) => (
+                              <CardRadio
+                                key={lvl}
+                                id={`${f.name}-${lvl}`}
+                                label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                                selected={field.value === lvl}
+                                onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
+                              />
+                            ))}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  ))}
                 </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Groundwater Risk (Low / Moderate / High / Others)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { name: 'groundwaterRedMud', label: 'Red Mud Groundwater Risk' },
+                    { name: 'groundwaterSPL', label: 'SPL Groundwater Risk' },
+                    { name: 'groundwaterDross', label: 'Dross Groundwater Risk' },
+                    { name: 'groundwaterFluoride', label: 'Fluoride Gases Groundwater Risk' },
+                    { name: 'groundwaterSlag', label: 'Slag Groundwater Risk' },
+                  ].map((f) => (
+                    <FormField key={f.name} control={control} name={f.name} render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>{f.label}</FormLabel>
+                        <FormControl>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {riskLevels.map((lvl) => (
+                              <CardRadio
+                                key={lvl}
+                                id={`${f.name}-${lvl}`}
+                                label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                                selected={field.value === lvl}
+                                onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
+                              />
+                            ))}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Economic Viability */}
+            <div className="space-y-6">
+              <h4 className="font-medium">Economic Viability (Low / Moderate / High)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { name: 'econCementAdditive', label: 'Cement Additive Economic Viability' },
+                  { name: 'econSoilStabilization', label: 'Soil Stabilization Economic Viability' },
+                  { name: 'econIronExtraction', label: 'Iron Extraction Economic Viability' },
+                  { name: 'econRareEarthExtraction', label: 'Rare Earth Extraction Economic Viability' },
+                  { name: 'econSPLEncapsulation', label: 'SPL Encapsulation Economic Viability' },
+                  { name: 'econDrossRecovery', label: 'Dross Recovery Economic Viability' },
+                  { name: 'econFluorideCapture', label: 'Fluoride Capture Economic Viability' },
+                ].map((f) => (
+                  <FormField key={f.name} control={control} name={f.name} render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>{f.label}</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-3 gap-3">
+                          {econLevels.map((lvl) => (
+                            <CardRadio
+                              key={lvl}
+                              id={`${f.name}-${lvl}`}
+                              label={lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                              selected={field.value === lvl}
+                              onSelect={() => field.onChange(field.value === lvl ? undefined : lvl)}
+                            />
+                          ))}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                ))}
+              </div>
+            </div>
           </form>
         </Form>
       </StepSection>
@@ -3271,41 +3361,41 @@ function StepForm({ stepKey, stepTitle, values, onChange, miningOptions }) {
   // Placeholder step fields
   return (
     <Card className="p-4 sm:p-6 bg-[#F3F2EC]">
-        <div className="space-y-6">
+      <div className="space-y-6">
         <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-[#181814]">{stepTitle}</h2>
-            <p className="text-sm text-gray-600">Provide the details. Replace with real fields later.</p>
+          <h2 className="text-lg sm:text-xl font-semibold text-[#181814]">{stepTitle}</h2>
+          <p className="text-sm text-gray-600">Provide the details. Replace with real fields later.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div>
             <label htmlFor={`${stepKey}-field1`} className="block text-sm font-medium text-[#181814] mb-1">
-                {stepTitle} Field 1
+              {stepTitle} Field 1
             </label>
             <input
-                id={`${stepKey}-field1`}
-                type="text"
-                value={values.field1}
-                onChange={(e) => onChange("field1", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BA7967]/20 focus:border-[#BA7967] text-sm bg-white"
-                placeholder="Enter value"
+              id={`${stepKey}-field1`}
+              type="text"
+              value={values.field1}
+              onChange={(e) => onChange("field1", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BA7967]/20 focus:border-[#BA7967] text-sm bg-white"
+              placeholder="Enter value"
             />
-            </div>
-            <div>
+          </div>
+          <div>
             <label htmlFor={`${stepKey}-field2`} className="block text-sm font-medium text-[#181814] mb-1">
-                {stepTitle} Field 2
+              {stepTitle} Field 2
             </label>
             <input
-                id={`${stepKey}-field2`}
-                type="number"
-                value={values.field2}
-                onChange={(e) => onChange("field2", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BA7967]/20 focus:border-[#BA7967] text-sm bg-white"
-                placeholder="Enter number"
+              id={`${stepKey}-field2`}
+              type="number"
+              value={values.field2}
+              onChange={(e) => onChange("field2", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BA7967]/20 focus:border-[#BA7967] text-sm bg-white"
+              placeholder="Enter number"
             />
-            </div>
+          </div>
         </div>
-        </div>
+      </div>
     </Card>
   )
 }
