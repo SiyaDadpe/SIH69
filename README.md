@@ -1,4 +1,4 @@
-# SIH69 — Life Cycle Assessment (LCA) Platform
+# SIH69 — Life Cycle Assessment (LCA) Platform 
 
 Full‑stack platform for metal lifecycle analytics with a guided 7‑step Wizard, drag‑and‑drop Canvas builder, dashboards, analytics, and rich reports. The repo contains a React (Vite) client and an Express/MongoDB server.
 
