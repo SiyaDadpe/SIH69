@@ -54,9 +54,7 @@ export const register = async (userData) => {
     
     return response.data;
   } catch (error) {
-    // Better error handling
     if (error.response) {
-      // Server responded with error
       throw error.response.data;
     } else if (error.request) {
       // Request made but no response - server not running
