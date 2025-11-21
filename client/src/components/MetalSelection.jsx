@@ -17,22 +17,18 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
-const MIN_DRAWER_HEIGHT = 110;
-const MAX_DRAWER_HEIGHT = 340;
-
 export default function MetalSelection({ onSelect }) {
   const { sidebarOpen } = useSidebar();
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
   const actionRefs = useRef([]);
   const headerRef = useRef(null);
-  const dragRef = useRef({ startY: 0, startHeight: MIN_DRAWER_HEIGHT, moveListener: null, upListener: null });
 
   const [stage, setStage] = useState('metal');
   const [selectedMetal, setSelectedMetal] = useState(null);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
-  const [drawerHeight, setDrawerHeight] = useState(MIN_DRAWER_HEIGHT);
+  const [openProjectsExpanded, setOpenProjectsExpanded] = useState(false);
 
   // Animate metal cards when stage is "metal"
   useEffect(() => {
@@ -81,17 +77,6 @@ export default function MetalSelection({ onSelect }) {
 
     return () => ctx.revert();
   }, [stage]);
-
-  useEffect(() => {
-    return () => {
-      if (dragRef.current.moveListener) {
-        window.removeEventListener('pointermove', dragRef.current.moveListener);
-      }
-      if (dragRef.current.upListener) {
-        window.removeEventListener('pointerup', dragRef.current.upListener);
-      }
-    };
-  }, []);
 
   const handleCardHover = (index, isEntering) => {
     if (stage !== 'metal') return;
@@ -146,38 +131,7 @@ export default function MetalSelection({ onSelect }) {
     setSelectedMetal(null);
     setProjectName('');
     setProjectDescription('');
-    setDrawerHeight(MIN_DRAWER_HEIGHT);
-  };
-
-  const handleDrawerPointerDown = (event) => {
-    event.preventDefault();
-    dragRef.current.startY = event.clientY;
-    dragRef.current.startHeight = drawerHeight;
-
-    const handleMove = (e) => {
-      const delta = e.clientY - dragRef.current.startY;
-      const nextHeight = Math.max(
-        MIN_DRAWER_HEIGHT,
-        Math.min(MAX_DRAWER_HEIGHT, dragRef.current.startHeight + delta)
-      );
-      setDrawerHeight(nextHeight);
-    };
-
-    const handleUp = () => {
-      const threshold = MIN_DRAWER_HEIGHT + (MAX_DRAWER_HEIGHT - MIN_DRAWER_HEIGHT) / 2;
-      setDrawerHeight((current) => (current >= threshold ? MAX_DRAWER_HEIGHT : MIN_DRAWER_HEIGHT));
-
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-      dragRef.current.moveListener = null;
-      dragRef.current.upListener = null;
-    };
-
-    dragRef.current.moveListener = handleMove;
-    dragRef.current.upListener = handleUp;
-
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
+    setOpenProjectsExpanded(false);
   };
 
   const renderActionStage = () => {
@@ -376,49 +330,37 @@ export default function MetalSelection({ onSelect }) {
               </p>
             </div>
 
-            <div className={`relative rounded-3xl ${colors.drawerCardBg} border overflow-hidden`}>
-              <div
-                className="flex flex-col items-center gap-2 py-3 cursor-grab active:cursor-grabbing"
-                onPointerDown={handleDrawerPointerDown}
+            <div className={`rounded-3xl border border-dashed ${colors.drawerBorder} bg-white/80 overflow-hidden`}>
+              <button
+                type="button"
+                onClick={() => setOpenProjectsExpanded((prev) => !prev)}
+                className="w-full flex items-center justify-between px-6 py-4 text-left"
               >
-                <div className={`w-16 h-1.5 rounded-full ${colors.drawerHandle}`} />
-                <p className={`text-xs font-semibold tracking-[0.3em] ${colors.drawerHandleText} uppercase`}>
-                  Drag down
-                </p>
-                <ChevronDown className={`h-4 w-4 ${colors.drawerHandleText} animate-bounce`} />
-              </div>
-
+                <div>
+                  <p className={`text-sm font-semibold ${colors.drawerContentText}`}>Local wizard projects</p>
+                  <p className={`text-xs ${colors.drawerContentSubtext}`}>
+                    No local drafts yet
+                  </p>
+                </div>
+                {openProjectsExpanded ? (
+                  <ChevronUp className={`h-5 w-5 ${colors.drawerChevron}`} />
+                ) : (
+                  <ChevronDown className={`h-5 w-5 ${colors.drawerChevron}`} />
+                )}
+              </button>
               <div
-                className={`transition-[height] duration-200 ease-out overflow-hidden border-t border-dashed ${colors.drawerBorder} bg-white`}
-                style={{ height: drawerHeight }}
+                className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
               >
-                <div className={`px-6 py-6 space-y-4 text-center ${colors.drawerContentText}`}>
-                  {drawerHeight > MIN_DRAWER_HEIGHT + 10 ? (
-                    <>
-                      <ChevronUp className={`mx-auto h-5 w-5 ${colors.drawerChevron}`} />
-                      <p className="font-semibold">Recent {selectedMetal} projects</p>
-                      <p className={`text-sm ${colors.drawerContentSubtext}`}>
-                        Your previously opened projects will appear here as soon as they exist. Hook
-                        this panel to your backend when you're ready.
-                      </p>
-                      <div className={`rounded-2xl border border-dashed ${colors.drawerDashed} p-4 text-sm`}>
-                        <p className="font-medium">
-                          No projects yet — perfect time to create something new!
-                        </p>
-                      </div>
-                      <Button variant="outline" className={`mt-2 border ${colors.drawerButton}`}>
-                        Link workspace
-                      </Button>
-                    </>
-                  ) : (
-                    <p className={`text-sm ${colors.drawerHandleText}`}>Keep dragging to peek inside</p>
-                  )}
+                <div className={`px-6 pb-6 space-y-3 text-sm ${colors.drawerContentText}`}>
+                  <p className={`text-sm ${colors.drawerContentSubtext}`}>
+                    Create a project on the left to populate this list.
+                  </p>
                 </div>
               </div>
             </div>
 
             <p className={`text-sm ${colors.drawerFooter}`}>
-              Want this to auto-populate? Connect your wizard history API and hydrate the drawer with
+              Want this to auto-populate? Connect your wizard history API and hydrate the list with
               real sessions when they're available.
             </p>
           </div>
