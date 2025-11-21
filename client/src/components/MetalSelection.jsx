@@ -3,7 +3,8 @@ import { gsap } from 'gsap';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import Plasma from '@/components/animations/plasma';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { cn } from '@/lib/utils';
 import {
   Sparkles,
   Clock,
@@ -20,6 +21,7 @@ const MIN_DRAWER_HEIGHT = 110;
 const MAX_DRAWER_HEIGHT = 340;
 
 export default function MetalSelection({ onSelect }) {
+  const { sidebarOpen } = useSidebar();
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
   const actionRefs = useRef([]);
@@ -550,20 +552,20 @@ export default function MetalSelection({ onSelect }) {
   );
 
   return (
-    <div ref={containerRef} className="relative min-h-screen w-full overflow-hidden bg-[#F3F2EC]">
-      <div className="fixed inset-0 w-full h-full z-0 opacity-30">
-        <Plasma
-          color="#e0e7ff"
-          speed={0.8}
-          direction="forward"
-          scale={1.2}
-          opacity={0.4}
-          mouseInteractive={false}
-        />
-      </div>
-
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-12">
-        {stage === 'metal' ? renderMetalStage() : renderActionStage()}
+    <div 
+      className={cn(
+        "fixed z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4",
+        sidebarOpen ? "left-[260px]" : "left-16",
+        "right-0 top-16 bottom-0"
+      )}
+    >
+      <div
+        ref={containerRef}
+        className="w-full max-w-7xl rounded-4xl bg-white shadow-2xl border border-[#efe4d5] max-h-[90vh] overflow-y-auto"
+      >
+        <div className="relative z-10 min-h-[60vh] flex flex-col items-center justify-center px-6 py-12">
+          {stage === 'metal' ? renderMetalStage() : renderActionStage()}
+        </div>
       </div>
     </div>
   );
