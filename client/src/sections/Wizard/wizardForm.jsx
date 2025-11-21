@@ -263,6 +263,12 @@ const formSchema = z.object({
   waterUsage: z.coerce.number().optional(),
   biodiversityImpact: z.string().optional(),
   redMudGeneration: z.coerce.number().optional(),
+  // AI Predicted fields
+  mining_energy_MJ_per_t_ore: z.coerce.number().optional(),
+  mining_co2_kg_per_t_ore: z.coerce.number().optional(),
+  mining_sox_kg_per_t_ore: z.coerce.number().optional(),
+  mining_nox_kg_per_t_ore: z.coerce.number().optional(),
+  mining_pm_kg_per_t_ore: z.coerce.number().optional(),
 });
 
 function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting }) {
@@ -282,8 +288,28 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
     handleSubmit,
     control,
     watch,
+    setValue,
+    reset,
     formState: { isValid, errors },
   } = form;
+
+  // Sync form with updated initialValues (e.g., when AI predictions are received)
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Mining Form] Syncing with updated initial values:', initialValues);
+      console.log('🔄 [Mining Form] Current form values before reset:', form.getValues());
+      
+      // Reset form with new values - force update all fields including AI predictions
+      reset(initialValues, {
+        keepDirtyValues: false, // Allow AI predictions to override user inputs for predicted fields
+      });
+      
+      console.log('🔄 [Mining Form] Form values after reset:', form.getValues());
+      console.log('✅ [Mining Form] Form synced with AI predictions');
+    }
+  }, [initialValues, reset, form]);
+
+
 
   const onSubmit = async (data) => {
     console.log('='.repeat(80));
@@ -391,7 +417,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         predicting={predicting}
         footer={footerContent}
       >
-        <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={control}
@@ -729,7 +754,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
             </div>
           </form>
-        </Form>
       </StepSection>
     </FormProvider>
   );
@@ -738,6 +762,9 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 // Step 2: Beneficiation
 function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const benLocations = [...new Set((Array.isArray(beneficiationData) ? beneficiationData : []).map((d) => d.location))]
     .filter(Boolean)
 
@@ -786,6 +813,12 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     tailingsOthers: z.string().optional(),
     noiseLevel: z.string().optional(),
     dustLevel: z.string().optional(),
+    // AI Predicted fields
+    beneficiation_water_m3_per_t_ore: z.coerce.number().optional(),
+    beneficiation_electricity_kWh_per_t_ore: z.coerce.number().optional(),
+    beneficiation_tailings_management: z.string().optional(),
+    beneficiation_noise_pollution: z.string().optional(),
+    beneficiation_dust_pollution: z.string().optional(),
   })
 
   const form = useForm({
@@ -797,23 +830,79 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     mode: "onChange",
   })
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form
+  const { control, handleSubmit, watch, reset, formState: { isValid, errors } } = form
+  
+  // Sync form with updated initialValues (e.g., when AI predictions are received)
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Beneficiation Form] Syncing with updated initial values:', initialValues);
+      console.log('🔄 [Beneficiation Form] Current form values before reset:', form.getValues());
+      
+      // Reset form with new values - force update all fields including AI predictions
+      reset(initialValues, {
+        keepDirtyValues: false, // Allow AI predictions to override user inputs for predicted fields
+      });
+      
+      console.log('🔄 [Beneficiation Form] Form values after reset:', form.getValues());
+      console.log('✅ [Beneficiation Form] Form synced with AI predictions');
+    }
+  }, [initialValues, reset, form]);
 
   const selectedProcesses = watch("processes")
   const selectedTailings = watch("tailings")
   const selectedChemicals = watch("chemicalAgents")
 
-  const onSubmit = (data) => {
-    onSave?.(data)
-    onNext?.()
-  }
+  const onSubmit = async (data) => {
+    console.log('='.repeat(80));
+    console.log('🎯 [Beneficiation Form] FORM SUBMISSION STARTED');
+    console.log('='.repeat(80));
+    console.log('📋 [Beneficiation Form] Form data:', data);
+    
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      
+      await onSave?.(data);
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      
+      console.log('✅ [Beneficiation Form] Form saved successfully');
+      onNext?.();
+    } catch (error) {
+      console.error('❌ [Beneficiation Form] Save error:', error);
+      setSaveError(error.message || 'Failed to save form data');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const footerContent = (
-    <StepFooterActions
-      onBack={onBack}
-      onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
-    />
+    <>
+      {saveSuccess && (
+        <div className="w-full rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 shadow-sm flex items-center gap-2">
+          <span className="text-lg">✅</span>
+          <span>Data saved successfully!</span>
+        </div>
+      )}
+      {saveError && (
+        <div className="w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm flex items-center gap-2">
+          <span className="text-lg">⚠️</span>
+          <span>{saveError}</span>
+        </div>
+      )}
+      {!isValid && Object.keys(errors).length > 0 && (
+        <div className="w-full rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+          ℹ️ Please fill required fields: {Object.keys(errors).join(', ')}
+        </div>
+      )}
+      <StepFooterActions
+        onBack={onBack}
+        onForward={handleSubmit(onSubmit)}
+        forwardDisabled={!isValid || isSaving}
+        forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+      />
+    </>
   );
 
   return (
@@ -827,7 +916,6 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         predicting={predicting}
         footer={footerContent}
       >
-        <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             {/* 1. Select Applicable Processes */}
             <FormField
@@ -886,7 +974,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Location*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a location" />
@@ -1140,8 +1228,85 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 )}
               />
             </div>
+
+            <hr className="my-4 border-gray-200" />
+
+            <h3 className="text-lg font-semibold mb-4">AI Predicted Values</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+              <FormField
+                control={control}
+                name="beneficiation_water_m3_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Water Usage (m³ per tonne)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="beneficiation_electricity_kWh_per_t_ore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Electricity Usage (kWh per tonne)</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="beneficiation_tailings_management"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Tailings Management</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="beneficiation_noise_pollution"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Noise Pollution Level</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="beneficiation_dust_pollution"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Dust Pollution Level</FormLabel>
+                    <FormControl>
+                      <Input {...field} readOnly placeholder="AI predicted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+            </div>
           </form>
-        </Form>
       </StepSection>
     </FormProvider>
   )
@@ -1156,6 +1321,11 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [predicting, setPredicting] = useState(false)
   const [predictionError, setPredictionError] = useState(null)
   const [predictionSuccess, setPredictionSuccess] = useState(null)
+  
+  // Debug: Track formValues changes
+  React.useEffect(() => {
+    console.log('📊 [Wizard] formValues changed:', formValues);
+  }, [formValues]);
 
   // Load existing workflow data into form values
   React.useEffect(() => {
@@ -1339,7 +1509,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     return mappedData;
   };
 
-  // Handle AI Prediction
+  // Handle AI Prediction with enhanced mapping
   const handleGenerateAIPrediction = async (stepName, currentFormData) => {
     console.log('🤖 [AI Prediction] Button clicked for step:', stepName);
     console.log('🤖 [AI Prediction] Current form data (frontend):', currentFormData);
@@ -1374,44 +1544,94 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       // Call AI prediction API with mapped data
       const response = await generateStepPrediction(workflowId, stepName, mappedData);
 
-      if (response.success && response.data?.combinedData) {
-        console.log('✅ [AI Prediction] Predictions received:', response.data.combinedData);
+      if (response.success && response.data) {
+        console.log('✅ [AI Prediction] Predictions received:', response.data);
         console.log('📊 [AI Prediction] Metadata:', response.data.predictionMetadata);
+        console.log('🔍 [AI Prediction] Full response structure:', JSON.stringify(response, null, 2));
 
-        // Map the response back to frontend field names for form population
-        // const frontendData = { ...currentFormData, ...response.data.combinedData };
+        // Enhanced mapping approach - merge predictions with current data
+        const { combinedData, predictionMetadata } = response.data;
+        console.log('🔍 [AI Prediction] Extracted combinedData:', combinedData);
+        console.log('🔍 [AI Prediction] Extracted predictionMetadata:', predictionMetadata);
         const info = getPredictionInfo(stepName);
         const predictableFields = info?.predictableFields || [];
 
-        // 2. Merge only predicted fields
+        // Create merged data starting with current form data
         const mergedData = { ...currentFormData };
+        
+        // Track successful predictions
+        const updatedFields = [];
 
-        predictableFields.forEach(field => {
-          if (response.data.combinedData.hasOwnProperty(field)) {
-            mergedData[field] = response.data.combinedData[field];
+        // Map backend predictions to frontend fields and merge
+        predictableFields.forEach(backendField => {
+          if (combinedData && combinedData.hasOwnProperty(backendField)) {
+            const value = combinedData[backendField];
+            
+            if (value !== undefined && value !== null) {
+              // For most fields, backend and frontend names are the same
+              mergedData[backendField] = value;
+              updatedFields.push({ field: backendField, value });
+              console.log(`✅ [AI Prediction] Mapped ${backendField} = ${value}`);
+            } else {
+              console.log(`⚠️ [AI Prediction] Skipping ${backendField} - value is ${value}`);
+            }
+          } else {
+            console.log(`⚠️ [AI Prediction] Field ${backendField} not found in response data`);
           }
         });
+        
+        console.log('🔄 [AI Prediction] Final merged data:', mergedData);
+        console.log('🔄 [AI Prediction] Updated fields:', updatedFields);
 
-        // Update form values with predicted data
-        setFormValues((prev) => ({
-          ...prev,
-          [stepName]: mergedData
-        }));
+        // Update form values with merged data (including predictions)
+        console.log('🔄 [AI Prediction] Current formValues before update:', formValues[stepName]);
+        console.log('🔄 [AI Prediction] About to set merged data:', mergedData);
+        
+        setFormValues((prev) => {
+          const newFormValues = {
+            ...prev,
+            [stepName]: mergedData
+          };
+          console.log('🔄 [AI Prediction] New formValues after update:', newFormValues[stepName]);
+          return newFormValues;
+        });
 
-        // Show success message
-        const predictedCount = response.data.predictionMetadata.predictedCount;
-        const confidence = (response.data.predictionMetadata.confidence * 100).toFixed(1);
-        setPredictionSuccess(`🎉 Generated ${predictedCount} predictions with ${confidence}% confidence`);
+        // Show enhanced success message
+        const predictedCount = predictionMetadata?.predictedCount || updatedFields.length;
+        const confidence = predictionMetadata?.confidence 
+          ? (predictionMetadata.confidence * 100).toFixed(1)
+          : 'N/A';
+        
+        setPredictionSuccess(
+          `🎉 Successfully updated ${predictedCount} fields with AI predictions (Confidence: ${confidence}%)`
+        );
 
-        console.log('✅ [AI Prediction] Form values updated successfully');
+        console.log(`📊 [AI Prediction] Successfully updated ${updatedFields.length} fields`);
+        console.log('✅ [AI Prediction] Form values updated with predictions');
 
         // Clear success message after 5 seconds
         setTimeout(() => setPredictionSuccess(null), 5000);
+
+        // Return success info for caller
+        return {
+          success: true,
+          updatedCount: updatedFields.length,
+          updatedFields,
+          confidence: predictionMetadata?.confidence
+        };
+      } else {
+        throw new Error('Invalid response format from AI prediction service');
       }
     } catch (error) {
       console.error('❌ [AI Prediction] Error:', error);
-      setPredictionError(error.response?.data?.message || 'Failed to generate predictions');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate predictions';
+      setPredictionError(`AI Prediction Error: ${errorMessage}`);
       setTimeout(() => setPredictionError(null), 5000);
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
     } finally {
       setPredicting(false);
     }
