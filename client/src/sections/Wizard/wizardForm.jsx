@@ -250,8 +250,12 @@ const biodiversityImpacts = [
 ];
 
 const formSchema = z.object({
-  applicableProcesses: z.array(z.string()).refine((value) => value.some((item) => item), {
-    message: "You have to select at least one item.",
+applicableProcesses: z
+  .string({
+    required_error: "You have to select one process.",
+  })
+  .refine((val) => val.trim() !== "", {
+    message: "You have to select one process.",
   }),
   others: z.string().optional(),
   location: z.string({ required_error: "Location is required." }),
@@ -408,6 +412,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
   return (
     <FormProvider {...form}>
+      
       <StepSection
         stepNumber={1}
         badgeLabel="Mining"
@@ -418,39 +423,40 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={control}
-              name="applicableProcesses"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className={GROUP_HEADING_TEXT}>
-                      Select Applicable Processes*
-                    </FormLabel>
-                    <FormDescription>
-                      Select all the processes that apply.
-                    </FormDescription>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {miningProcesses.map((item) => (
-                      <FormField key={item.id} control={control} name="applicableProcesses" render={({ field }) => (
-                        <CardCheckbox
-                          id={`mining-proc-${item.id}`}
-                          label={item.label}
-                          checked={field.value?.includes(item.id)}
-                          onChange={(checked) => {
-                            const next = new Set(field.value || [])
-                            if (checked) next.add(item.id); else next.delete(item.id)
-                            field.onChange(Array.from(next))
-                          }}
-                        />
-                      )} />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+<FormField
+  control={control}
+  name="applicableProcesses"
+  render={({ field }) => (
+    <FormItem>
+      <div className="mb-4">
+        <FormLabel className={GROUP_HEADING_TEXT}>
+          Select Applicable Processes*
+        </FormLabel>
+        <FormDescription>
+          Select all the processes that apply.
+        </FormDescription>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {miningProcesses.map(item => {
+          const checked = field.value?.includes(item.id) || false
+
+          return (
+            <CardCheckbox
+              key={item.id}
+              id={`mining-proc-${item.id}`}
+              label={item.label}
+              checked={checked}
+         onChange={() => field.onChange(item.id)}
             />
+          )
+        })}
+      </div>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
 
             {applicableProcesses?.includes("others") && (
               <FormField
@@ -799,7 +805,13 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
   ]
 
   const schema = z.object({
-    processes: z.array(z.string()).min(1, { message: "Select at least one process" }),
+    processes: z
+  .string({
+    required_error: "You have to select one process.",
+  })
+  .refine((val) => val.trim() !== "", {
+    message: "You have to select one process.",
+  }),
     processOthers: z.string().optional(),
     location: z.string({ required_error: "Location is required" }),
     oreFeedRate: z.coerce.number().min(0, { message: "Must be >= 0" }),
@@ -918,35 +930,38 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             {/* 1. Select Applicable Processes */}
-            <FormField
-              control={control}
-              name="processes"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className={GROUP_HEADING_TEXT}>Select Applicable Processes*</FormLabel>
-                    <FormDescription>Choose all processes that apply.</FormDescription>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {processes.map((p) => (
-                      <FormField key={p.id} control={control} name="processes" render={({ field }) => (
-                        <CardCheckbox
-                          id={`beneficiation-proc-${p.id}`}
-                          label={p.label}
-                          checked={field.value?.includes(p.id)}
-                          onChange={(checked) => {
-                            const next = new Set(field.value || [])
-                            if (checked) next.add(p.id); else next.delete(p.id)
-                            field.onChange(Array.from(next))
-                          }}
-                        />
-                      )} />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
+<FormField
+  control={control}
+  name="processes"
+  render={({ field }) => (
+    <FormItem>
+      <div className="mb-4">
+        <FormLabel className={GROUP_HEADING_TEXT}>
+          Select Applicable Process*
+        </FormLabel>
+        <FormDescription>Choose one process.</FormDescription>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {processes.map((p) => {
+          const selected = field.value === p.id; // single selection
+          return (
+            <CardRadio
+              key={p.id}
+              id={`beneficiation-proc-${p.id}`}
+              label={p.label}
+              selected={selected}
+              onSelect={() => field.onChange(p.id)} // set the value
             />
+          );
+        })}
+      </div>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
 
             {selectedProcesses?.includes("others") && (
               <FormField
@@ -1338,7 +1353,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       })
       setFormValues(values)
     }
-  }, [workflowData, steps])
+  }, [workflowData])
 
   const handleValueChange = (stepKey, field, value) => {
     setFormValues((prev) => ({
@@ -3137,6 +3152,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     try {
       // Save the valorization step data
       await onSave?.(data)
+      onNext()
+
       console.log('✅ Valorization step saved successfully')
 
       // Trigger workflow submission callback

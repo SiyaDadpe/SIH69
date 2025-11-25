@@ -39,15 +39,17 @@ export default function Wizard() {
     { title: "Valorization", description: "Create value from by-products and residues", key: "valorization" },
   ], [])
 
+  const [generatingReport, setGeneratingReport] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [activeStep, setActiveStep] = useState(0)
   const [workflowId, setWorkflowId] = useState(null)
   const [workflowData, setWorkflowData] = useState(null)
   const [projectBrief, setProjectBrief] = useState(null)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
-  const [generatingReport, setGeneratingReport] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
+
 
   // Initialize or load workflow
   useEffect(() => {
@@ -84,6 +86,8 @@ export default function Wizard() {
     }
   }, [searchParams, isInitialized])
 
+
+  
   const initializeWorkflow = async (metalType = 'Aluminium', projectMeta = null) => {
     // Prevent duplicate calls
     if (loading || workflowId) {
@@ -96,14 +100,12 @@ export default function Wizard() {
     setError(null)
     try {
       // Get userId from localStorage or auth context
-      const userId = localStorage.getItem('userId') || '68f5f9e48a8acc3f27b21ad0'
       const projectName = projectMeta?.projectName?.trim()
       const projectDescription = projectMeta?.projectDescription?.trim()
       
       const response = await createWizardWorkflow({
         name: projectName || `LCA Wizard - ${metalType} - ${new Date().toLocaleDateString()}`,
         metalType: metalType,
-        userId: userId,
         description: projectDescription || `Wizard-based lifecycle assessment for ${metalType}`,
       })
 
@@ -113,7 +115,7 @@ export default function Wizard() {
         setWorkflowId(newId)
         setWorkflowData(response.data.workflow)
         
-        // Save to localStorage to reuse this workflow
+        // Save to localStorage for continuity
         localStorage.setItem('currentWizardWorkflowId', newId);
         console.log('💾 Saved workflow ID to localStorage');
         
@@ -273,7 +275,7 @@ export default function Wizard() {
   const isCompleted = completionPercentage === 100
   const isSubmitted = workflowData?.status === 'submitted'
 
-  // Handle metal selection
+  // On Create Wizard
   const handleMetalSelection = (selection) => {
     const metalType = typeof selection === 'string' ? selection : selection?.metal;
     if (!metalType) return;

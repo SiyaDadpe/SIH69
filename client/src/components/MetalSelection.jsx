@@ -379,6 +379,8 @@ export default function MetalSelection({ onSelect }) {
         </p>
       </div>
 
+      {/* Aluminium */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl w-full">
         <div
           ref={(el) => (cardRefs.current[0] = el)}
@@ -432,6 +434,8 @@ export default function MetalSelection({ onSelect }) {
             </CardContent>
           </Card>
         </div>
+
+{/* Copper  */}
 
         <div
           ref={(el) => (cardRefs.current[1] = el)}
