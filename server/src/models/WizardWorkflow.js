@@ -317,9 +317,7 @@ const wizardWorkflowSchema = new mongoose.Schema(
       }],
       variantsOthers: String,
       variantOthers: String,
-      scrapInputPercentage: Number, // % of total feedstock (original)
       scrapInputPercent: Number, // % of total feedstock (frontend field name)
-      collectionRate: Number, // % of available scrap collected (original)
       collectionRatePercent: Number, // % of available scrap collected (frontend field name)
       recyclingMethods: {
         type: String,
@@ -351,13 +349,13 @@ const wizardWorkflowSchema = new mongoose.Schema(
     valorization: {
       wasteTypes: [{
         type: String,
-        enum: ['Red Mud', 'SPL', 'Dross', 'Fluoride Gases', 'Slag', 'Others', 'red_mud', 'spl', 'dross', 'fluoride_gases', 'slag', 'others']
+        enum: ['red_mud', 'spl', 'dross', 'fluoride_gases', 'slag', 'others']
       }],
       wasteTypeOthers: String,
       wasteTypesOthers: String,
       valorizationMethods: [{
         type: String,
-        enum: ['Cement additive', 'Soil stabilization', 'Iron extraction', 'Rare earth extraction', 'SPL encapsulation', 'Dross recovery', 'Fluoride capture', 'Others', 'cement_additive', 'soil_stabilization', 'iron_extraction', 'rare_earth_extraction', 'spl_encapsulation', 'dross_recovery', 'fluoride_capture', 'others']
+        enum: ['cement_additive', 'soil_stabilization', 'iron_extraction', 'rare_earth_extraction', 'spl_encapsulation', 'dross_recovery', 'fluoride_capture', 'others']
       }],
       valorizationMethodsOthers: String,
       methodsOthers: String,
@@ -365,14 +363,11 @@ const wizardWorkflowSchema = new mongoose.Schema(
       wasteUtilizationOverallPercent: Number, // frontend field name
       emissionReductions: Number, // kg CO₂e per tonne of waste used (original)
       emissionReductionsPerTonne: Number, // kg CO₂e per tonne of waste used (frontend field name)
-      redMudWasteUtilized: Number, // % (original)
       redMudUtilized: Number, // % (frontend field name)
-      splWasteUtilized: Number, // % (original)
       splUtilized: Number, // % (frontend field name)
-      drossWasteUtilized: Number, // % (original)
       drossUtilized: Number, // % (frontend field name)
-      fluorideGasesWasteUtilized: Number, // %
-      slagWasteUtilized: Number, // %
+      fluorideUtilized: Number, // %
+      slagUtilized: Number, // %
       // Economic viability for each method
       ironExtractionEconomicViability: {
         type: String,
@@ -394,9 +389,102 @@ const wizardWorkflowSchema = new mongoose.Schema(
         type: String,
         enum: ['Low', 'Moderate', 'High']
       },
-      // Recovery efficiencies
+      // Recovery efficiencies (individual fields for each waste type)
+      redMudRecovery: Number, // %
+      splRecovery: Number, // %
+      drossRecovery: Number, // %
+      fluorideRecovery: Number, // %
+      slagRecovery: Number, // %
+      
+      // Toxicity levels for each waste type
+      toxicityRedMud: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      toxicitySPL: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      toxicityDross: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      toxicityFluoride: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      toxicitySlag: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      
+      // Groundwater risk for each waste type
+      groundwaterRedMud: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      groundwaterSPL: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      groundwaterDross: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      groundwaterFluoride: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      groundwaterSlag: {
+        type: String,
+        enum: ['low', 'moderate', 'high', 'others']
+      },
+      
+      // Additional economic viability fields to match frontend
+      econCementAdditive: {
+        type: String,
+        enum: ['low', 'moderate', 'high']
+      },
+      econSoilStabilization: {
+        type: String,
+        enum: ['low', 'moderate', 'high']
+      },
+      econRareEarthExtraction: {
+        type: String,
+        enum: ['low', 'moderate', 'high']
+      },
+      econSPLEncapsulation: {
+        type: String,
+        enum: ['low', 'moderate', 'high']
+      },
+      econDrossRecovery: {
+        type: String,
+        enum: ['low', 'moderate', 'high']
+      },
+      econFluorideCapture: {
+        type: String,
+        enum: ['low', 'moderate', 'high']
+      },
+      
+      // Legacy fields for backward compatibility
       drossRecoveryEfficiency: Number, // %
-      fluorideGasesRecoveryEfficiency: Number // %
+      fluorideGasesRecoveryEfficiency: Number, // %
+      rareEarthExtractionEconomicViability: {
+        type: String,
+        enum: ['Low', 'Moderate', 'High']
+      },
+      splEncapsulationEconomicViability: {
+        type: String,
+        enum: ['Low', 'Moderate', 'High']
+      },
+      drossRecoveryEconomicViability: {
+        type: String,
+        enum: ['Low', 'Moderate', 'High']
+      },
+      fluorideCaptureEconomicViability: {
+        type: String,
+        enum: ['Low', 'Moderate', 'High']
+      }
     },
 
     // ============================================================================
@@ -584,11 +672,22 @@ wizardWorkflowSchema.methods.markStepCompleted = function(stepNumber) {
  * Update a specific step's data
  */
 wizardWorkflowSchema.methods.updateStep = function(stepName, data) {
-  if (!this[stepName]) {
+  const validSteps = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+  if (!validSteps.includes(stepName)) {
     throw new Error(`Invalid step name: ${stepName}`);
   }
   
-  this[stepName] = { ...this[stepName].toObject(), ...data };
+  // Deep merge with existing data to prevent overwrites
+  if (this[stepName]) {
+    const currentData = this[stepName].toObject ? this[stepName].toObject() : this[stepName];
+    this[stepName] = { ...currentData, ...data };
+  } else {
+    this[stepName] = data;
+  }
+  
+  // Mark the path as modified to ensure Mongoose saves the changes
+  this.markModified(stepName);
+  
   return this.save();
 };
 

@@ -250,12 +250,8 @@ const biodiversityImpacts = [
 ];
 
 const formSchema = z.object({
-applicableProcesses: z
-  .string({
-    required_error: "You have to select one process.",
-  })
-  .refine((val) => val.trim() !== "", {
-    message: "You have to select one process.",
+  applicableProcesses: z.array(z.string()).min(1, {
+    message: "You have to select at least one process.",
   }),
   others: z.string().optional(),
   location: z.string({ required_error: "Location is required." }),
@@ -412,7 +408,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
   return (
     <FormProvider {...form}>
-      
       <StepSection
         stepNumber={1}
         badgeLabel="Mining"
@@ -805,13 +800,9 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
   ]
 
   const schema = z.object({
-    processes: z
-  .string({
-    required_error: "You have to select one process.",
-  })
-  .refine((val) => val.trim() !== "", {
-    message: "You have to select one process.",
-  }),
+    processes: z.array(z.string()).min(1, {
+      message: "You have to select at least one process.",
+    }),
     processOthers: z.string().optional(),
     location: z.string({ required_error: "Location is required" }),
     oreFeedRate: z.coerce.number().min(0, { message: "Must be >= 0" }),
@@ -961,7 +952,6 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     </FormItem>
   )}
 />
-
 
             {selectedProcesses?.includes("others") && (
               <FormField
@@ -1484,7 +1474,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       valorization: {
         wasteTypes: 'waste_types',
         valorizationMethods: 'valorization_methods',
-        wasteUtilizationOverallPercent: 'waste_utilization_percentages'
+        wasteUtilizationOverallPercent: 'waste_utilization_percentages',
+        ironExtractionEconomicViability: 'ironExtractionEconomicViability'
       }
     };
 
@@ -2402,14 +2393,14 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
   ]
 
   const schema = z.object({
-    processes: z.array(z.string()).default([]),
+    processes: z.array(z.string()).min(1, { message: 'Select at least one manufacturing process' }),
     processOthers: z.string().optional(),
     castingProcesses: z.array(z.string()).default([]),
-    scrapRate: z.coerce.number().min(0).max(100, { message: '0 - 100' }),
+    scrapRate: z.coerce.number().min(0).max(100, { message: 'Scrap rate must be between 0-100%' }),
     recycledContent: z.coerce.number().min(0).max(100).optional(),
     energyUsePerStep: z.coerce.number().min(0).optional(),
     fabricationEmissions: z.coerce.number().min(0).optional(),
-    transportDistance: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
+    transportDistance: z.coerce.number().min(0, { message: 'Transport distance is required and must be >= 0' }),
     transportMode: z.enum(['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']).optional(),
     transportModeOthers: z.string().optional(),
     transportEmissionsPerTkm: z.coerce.number().min(0).optional(),
@@ -2442,7 +2433,13 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: initialValues || { processes: [], castingProcesses: [], lightweightingSectors: [] },
+    defaultValues: initialValues || { 
+      processes: [], 
+      castingProcesses: [], 
+      lightweightingSectors: [],
+      scrapRate: 0,
+      transportDistance: 0
+    },
     mode: 'onChange',
   })
 
@@ -3125,7 +3122,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
 
     econCementAdditive: z.enum(['low', 'moderate', 'high']).optional(),
     econSoilStabilization: z.enum(['low', 'moderate', 'high']).optional(),
-    econIronExtraction: z.enum(['low', 'moderate', 'high']).optional(),
+    ironExtractionEconomicViability: z.enum(['low', 'moderate', 'high']).optional(),
     econRareEarthExtraction: z.enum(['low', 'moderate', 'high']).optional(),
     econSPLEncapsulation: z.enum(['low', 'moderate', 'high']).optional(),
     econDrossRecovery: z.enum(['low', 'moderate', 'high']).optional(),
@@ -3152,12 +3149,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     try {
       // Save the valorization step data
       await onSave?.(data)
-      onNext()
-
       console.log('✅ Valorization step saved successfully')
 
-      // Trigger workflow submission callback
-      onSubmitSuccess?.()
     } catch (e) {
       console.error('❌ Valorization submission failed:', e)
     }
@@ -3168,8 +3161,6 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
-      forwardLabel="Submit"
-      showLca={false}
     />
   )
 
@@ -3488,7 +3479,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                 {[
                   { name: 'econCementAdditive', label: 'Cement Additive Economic Viability' },
                   { name: 'econSoilStabilization', label: 'Soil Stabilization Economic Viability' },
-                  { name: 'econIronExtraction', label: 'Iron Extraction Economic Viability' },
+                  { name: 'ironExtractionEconomicViability', label: 'Iron Extraction Economic Viability' },
                   { name: 'econRareEarthExtraction', label: 'Rare Earth Extraction Economic Viability' },
                   { name: 'econSPLEncapsulation', label: 'SPL Encapsulation Economic Viability' },
                   { name: 'econDrossRecovery', label: 'Dross Recovery Economic Viability' },

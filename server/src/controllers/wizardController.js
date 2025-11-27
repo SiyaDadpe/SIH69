@@ -10,6 +10,112 @@ const { WizardWorkflow, User, Report, Project } = require('../models');
 const mongoose = require('mongoose');
 const { clearCache, clearAllCache } = require('../utils/localCache');
 
+
+/**
+ * Logic For Filling Null values
+ * This is wrt to frontend fields
+ */
+const getStepFieldDefinitions = () => {
+  return {
+    mining: [
+      'applicableProcesses', 'others', 'location', 'year', 'oreGrade', 'overburdenRatio',
+      'typeOfEquipment', 'waterUsage', 'redMudGeneration', 'biodiversityImpact',
+      'mining_energy_MJ_per_t_ore', 'mining_co2_kg_per_t_ore', 'mining_sox_kg_per_t_ore',
+      'mining_nox_kg_per_t_ore', 'mining_pm_kg_per_t_ore'
+    ],
+    beneficiation: [
+      'processes', 'processOthers', 'location', 'oreFeedRate', 'waterConsumption',
+      'electricityUse', 'beneficiationEfficiency', 'crushingSelections', 'chemicalAgents',
+      'chemicalOthers', 'tailings', 'tailingsOthers', 'noiseLevel', 'dustLevel',
+      'beneficiation_water_m3_per_t_ore', 'beneficiation_electricity_kWh_per_t_ore',
+      'beneficiation_tailings_management', 'beneficiation_noise_pollution', 'beneficiation_dust_pollution'
+    ],
+    refining: [
+      'processes', 'processOthers', 'variants', 'variantOthers', 'energyUse', 'waterUse',
+      'redMudGen', 'causticSoda', 'limeAdditives', 'so2', 'nox', 'dust', 'toxicity', 'toxicityOthers'
+    ],
+    smelting: [
+      'processes', 'processOthers', 'variants', 'variantOthers', 'electricityDemand',
+      'co2Emissions', 'cellTechnology', 'pfcEmissions', 'so2', 'nox', 'fluorideRecovery',
+      'thermalRecovery'
+    ],
+    manufacturing: [
+      'processes', 'processOthers', 'castingProcesses', 'scrapRate', 'recycledContent',
+      'energyUsePerStep', 'fabricationEmissions', 'transportDistance', 'transportMode',
+      'transportModeOthers', 'transportEmissionsPerTkm', 'lightweightingSectors',
+      'lightweightingOthers', 'corrosionImpact', 'corrosionOthers'
+    ],
+    recycling: [
+      'processes', 'processOthers', 'variants', 'variantOthers', 'scrapInputPercent',
+      'collectionRatePercent', 'recyclingMethod', 'recoveryYieldPercent',
+      'recyclingEfficiencyPercent', 'closedLoopPercent', 'openLoopPercent',
+      'furnaceEnergyDemand', 'emissionSavings', 'sortingMethods', 'sortingOthers'
+    ],
+    valorization: [
+      'wasteTypes', 'wasteTypeOthers', 'wasteTypesOthers', 'valorizationMethods', 
+      'valorizationMethodsOthers', 'methodsOthers', 'wasteUtilizationPercentages',
+      'wasteUtilizationOverallPercent', 'emissionReductions', 'emissionReductionsPerTonne',
+      'redMudUtilized', 'splUtilized', 'drossUtilized', 'fluorideUtilized', 'slagUtilized',
+      'redMudRecovery', 'splRecovery', 'drossRecovery', 'fluorideRecovery', 'slagRecovery',
+      'toxicityRedMud', 'toxicitySPL', 'toxicityDross', 'toxicityFluoride', 'toxicitySlag',
+      'groundwaterRedMud', 'groundwaterSPL', 'groundwaterDross', 'groundwaterFluoride', 'groundwaterSlag',
+      'econCementAdditive', 'econSoilStabilization', 'ironExtractionEconomicViability', 
+      'econRareEarthExtraction', 'econSPLEncapsulation', 'econDrossRecovery', 'econFluorideCapture',
+      'rareEarthExtractionEconomicViability', 'splEncapsulationEconomicViability',
+      'drossRecoveryEconomicViability', 'fluorideCaptureEconomicViability',
+      'drossRecoveryEfficiency', 'fluorideGasesRecoveryEfficiency'
+    ]
+  };
+};
+
+/**
+ */
+const smartMergeStepData = (stepName, existingData, inputData) => {
+  const fieldDefinitions = getStepFieldDefinitions();
+  const stepFields = fieldDefinitions[stepName] || [];
+  
+  // Start with existing data (if any)
+  const mergedData = existingData ? { ...existingData } : {};
+  
+  // Update with input data (explicitly provided)
+  Object.keys(inputData).forEach(key => {
+    if (inputData[key] !== undefined) {
+      mergedData[key] = inputData[key];
+    }
+  });
+  
+
+  stepFields.forEach(field => {
+    if (!(field in mergedData)) {
+      mergedData[field] = null;
+    }
+  });
+  
+  // console.log(`[DEBUG] Smart merge for ${stepName}:`);
+  // console.log(`- Existing fields: ${Object.keys(existingData || {}).length}`);
+  // console.log(`- Input fields: ${Object.keys(inputData).length}`);
+  // console.log(`- Final fields: ${Object.keys(mergedData).length}`);
+  // console.log(`- Schema fields: ${stepFields.length}`);
+  
+  return mergedData;
+};
+
+/**
+ * Checks if savied first time (for initial null population)
+ */
+const isFirstTimeSave = (existingData, inputData) => {
+  // existing data
+  if (!existingData || Object.keys(existingData).length === 0) {
+    return true;
+  }
+  const hasNonNullValues = Object.values(existingData).some(value => 
+    value !== null && value !== undefined && value !== ''
+  );
+  
+  return !hasNonNullValues;
+};
+
+
 /**
  * Helper function to generate a comprehensive report from wizard workflow
  * @param {Object} workflow - The wizard workflow document
@@ -363,6 +469,8 @@ const updateWorkflow = asyncHandler(async (req, res) => {
   });
 });
 
+
+
 /**
  * @desc    Update specific wizard step data
  * @route   PUT /api/wizard/workflows/:id/steps/:stepName
@@ -413,14 +521,21 @@ const updateStep = asyncHandler(async (req, res) => {
   console.log('[DEBUG] Workflow found:', workflow._id);
   console.log('[DEBUG] Current step data before update:', JSON.stringify(workflow[stepName], null, 2));
 
-  // Update the step data - merge with existing data to prevent overwrites
-  if (workflow[stepName]) {
-    workflow[stepName] = { ...workflow[stepName].toObject(), ...stepData };
-  } else {
-    workflow[stepName] = stepData;
-  }
+  // Get existing data (convert from Mongoose object if needed)
+  const existingData = workflow[stepName] ? 
+    (workflow[stepName].toObject ? workflow[stepName].toObject() : workflow[stepName]) : 
+    null;
   
-  console.log('[DEBUG] Step data after update:', JSON.stringify(workflow[stepName], null, 2));
+  // Use smart merging to preserve existing values while setting unfilled fields to null
+  const mergedData = smartMergeStepData(stepName, existingData, stepData);
+  
+  // Update the workflow with merged data
+  workflow[stepName] = mergedData;
+  
+  // Mark the path as modified to ensure Mongoose saves the changes
+  workflow.markModified(stepName);
+  
+  console.log('[DEBUG] Step data after smart merge:', JSON.stringify(workflow[stepName], null, 2));
 
   // Mark step as completed if markCompleted flag is true
   if (stepData.markCompleted === true) {
@@ -433,11 +548,21 @@ const updateStep = asyncHandler(async (req, res) => {
       recycling: 5,
       valorization: 6
     };
-    await workflow.markStepCompleted(stepNumbers[stepName]);
-    console.log('[INFO] Step marked as completed');
+    try {
+      await workflow.markStepCompleted(stepNumbers[stepName]);
+      console.log('[INFO] Step marked as completed');
+    } catch (saveError) {
+      console.error('[ERROR] Failed to mark step as completed:', saveError);
+      throw saveError;
+    }
   } else {
-    await workflow.save();
-    console.log('[INFO] Workflow saved without marking complete');
+    try {
+      await workflow.save();
+      console.log('[INFO] Workflow saved without marking complete');
+    } catch (saveError) {
+      console.error('[ERROR] Failed to save workflow:', saveError);
+      throw saveError;
+    }
   }
 
   // Verify the save
