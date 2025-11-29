@@ -85,14 +85,14 @@ const RightSidebar = ({
   return (
     <div className="absolute right-0 top-0 bottom-0 w-96 bg-white border-l border-gray-200 flex flex-col z-10 shadow-xl">
       {/* Header */}
-      <div className="shrink-0 px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-[#BA7967] to-[#3d3635]">
+      <div className="shrink-0 px-4 py-3 border-b-2 border-[#D4A574] bg-[#EEEBE5]">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Configure Process</h2>
+          <h2 className="text-lg font-bold text-[#A0735C]">Configure Process</h2>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-[#D4A574]/15 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-[#A0735C]" />
           </button>
         </div>
       </div>
