@@ -809,7 +809,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     waterConsumption: z.coerce.number().min(0).optional(),
     electricityUse: z.coerce.number().min(0).optional(),
     beneficiationEfficiency: z.coerce.number().min(0).max(100).optional(),
-    crushingSelections: z.array(z.string()).default([]),
+    crushingStage: z.string().optional(),
     chemicalAgents: z.array(z.string()).default([]),
     chemicalOthers: z.string().optional(),
     tailings: z.string().optional(),
@@ -828,7 +828,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     resolver: zodResolver(schema),
     defaultValues: initialValues || {
       processes: [],
-      crushingSelections: [],
+      crushingStage: '',
     },
     mode: "onChange",
   })
@@ -1066,27 +1066,28 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 )}
               />
 
-              <div className="space-y-2">
-                <FormLabel className={GROUP_HEADING_TEXT}>Crushing</FormLabel>
-                <FormDescription>Select stages involved.</FormDescription>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {crushingOptions.map((c) => (
-                    <FormField key={c.id} control={control} name="crushingSelections" render={({ field }) => (
-                      <CardCheckbox
-                        id={`ben-crush-${c.id}`}
-                        label={c.label}
-                        checked={field.value?.includes(c.id)}
-                        onChange={(checked) => {
-                          const next = new Set(field.value || [])
-                          if (checked) next.add(c.id); else next.delete(c.id)
-                          field.onChange(Array.from(next))
-                        }}
-                      />
-                    )} />
-                  ))}
-                </div>
-                <FormMessage />
-              </div>
+              <FormField
+                control={control}
+                name="crushingStage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Crushing Stage</FormLabel>
+                    <FormDescription>Select the crushing stage.</FormDescription>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {crushingOptions.map((c) => (
+                        <CardRadio
+                          key={c.id}
+                          id={`ben-crush-${c.id}`}
+                          label={c.label}
+                          selected={field.value === c.id}
+                          onSelect={() => field.onChange(c.id)}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <hr className="my-4 border-gray-200" />

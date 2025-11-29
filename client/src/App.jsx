@@ -7,9 +7,8 @@ import Landing from './pages/Landing';
 import Wizard from './pages/Wizard';
 import Reports from './pages/Reports';
 import Docs from './pages/Docs';
-
-import Canvas from './pages/Canvas';
 import Analytics from './pages/Analytics';
+import ProcessCanvas from './pages/ProcessCanvas';
 import MainLayout from './layouts/MainLayout';
 import RouteError from './components/RouteError';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -68,7 +67,7 @@ function App() {
         },
         {
           path: "canvas",
-          element: <Canvas />,
+          element: <ProcessCanvas />,
           errorElement: <RouteError />
         },
         {

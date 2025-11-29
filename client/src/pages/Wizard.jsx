@@ -1,9 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import WizardForm from "@/sections/Wizard/wizardForm"
-import CopperWizardForm from "@/sections/Wizard/wizardForm-cu"
 import ProgressTracker from "@/sections/Wizard/progressTracker"
-import ProgressTrackerCopper from "@/sections/Wizard/progressTracker-cu"
 import MetalSelection from "@/components/MetalSelection"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react"
@@ -27,16 +25,6 @@ export default function Wizard() {
     { title: "Manufacturing", description: "Transform refined metal into products", key: "manufacturing" },
     { title: "Recycling", description: "Recover and reprocess metal waste", key: "recycling" },
     { title: "Valorization", description: "Create value from by-products and waste", key: "valorization" },
-  ], [])
-
-  const copperSteps = useMemo(() => [
-    { title: "Mining", description: "Extract raw materials from ore deposits", key: "mining" },
-    { title: "Beneficiation", description: "Process and concentrate the ore", key: "beneficiation" },
-    { title: "Extraction", description: "Select copper extraction routes and parameters", key: "refining" },
-    { title: "Manufacturing", description: "Transform refined copper into products", key: "manufacturing" },
-    { title: "Use Phase", description: "Monitor copper performance during product use", key: "usePhase" },
-    { title: "Recycling", description: "Recover and reprocess copper waste", key: "recycling" },
-    { title: "Valorization", description: "Create value from by-products and residues", key: "valorization" },
   ], [])
 
   const [generatingReport, setGeneratingReport] = useState(false)
@@ -155,9 +143,8 @@ export default function Wizard() {
         
         // Set metal type from loaded workflow
         const metalType = response.data.workflow.metalType;
-        let workflowMetal = 'aluminum';
         if (metalType) {
-          workflowMetal = metalType.toLowerCase() === 'copper' ? 'copper' : 'aluminum';
+          const workflowMetal = metalType.toLowerCase() === 'steel' ? 'steel' : 'aluminum';
           setSelectedMetal(workflowMetal);
           console.log('🎯 Metal type from workflow:', workflowMetal);
         }
@@ -172,8 +159,7 @@ export default function Wizard() {
         
         // Set active step based on workflow progress
         const completedCount = response.data.workflow.completedSteps?.length || 0
-        const workflowStepsConfig = workflowMetal === 'copper' ? copperSteps : steps
-        setActiveStep(Math.min(completedCount, workflowStepsConfig.length - 1))
+        setActiveStep(Math.min(completedCount, steps.length - 1))
       }
     } catch (err) {
       console.error('❌ Error loading workflow:', err);
@@ -292,7 +278,7 @@ export default function Wizard() {
     }
 
     setSelectedMetal(metalType);
-    const normalizedMetal = metalType === 'aluminum' ? 'Aluminium' : 'Copper';
+    const normalizedMetal = metalType === 'steel' ? 'Steel' : 'Aluminium';
     const projectMeta = selection && typeof selection === 'object' ? selection : null;
     initializeWorkflow(normalizedMetal, projectMeta);
   }
@@ -427,45 +413,22 @@ export default function Wizard() {
         </div>
       ) : (
         <>
-          {selectedMetal === 'copper' ? (
-            <>
-              <CopperWizardForm 
-                steps={copperSteps} 
-                activeStep={activeStep} 
-                onStepChange={setActiveStep}
-                workflowId={workflowId}
-                workflowData={workflowData}
-                onWorkflowUpdate={handleWorkflowUpdate}
-                onWorkflowSubmitted={handleWorkflowSubmitted}
-              />
-              <ProgressTrackerCopper 
-                steps={copperSteps} 
-                currentStep={activeStep} 
-                onStepClick={setActiveStep}
-                completedSteps={workflowData?.completedSteps || []}
-                completionPercentage={completionPercentage}
-              />
-            </>
-          ) : (
-            <>
-              <WizardForm 
-                steps={steps} 
-                activeStep={activeStep} 
-                onStepChange={setActiveStep}
-                workflowId={workflowId}
-                workflowData={workflowData}
-                onWorkflowUpdate={handleWorkflowUpdate}
-                onWorkflowSubmitted={handleWorkflowSubmitted}
-              />
-              <ProgressTracker 
-                steps={steps} 
-                currentStep={activeStep} 
-                onStepClick={setActiveStep}
-                completedSteps={workflowData?.completedSteps || []}
-                completionPercentage={completionPercentage}
-              />
-            </>
-          )}
+          <WizardForm 
+            steps={steps} 
+            activeStep={activeStep} 
+            onStepChange={setActiveStep}
+            workflowId={workflowId}
+            workflowData={workflowData}
+            onWorkflowUpdate={handleWorkflowUpdate}
+            onWorkflowSubmitted={handleWorkflowSubmitted}
+          />
+          <ProgressTracker 
+            steps={steps} 
+            currentStep={activeStep} 
+            onStepClick={setActiveStep}
+            completedSteps={workflowData?.completedSteps || []}
+            completionPercentage={completionPercentage}
+          />
         </>
       )}
     </div>
