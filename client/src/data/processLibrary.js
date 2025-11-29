@@ -750,7 +750,9 @@ export const processLibrary = {
 };
 
 export const getProcessesForStage = (metal, stage) => {
-  return processLibrary[metal]?.[stage] || [];
+  const processes = processLibrary[metal]?.[stage] || [];
+  // Add stage property to each process
+  return processes.map(process => ({ ...process, stage }));
 };
 
 export const getProcessById = (metal, processId) => {

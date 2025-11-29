@@ -10,6 +10,11 @@ const CanvasNode = ({ data, selected }) => {
   const process = data?.process;
   const IconComponent = process?.icon;
   
+  // Debug icon
+  if (process && !IconComponent) {
+    console.log('❌ No icon for process:', process.name, process);
+  }
+  
   if (!data || !process) {
     return null;
   }

@@ -3,8 +3,8 @@
  * Left sidebar with metal selector, stage selector, and process cards
  */
 
-import React, { useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DraggableProcess from './DraggableProcess';
 import { getStagesForMetal } from '@/data/stageMapping';
@@ -17,8 +17,13 @@ const ProcessLibrary = ({
   onSelectStage,
   onDragStart,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  existingNodes = [],
+  onWidthChange
 }) => {
+  const [width, setWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef(null);
   const metals = [
     { id: 'steel', label: 'Steel', color: '#708090' },
     { id: 'aluminum', label: 'Aluminum', color: '#A8A9AD' }
@@ -33,12 +38,59 @@ const ProcessLibrary = ({
     return getProcessesForStage(selectedMetal, selectedStage);
   }, [selectedMetal, selectedStage]);
   
+  // Get set of stages that already have nodes on canvas
+  const occupiedStages = useMemo(() => {
+    return new Set(existingNodes.map(node => node.data.stage));
+  }, [existingNodes]);
+  
+  // Get set of process IDs with their stages (stage:processId) that are on canvas
+  const processesOnCanvas = useMemo(() => {
+    return new Set(existingNodes.map(node => {
+      const processId = node.data.process?.id || node.data.process?.typeId;
+      const stage = node.data.stage;
+      return `${stage}:${processId}`;
+    }));
+  }, [existingNodes]);
+  
   // Auto-select first stage when metal changes
   React.useEffect(() => {
     if (stages.length > 0 && !selectedStage) {
       onSelectStage(stages[0].id);
     }
   }, [stages, selectedStage, onSelectStage]);
+  
+  // Handle resize
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      
+      const newWidth = e.clientX;
+      if (newWidth >= 280 && newWidth <= 500) {
+        setWidth(newWidth);
+        if (onWidthChange) {
+          onWidthChange(newWidth);
+        }
+      }
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+    
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'ew-resize';
+      document.body.style.userSelect = 'none';
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, onWidthChange]);
   
   if (isCollapsed) {
     return (
@@ -54,16 +106,20 @@ const ProcessLibrary = ({
   }
   
   return (
-    <div className="absolute left-0 top-0 bottom-0 w-80 bg-white border-r border-gray-200 flex flex-col z-10">
+    <div 
+      ref={sidebarRef}
+      className="absolute left-0 top-0 bottom-0 bg-white border-r border-gray-200 flex flex-col z-10"
+      style={{ width: `${width}px` }}
+    >
       {/* Header */}
-      <div className="shrink-0 px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-[#BA7967] to-[#3d3635]">
+      <div className="shrink-0 px-4 py-3 border-b-2 border-[#D4A574] bg-[#EEEBE5]">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Process Library</h2>
+          <h2 className="text-lg font-bold text-[#A0735C]">Process Library</h2>
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-[#D4A574]/15 rounded-lg transition-colors"
           >
-            <ChevronLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-[#A0735C]" />
           </button>
         </div>
       </div>
@@ -131,12 +187,14 @@ const ProcessLibrary = ({
               
               {/* Process Cards */}
               {processes.length > 0 ? (
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
                   {processes.map((process) => (
                     <DraggableProcess
                       key={process.id}
                       process={process}
                       onDragStart={onDragStart}
+                      isDisabled={occupiedStages.has(process.stage)}
+                      isOnCanvas={processesOnCanvas.has(`${process.stage}:${process.id}`)}
                     />
                   ))}
                 </div>
@@ -173,6 +231,16 @@ const ProcessLibrary = ({
         <p className="text-xs text-gray-600 text-center">
           💡 Drag processes to the canvas to build your workflow
         </p>
+      </div>
+      
+      {/* Resize Handle */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-[#BA7967] transition-colors group"
+        onMouseDown={() => setIsResizing(true)}
+      >
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <GripVertical className="w-4 h-4 text-[#BA7967]" />
+        </div>
       </div>
     </div>
   );

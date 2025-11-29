@@ -66,6 +66,7 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
   const [isLibraryCollapsed, setIsLibraryCollapsed] = React.useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [libraryWidth, setLibraryWidth] = React.useState(320);
   
   // Node types for ReactFlow
   const nodeTypes = useMemo(() => ({
@@ -91,8 +92,12 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
   
   // Handle subprocess modal - add to canvas
   const handleAddFromModal = useCallback((enhancedProcess) => {
-    addProcessToCenter(enhancedProcess);
-    toast.success(`Added ${enhancedProcess.name} to canvas`);
+    const result = addProcessToCenter(enhancedProcess);
+    if (result) {
+      toast.success(`Added ${enhancedProcess.name} to canvas`);
+    } else {
+      toast.error(`Cannot add ${enhancedProcess.name}. A process from this stage already exists on the canvas.`);
+    }
   }, [addProcessToCenter]);
   
   // Handle node click
@@ -155,6 +160,15 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
     toast.success('Process removed');
   }, [deleteNode]);
   
+  // Handle drop with validation
+  const handleDrop = useCallback((event) => {
+    const result = onDrop(event);
+    if (result === null) {
+      // Node was not added due to stage conflict
+      toast.error('Cannot add process. A process from this stage already exists on the canvas.');
+    }
+  }, [onDrop]);
+  
   return (
     <ReactFlowProvider>
       <div className="w-full h-screen bg-gray-100 relative overflow-hidden">
@@ -167,13 +181,15 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
           onDragStart={handleProcessDrag}
           isCollapsed={isLibraryCollapsed}
           onToggleCollapse={() => setIsLibraryCollapsed(!isLibraryCollapsed)}
+          existingNodes={nodes}
+          onWidthChange={setLibraryWidth}
         />
         
         {/* Canvas Area */}
         <div
-          className="absolute inset-0 transition-all duration-300"
+          className="absolute inset-0 transition-all duration-150"
           style={{
-            left: isLibraryCollapsed ? '48px' : '320px',
+            left: isLibraryCollapsed ? '48px' : `${libraryWidth}px`,
             right: (selectedNode && !isSidebarCollapsed) ? '384px' : (selectedNode ? '48px' : '0')
           }}
         >
@@ -185,7 +201,7 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
             onConnect={handleConnect}
             onNodeClick={handleNodeClick}
             onPaneClick={handlePaneClick}
-            onDrop={onDrop}
+            onDrop={handleDrop}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             isDragOver={isDragOver}

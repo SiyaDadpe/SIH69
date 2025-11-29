@@ -35,10 +35,18 @@ export const useCanvasState = (initialMetal = 'steel') => {
    * Add a process node to the canvas
    */
   const addNode = useCallback((process, position) => {
+    // Check if a node from the same stage already exists
+    const existingNodeInStage = nodes.find(node => node.data.stage === process.stage);
+    
+    if (existingNodeInStage) {
+      // Return null to indicate the node was not added
+      return null;
+    }
+    
     const newNode = createProcessNode(process, position, selectedMetal, process.stage);
     setNodes(nds => [...nds, newNode]);
     return newNode;
-  }, [selectedMetal, setNodes]);
+  }, [selectedMetal, setNodes, nodes]);
   
   /**
    * Update node data

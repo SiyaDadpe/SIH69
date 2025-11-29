@@ -1051,6 +1051,63 @@ export const getProcessDefaults = (metal, processTypeId) => {
   return metalDefaults[processTypeId] || {};
 };
 
+const getPlaceholder = (key) => {
+  // Map parameter names to their placeholder examples
+  const placeholders = {
+    // Mining/Extraction
+    oreGrade: 'e.g., 25',
+    oreGradePercentCu: 'e.g., 0.85',
+    overburdenRatio: 'e.g., 3.5',
+    location: 'e.g., Chile, Atacama',
+    depth: 'e.g., 350',
+    waterUsage: 'e.g., 0.04',
+    waterUse: 'e.g., 2.5',
+    energyConsumption: 'e.g., 120000',
+    energyUse: 'e.g., 12000',
+    redMudGeneration: 'e.g., 150',
+    redMudGen: 'e.g., 1000',
+    // Beneficiation
+    oreFeedRate: 'e.g., 200',
+    crushingEnergy: 'e.g., 18.5',
+    grindingEnergy: 'e.g., 45',
+    recoveryRate: 'e.g., 87',
+    tailingsManagement: 'e.g., Dry stacking',
+    // Refining
+    causticSoda: 'e.g., 90',
+    lime: 'e.g., 40',
+    temperature: 'e.g., 950',
+    pressure: 'e.g., 2.5',
+    // Smelting
+    electricityDemand: 'e.g., 15000',
+    co2Emissions: 'e.g., 1.5',
+    cellTechnology: 'e.g., Hall-Héroult',
+    anodeType: 'e.g., Prebaked',
+    // Manufacturing
+    rollingEnergy: 'e.g., 800',
+    extrusionEnergy: 'e.g., 600',
+    castingEnergy: 'e.g., 450',
+    scrapRate: 'e.g., 15',
+    recycledContent: 'e.g., 30',
+    // Recycling
+    collectionRate: 'e.g., 75',
+    sortingEfficiency: 'e.g., 92',
+    meltingEnergy: 'e.g., 3500',
+    recoveryYield: 'e.g., 95',
+    // Emissions
+    so2Emissions: 'e.g., 0.7',
+    noxEmissions: 'e.g., 0.9',
+    dustEmissions: 'e.g., 0.2',
+    particulateMatter: 'e.g., 0.5',
+    // General
+    transportDistance: 'e.g., 500',
+    fuelConsumption: 'e.g., 250',
+    biodiversityImpact: 'Select an option',
+    landUse: 'e.g., 100'
+  };
+  
+  return placeholders[key] || `Enter ${formatLabel(key).toLowerCase()}`;
+};
+
 export const getParameterConfig = (metal, processTypeId) => {
   // Return parameter configuration schema for dynamic form generation
   const defaults = getProcessDefaults(metal, processTypeId);
@@ -1059,20 +1116,21 @@ export const getParameterConfig = (metal, processTypeId) => {
     const value = defaults[key];
     const type = typeof value;
     const required = isRequiredField(key);
+    const placeholder = getPlaceholder(key);
 
     if (type === 'number') {
-      return { name: key, type: 'number', default: value, label: formatLabel(key), required };
+      return { name: key, type: 'number', default: value, label: formatLabel(key), required, placeholder };
     } else if (type === 'string') {
       // Check if it's a select option
       if (isSelectOption(key)) {
-        return { name: key, type: 'select', default: value, options: getSelectOptions(key), label: formatLabel(key), required };
+        return { name: key, type: 'select', default: value, options: getSelectOptions(key), label: formatLabel(key), required, placeholder: 'Select an option' };
       }
-      return { name: key, type: 'text', default: value, label: formatLabel(key), required };
+      return { name: key, type: 'text', default: value, label: formatLabel(key), required, placeholder };
     } else if (type === 'object') {
-      return { name: key, type: 'object', default: value, label: formatLabel(key), required };
+      return { name: key, type: 'object', default: value, label: formatLabel(key), required, placeholder };
     }
     
-    return { name: key, type: 'text', default: value, label: formatLabel(key), required };
+    return { name: key, type: 'text', default: value, label: formatLabel(key), required, placeholder };
   });
 };
 

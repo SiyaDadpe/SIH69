@@ -148,8 +148,9 @@ const RightSidebar = ({
                   {param.type === 'number' && (
                     <Input
                       type="number"
-                      value={parameters[param.name] ?? param.default}
+                      value={parameters[param.name] ?? ''}
                       onChange={(e) => handleParameterChange(param.name, parseFloat(e.target.value) || 0)}
+                      placeholder={param.placeholder || `Enter ${param.label.toLowerCase()}`}
                       className="w-full"
                       step="any"
                     />
@@ -158,18 +159,20 @@ const RightSidebar = ({
                   {param.type === 'text' && (
                     <Input
                       type="text"
-                      value={parameters[param.name] ?? param.default}
+                      value={parameters[param.name] ?? ''}
                       onChange={(e) => handleParameterChange(param.name, e.target.value)}
+                      placeholder={param.placeholder || `Enter ${param.label.toLowerCase()}`}
                       className="w-full"
                     />
                   )}
                   
                   {param.type === 'select' && (
                     <select
-                      value={parameters[param.name] ?? param.default}
+                      value={parameters[param.name] ?? ''}
                       onChange={(e) => handleParameterChange(param.name, e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
                     >
+                      <option value="">Select an option...</option>
                       {param.options?.map((option) => (
                         <option key={option} value={option}>
                           {option.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}

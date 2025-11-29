@@ -77,7 +77,12 @@ export const useDragDrop = (reactFlowInstance, addNode) => {
       // Add node at drop position with full process data
       const newNode = addNode(process, position);
       
-      console.log('✅ Process dropped:', process.name, 'at', position);
+      if (!newNode) {
+        // Node was not added due to stage conflict
+        console.log('❌ Cannot add process - stage already has a process');
+      } else {
+        console.log('✅ Process dropped:', process.name, 'at', position);
+      }
       
       // Clear dragged process
       setDraggedProcess(null);
@@ -99,8 +104,15 @@ export const useDragDrop = (reactFlowInstance, addNode) => {
     }
     
     const position = getCenterPosition(reactFlowInstance.current);
-    return addNode(process, position);
-  }, [reactFlowInstance, addNode, draggedProcess]);
+    const newNode = addNode(process, position);
+    
+    if (!newNode) {
+      // Node was not added due to stage conflict
+      console.log('❌ Cannot add process - stage already has a process');
+    }
+    
+    return newNode;
+  }, [reactFlowInstance, addNode]);
   
   return {
     isDragOver,

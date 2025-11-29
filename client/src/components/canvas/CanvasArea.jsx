@@ -46,7 +46,7 @@ const CanvasArea = ({
         attributionPosition="bottom-left"
         className={`
           transition-all duration-300
-          ${isDragOver ? 'bg-blue-50' : 'bg-gray-50'}
+          ${isDragOver ? 'bg-blue-50' : 'bg-[#f5f1ed]'}
           ${isConnectMode ? 'cursor-crosshair' : ''}
         `}
         defaultEdgeOptions={{
@@ -60,7 +60,7 @@ const CanvasArea = ({
         <Background
           gap={16}
           size={1}
-          color="#e5e7eb"
+          color="#d4c9be"
         />
         <Controls
           className="bg-white border border-gray-200 rounded-lg shadow-lg"
@@ -76,8 +76,8 @@ const CanvasArea = ({
               animate={{ opacity: 1, scale: 1 }}
               className="text-center max-w-md px-6"
             >
-              <div className="w-24 h-24 bg-gradient-to-br from-[#BA7967] to-[#3d3635] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                <Network className="w-12 h-12 text-white" />
+              <div className="w-24 h-24 bg-[#EEEBE5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg border-4 border-[#D4A574]">
+                <Network className="w-12 h-12 text-[#A0735C]" />
               </div>
               
               <h2 className="text-2xl font-bold text-gray-900 mb-3">
