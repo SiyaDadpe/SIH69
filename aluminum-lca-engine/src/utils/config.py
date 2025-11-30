@@ -8,9 +8,9 @@ class Config:
     BIODB_NAME = os.getenv("BIODB_NAME", "biosphere3")
     ALUMINUM_DB_NAME = os.getenv("ALUMINUM_DB_NAME", "aluminum_foreground")
     DEFAULT_METHODS = {
-        'gwp': ('IPCC 2013', 'climate change', 'GWP 100a'),
-        'water_use': ('Boulay et al. 2011', 'water use', 'water use'),
-        'land_use': ('IPCC 2013', 'land use', 'land use')
+        'gwp': ('IPCC 2013', 'climate change', 'global warming potential (GWP100)'),
+        'water_use': ('ReCiPe 2016 v1.03, midpoint (H)', 'water use', 'water consumption potential (WCP)'),
+        'land_use': ('ReCiPe 2016 v1.03, midpoint (H)', 'land use', 'agricultural land occupation (LOP)')
     }
 
     # MongoDB integration
