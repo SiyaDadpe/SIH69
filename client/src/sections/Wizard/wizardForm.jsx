@@ -2565,51 +2565,167 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                   <FormMessage />
                 </FormItem>
               )} />
-
-              <FormField control={control} name="causticSoda" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>Caustic soda (kg/t)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 90" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={control} name="limeAdditives" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>Lime / other additives (kg/t)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.1" placeholder="e.g., 40" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
             </div>
 
             <hr className="my-4 border-gray-200" />
 
-            {/* 4. Emissions and Toxicity */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <FormField control={control} name="so2" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>SO₂ emissions (kg per tonne)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.7" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={control} name="nox" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>NOₓ emissions (kg per tonne)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.9" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={control} name="dust" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>Dust emissions (kg per tonne)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.2" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+            {/* 4. AI-Predictable Fields Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
+                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="refining_energy_MJ_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Energy (MJ per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_energy_MJ_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_water_m3_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Water (m³ per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_water_m3_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_red_mud_kg_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Red Mud (kg per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_red_mud_kg_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_caustic_soda_kg_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Caustic Soda (kg per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_caustic_soda_kg_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_lime_kg_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Lime (kg per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_lime_kg_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_so2_kg_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>SO₂ (kg per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_so2_kg_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_nox_kg_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>NOₓ (kg per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_nox_kg_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="refining_dust_kg_per_t_alumina" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Dust (kg per tonne alumina)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('refining_dust_kg_per_t_alumina') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
             </div>
 
+            <hr className="my-4 border-gray-200" />
+
+            {/* 5. Toxicity Indicators */}
             <FormField control={control} name="toxicity" render={({ field }) => (
               <FormItem className="space-y-3">
                 <FormLabel className={GROUP_HEADING_TEXT}>Toxicity Indicators of Red Mud</FormLabel>
@@ -2892,73 +3008,164 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                   <FormMessage />
                 </FormItem>
               )} />
-
-              <FormField control={control} name="pfcEmissions" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>PFC Emissions - Perfluorocarbon (kg per tonne)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 0.8" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
             </div>
 
             <hr className="my-4 border-gray-200" />
 
-            {/* 4. Emissions and Efficiency Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField control={control} name="so2" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>SO₂ Emissions (kg per tonne)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 1.1" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={control} name="nox" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>NOₓ Emissions (kg per tonne)</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" placeholder="e.g., 1.6" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={control} name="fluorideRecovery" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Recovery Efficiency (%)</FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      <Slider
-                        value={[typeof field.value === 'number' ? field.value : 0]}
-                        onValueChange={(v) => field.onChange(v[0])}
-                        min={0}
-                        max={100}
-                        step={1}
+            {/* 4. AI-Predictable Fields Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
+                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="smelting_energy_kWh_per_t_al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Energy (kWh per tonne aluminum)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_energy_kWh_per_t_al') ? 'ai-populated-field' : ''}
                       />
-                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
-              <FormField control={control} name="thermalRecovery" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={GROUP_HEADING_TEXT}>Thermal Energy Recovery Potential (% of total energy)</FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      <Slider
-                        value={[typeof field.value === 'number' ? field.value : 0]}
-                        onValueChange={(v) => field.onChange(v[0])}
-                        min={0}
-                        max={100}
-                        step={1}
+                <FormField control={control} name="smelting_energy_MJ_per_t_al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Energy (MJ per tonne aluminum)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_energy_MJ_per_t_al') ? 'ai-populated-field' : ''}
                       />
-                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="smelting_co2_kg_per_t_al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>CO₂ (kg per tonne aluminum)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_co2_kg_per_t_al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="smelting_pfc_kg_per_t_al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>PFC (kg per tonne aluminum)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_pfc_kg_per_t_al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="smelting_so2_kg_per_t_al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>SO₂ (kg per tonne aluminum)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_so2_kg_per_t_al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="smelting_nox_kg_per_t_al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>NOₓ (kg per tonne aluminum)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_nox_kg_per_t_al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="smelting_fluoride_recovery_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Fluoride Recovery (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_fluoride_recovery_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="smelting_thermal_recovery_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Thermal Recovery (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('smelting_thermal_recovery_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
             </div>
             
             {/* AI Predictions Review Section */}
@@ -3302,6 +3509,75 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 </FormItem>
               )} />
             </div>
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* 3.5. AI-Predictable Fields Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
+                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="manufacturing_energy_MJ_per_t_product" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Energy (MJ per tonne product)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('manufacturing_energy_MJ_per_t_product') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="manufacturing_recycled_content_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Recycled Content (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('manufacturing_recycled_content_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="manufacturing_transport_emissions_kgCO2e_per_t" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Transport Emissions (kg CO₂e per tonne)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('manufacturing_transport_emissions_kgCO2e_per_t') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+
+            <hr className="my-4 border-gray-200" />
 
             {/* 4. Product End-Use Impact */}
             <FormField control={control} name="lightweightingSectors" render={() => (
@@ -3725,6 +4001,113 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
               )} />
             </div>
 
+            <hr className="my-4 border-gray-200" />
+
+            {/* 3.5. AI-Predictable Fields Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
+                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="recycling_recovery_yield_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Recovery Yield (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_recovery_yield_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="recycling_energy_kWh_per_t_Al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Energy (kWh per tonne Al)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_energy_kWh_per_t_Al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="recycling_emission_savings_kgCO2e_per_t_Al" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Emission Savings (kg CO₂e per tonne Al)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_emission_savings_kgCO2e_per_t_Al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="recycling_closed_loop_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Closed-loop Recycling (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_closed_loop_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="recycling_open_loop_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Open-loop Recycling (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_open_loop_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+
+            <hr className="my-4 border-gray-200" />
+
             {/* 4. Energy, Emissions, and Sorting */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField control={control} name="furnaceEnergyDemand" render={({ field }) => (
@@ -4114,6 +4497,57 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                 </FormItem>
               )} />
             </div>
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* 2.5. AI-Predictable Fields Section */}
+            <div className="space-y-4">
+              <div>
+                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
+                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="valorization_recovery_efficiency_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Recovery Efficiency (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('valorization_recovery_efficiency_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="valorization_emission_reduction_kgCO2e_per_t_waste" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Emission Reduction (kg CO₂e per tonne waste)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('valorization_emission_reduction_kgCO2e_per_t_waste') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+
+            <hr className="my-4 border-gray-200" />
 
             {/* 3. Recovery Efficiency */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

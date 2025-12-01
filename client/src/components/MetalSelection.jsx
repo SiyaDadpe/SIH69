@@ -283,54 +283,54 @@ export default function MetalSelection({ onSelect }) {
     const colors = colorClasses[config.color] || colorClasses.stone;
 
     return (
-      <div className="w-full max-w-6xl space-y-10">
-        <div className="flex flex-col gap-4 text-center sm:text-left sm:flex-row sm:items-center sm:justify-between">
+      <div className="w-full max-w-6xl space-y-6">
+        <div className="flex flex-col gap-3 text-center sm:text-left sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className={`text-sm uppercase tracking-[0.3em] ${colors.text} font-semibold`}>Step 2</p>
-            <h2 className="text-3xl font-bold text-gray-900 mt-1">How would you like to continue?</h2>
-            <p className="text-gray-600 mt-2">
+            <p className={`text-xs uppercase tracking-[0.3em] ${colors.text} font-semibold`}>Step 2</p>
+            <h2 className="text-2xl font-bold text-gray-900 mt-1">How would you like to continue?</h2>
+            <p className="text-sm text-gray-600 mt-1">
               Build a fresh {selectedMetal} project or relaunch one you worked on earlier.
             </p>
           </div>
-          <div className="flex items-center justify-center gap-3">
-            <div className={`flex items-center gap-2 rounded-full ${colors.badge} px-4 py-2 text-sm`}>
-              <Sparkles className="h-4 w-4" />
+          <div className="flex items-center justify-center gap-2">
+            <div className={`flex items-center gap-1.5 rounded-full ${colors.badge} px-3 py-1.5 text-xs`}>
+              <Sparkles className="h-3.5 w-3.5" />
               {config.label} mode unlocked
             </div>
-            <Button variant="ghost" onClick={handleBackToMetals} className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="h-4 w-4 mr-2" />
+            <Button variant="ghost" onClick={handleBackToMetals} className="text-gray-600 hover:text-gray-900 text-sm">
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
               Change metal
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card
             ref={(el) => (actionRefs.current[0] = el)}
-            className={`rounded-3xl ${colors.cardBorder} bg-white shadow-lg`}
+            className={`rounded-2xl ${colors.cardBorder} bg-white shadow-lg`}
           >
-            <CardHeader>
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${colors.iconBg}`}>
-                    <NotebookPen className="h-6 w-6" />
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl ${colors.iconBg}`}>
+                    <NotebookPen className="h-5 w-5" />
                   </div>
                   <div>
                     <p className={`text-xs uppercase tracking-[0.4em] ${colors.text} font-semibold`}>
                       Create
                     </p>
-                    <CardTitle className="text-3xl">New Project</CardTitle>
+                    <CardTitle className="text-xl">New Project</CardTitle>
                   </div>
                 </div>
-                <span className={`text-sm font-medium ${colors.text}`}>Guided flow</span>
+                <span className={`text-xs font-medium ${colors.text}`}>Guided flow</span>
               </div>
-              <CardDescription className="text-base text-gray-600 mt-4">
+              <CardDescription className="text-sm text-gray-600 mt-3">
                 Give your project a name and tell us what it's about. We'll prime the wizard with
                 tailored prompts and checkpoints for {config.description}.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form className="space-y-5" onSubmit={handleCreateSubmit}>
+            <CardContent className="pt-2">
+              <form className="space-y-4" onSubmit={handleCreateSubmit}>
                 <div className="space-y-2">
                   <label htmlFor="project-name" className="text-sm font-medium text-gray-700">
                     Project name
@@ -373,25 +373,33 @@ export default function MetalSelection({ onSelect }) {
 
           <div
             ref={(el) => (actionRefs.current[1] = el)}
-            className={`rounded-3xl bg-linear-to-br ${colors.drawerBg} shadow-lg relative overflow-hidden`}
+            className={`rounded-2xl bg-linear-to-br ${colors.drawerBg} shadow-lg relative overflow-hidden`}
           >
-            <div className={`absolute inset-x-0 top-0 h-32 bg-linear-to-b ${colors.drawerGradient} to-transparent`} />
-            <div className="relative p-8 space-y-6">
+            <div className={`absolute inset-x-0 top-0 h-24 bg-linear-to-b ${colors.drawerGradient} to-transparent`} />
+            <div className="relative p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${colors.drawerIconBg} shadow`}>
-                    <FolderOpen className="h-6 w-6" />
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl ${colors.drawerIconBg} shadow`}>
+                    <FolderOpen className="h-5 w-5" />
                   </div>
                   <div>
                     <p className={`text-xs uppercase tracking-[0.4em] ${colors.drawerText} font-semibold`}>
                       Open
                     </p>
-                    <h3 className={`text-3xl font-semibold ${colors.drawerTitle}`}>Recent Projects</h3>
+                    <h3 className={`text-xl font-semibold ${colors.drawerTitle}`}>Recent Projects</h3>
                   </div>
                 </div>
+                <span className={`text-xs font-medium ${colors.drawerPill}`}>Drag to reveal</span>
                 <span className={`text-sm font-medium ${colors.drawerPill}`}>Your recent {config.label} workflows</span>
               </div>
 
+              <div className={`rounded-xl ${colors.drawerInfoBox} border p-3`}>
+                <p className={`text-xs ${colors.drawerInfoText} font-medium`}>Pull the drawer down</p>
+                <p className={`text-xs ${colors.drawerInfoSubtext}`}>
+                  We'll surface your previously opened wizard sessions here. No dummy data until you've
+                  actually run projects — just a clean staging area.
+                </p>
+              </div>
               {currentUser && (
                 <div className={`rounded-2xl ${colors.drawerInfoBox} border p-4`}>
                   <p className={`text-sm ${colors.drawerInfoText} font-medium`}>Recent {config.label} Projects</p>
@@ -405,21 +413,24 @@ export default function MetalSelection({ onSelect }) {
                 <button
                   type="button"
                   onClick={() => setOpenProjectsExpanded((prev) => !prev)}
-                  className="w-full flex items-center justify-between px-6 py-4 text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
                 >
                   <div>
+                    <p className={`text-xs font-semibold ${colors.drawerContentText}`}>Local wizard projects</p>
                     <p className={`text-sm font-semibold ${colors.drawerContentText}`}>Recent {config.label} Workflows</p>
                     <p className={`text-xs ${colors.drawerContentSubtext}`}>
                       {recentProjects.length} total
                     </p>
                   </div>
                   {openProjectsExpanded ? (
-                    <ChevronUp className={`h-5 w-5 ${colors.drawerChevron}`} />
+                    <ChevronUp className={`h-4 w-4 ${colors.drawerChevron}`} />
                   ) : (
-                    <ChevronDown className={`h-5 w-5 ${colors.drawerChevron}`} />
+                    <ChevronDown className={`h-4 w-4 ${colors.drawerChevron}`} />
                   )}
                 </button>
-                <div className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}>
+                <div
+                  className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
+                >
                   <div className={`px-6 pb-6 space-y-3 text-sm ${colors.drawerContentText}`}>
                     {loadingProjects ? (
                       <div className="text-center py-4">
@@ -466,7 +477,7 @@ export default function MetalSelection({ onSelect }) {
                 </div>
               </div>
 
-              <p className={`text-sm ${colors.drawerFooter}`}>
+              <p className={`text-xs ${colors.drawerFooter}`}>
                 Want this to auto-populate? Connect your wizard history API and hydrate the list with
                 real sessions when they're available.
               </p>
@@ -479,9 +490,9 @@ export default function MetalSelection({ onSelect }) {
 
   const renderMetalStage = () => (
     <>
-      <div ref={headerRef} className="text-center mb-12 space-y-3">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">Choose Your Metal</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+      <div ref={headerRef} className="text-center mb-6 space-y-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Choose Your Metal</h1>
+        <p className="text-sm text-gray-600 max-w-2xl mx-auto">
           Select the metal type for your lifecycle assessment project
         </p>
       </div>
@@ -496,38 +507,38 @@ export default function MetalSelection({ onSelect }) {
           className="cursor-pointer"
         >
           <Card className="bg-white border-[#E0D5CC] hover:border-[#6B5B59] hover:shadow-xl transition-all duration-300 h-full group">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-[#E5D9CF] via-[#F7F1EA] to-[#DED2C9] border-2 border-[#CFC2B9] flex items-center justify-center shadow-md relative overflow-hidden">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#E5D9CF] via-[#F7F1EA] to-[#DED2C9] border-2 border-[#CFC2B9] flex items-center justify-center shadow-md relative overflow-hidden">
                   <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/40 to-transparent"></div>
-                  <Zap className="w-10 h-10 text-[#6B5B59] relative z-10" strokeWidth={2.5} />
+                  <Zap className="w-7 h-7 text-[#6B5B59] relative z-10" strokeWidth={2.5} />
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F1EBE5] border border-[#E3D7CF] rounded-full">
-                  <Sparkles className="w-4 h-4 text-[#6B5B59]" />
-                  <span className="text-sm font-medium text-[#6B5B59]">Available</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F1EBE5] border border-[#E3D7CF] rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#6B5B59]" />
+                  <span className="text-xs font-medium text-[#6B5B59]">Available</span>
                 </div>
               </div>
-              <CardTitle className="text-3xl text-gray-900 mb-2">Aluminum</CardTitle>
-              <CardDescription className="text-gray-600 text-base">
+              <CardTitle className="text-2xl text-gray-900 mb-1">Aluminum</CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
                 Complete lifecycle assessment for aluminum production and recycling
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3 text-gray-700">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#6B5B59] mt-2" />
+            <CardContent className="space-y-3 pt-2">
+              <div className="space-y-2 text-gray-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
                   <p className="flex-1">Mining and ore extraction analysis</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#6B5B59] mt-2" />
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
                   <p className="flex-1">Beneficiation and refining processes</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#6B5B59] mt-2" />
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
                   <p className="flex-1">Manufacturing and recycling workflows</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#6B5B59] mt-2" />
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
                   <p className="flex-1">AI-powered predictions and insights</p>
                 </div>
               </div>
@@ -535,7 +546,7 @@ export default function MetalSelection({ onSelect }) {
                 onClick={() => handleMetalSelect('aluminum')}
                 className="w-full bg-linear-to-r from-[#6B5B59] to-[#5C4F4B] hover:from-[#5C4F4B] hover:to-[#4F4441] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all mb-4"
               >
-                <Sparkles className="w-5 h-5 mr-2" />
+                <Sparkles className="w-4 h-4 mr-2" />
                 Start with Aluminum
               </Button>
               
@@ -629,46 +640,46 @@ export default function MetalSelection({ onSelect }) {
           className="cursor-pointer"
         >
           <Card className="bg-white border-[#E8D0C3] hover:border-[#BA7967] hover:shadow-xl transition-all duration-300 h-full group">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-[#EACFC1] via-[#BA7967] to-[#A86B5C] border-2 border-[#A86B5C] flex items-center justify-center shadow-md relative overflow-hidden">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#EACFC1] via-[#BA7967] to-[#A86B5C] border-2 border-[#A86B5C] flex items-center justify-center shadow-md relative overflow-hidden">
                   <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/30 to-transparent"></div>
-                  <Zap className="w-10 h-10 text-white relative z-10" strokeWidth={2.5} />
+                  <Zap className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F5E8E2] border border-[#E6CEC1] rounded-full">
-                  <Sparkles className="w-4 h-4 text-[#BA7967]" />
-                  <span className="text-sm font-medium text-[#BA7967]">Available</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F5E8E2] border border-[#E6CEC1] rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#BA7967]" />
+                  <span className="text-xs font-medium text-[#BA7967]">Available</span>
                 </div>
               </div>
-              <CardTitle className="text-3xl text-gray-900">Copper</CardTitle>
-              <CardDescription className="text-gray-600 text-base">
+              <CardTitle className="text-2xl text-gray-900 mb-1">Copper</CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
                 Complete lifecycle assessment for copper production and recycling
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3 text-gray-700">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#BA7967] mt-2" />
+            <CardContent className="space-y-3 pt-2">
+              <div className="space-y-2 text-gray-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
                   <p className="flex-1">Mining and ore extraction analysis</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#BA7967] mt-2" />
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
                   <p className="flex-1">Smelting and refining processes</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#BA7967] mt-2" />
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
                   <p className="flex-1">Manufacturing and recycling workflows</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[#BA7967] mt-2" />
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
                   <p className="flex-1">AI-powered predictions and insights</p>
                 </div>
               </div>
               <Button
                 onClick={() => handleMetalSelect('copper')}
-                className="w-full bg-linear-to-r from-[#BA7967] to-[#A86B5C] hover:from-[#A86B5C] hover:to-[#915B4F] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all"
+                className="w-full bg-linear-to-r from-[#BA7967] to-[#A86B5C] hover:from-[#A86B5C] hover:to-[#915B4F] text-white font-semibold py-4 text-base shadow-md group-hover:shadow-lg transition-all"
               >
-                <Sparkles className="w-5 h-5 mr-2" />
+                <Sparkles className="w-4 h-4 mr-2" />
                 Start with Copper
               </Button>
             </CardContent>
@@ -676,8 +687,8 @@ export default function MetalSelection({ onSelect }) {
         </div>
       </div>
 
-      <div className="mt-10 text-center">
-        <p className="text-gray-500 text-sm">More metals will be available soon. Stay tuned!</p>
+      <div className="mt-6 text-center">
+        <p className="text-gray-500 text-xs">More metals will be available soon. Stay tuned!</p>
       </div>
     </>
   );
@@ -692,9 +703,9 @@ export default function MetalSelection({ onSelect }) {
     >
       <div
         ref={containerRef}
-        className="w-full max-w-7xl rounded-4xl bg-white shadow-2xl border border-[#efe4d5] max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-6xl rounded-3xl bg-white shadow-2xl border border-[#efe4d5] max-h-[85vh] overflow-y-auto"
       >
-        <div className="relative z-10 min-h-[60vh] flex flex-col items-center justify-center px-6 py-12">
+        <div className="relative z-10 flex flex-col items-center justify-center px-6 py-8">
           {stage === 'metal' ? renderMetalStage() : renderActionStage()}
         </div>
       </div>

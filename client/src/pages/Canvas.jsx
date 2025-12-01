@@ -219,6 +219,7 @@ function CanvasFlow() {
   const [projectDescriptionInput, setProjectDescriptionInput] = useState('');
   const [openProjectsExpanded, setOpenProjectsExpanded] = useState(false);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
+  const [welcomeStage, setWelcomeStage] = useState('metal'); // 'metal' or 'project'
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -280,6 +281,15 @@ function CanvasFlow() {
       setShowWelcomeOverlay(false);
     }
   }, [projectSummary]);
+
+  const handleMetalSelection = (metal) => {
+    setSelectedMetal(metal);
+    setWelcomeStage('project');
+  };
+
+  const handleBackToMetals = () => {
+    setWelcomeStage('metal');
+  };
 
   // COPPER FORM DEFAULTS - COMPREHENSIVE
   const copperMiningDefaults = useMemo(() => ({
@@ -2381,160 +2391,307 @@ function CanvasFlow() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.97 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="w-full max-w-5xl rounded-4xl bg-white shadow-2xl border border-[#efe4d5]"
+              className="w-full max-w-6xl rounded-3xl bg-white shadow-2xl border border-[#efe4d5] max-h-[85vh] overflow-y-auto"
             >
-              <div className="flex flex-col gap-3 border-b border-[#f2e7da] px-8 pt-8 pb-6 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-[#c27a5f] font-semibold">Canvas starter</p>
-                  <h1 className="text-3xl font-bold text-gray-900 mt-1">How would you like to continue?</h1>
-                  <p className="text-gray-600 mt-2 max-w-2xl">
-                    Launch a fresh canvas or reopen one of your local drafts. Everything here stays in your browser until you
-                    connect a backend.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    className="text-gray-600 hover:text-gray-900"
-                    onClick={() => setShowWelcomeOverlay(false)}
-                  >
-                    Skip for now
-                  </Button>
-                </div>
-              </div>
+              <div className="relative z-10 flex flex-col items-center justify-center px-6 py-8">
+                {welcomeStage === 'metal' ? (
+                  // STAGE 1: METAL SELECTION
+                  <>
+                    <div className="text-center mb-6 space-y-2">
+                      <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Choose Your Metal</h1>
+                      <p className="text-sm text-gray-600 max-w-2xl mx-auto">
+                        Select the metal type for your canvas lifecycle assessment project
+                      </p>
+                    </div>
 
-              <div className="grid gap-8 px-8 py-8 lg:grid-cols-2">
-                <div className="rounded-3xl border border-[#f2e7da] bg-linear-to-br from-white to-[#fff8ed] p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.4em] text-[#c27a5f] font-semibold">Create</p>
-                      <CardTitle className="text-3xl">New canvas</CardTitle>
-                    </div>
-                    <span className="text-sm font-medium text-[#c27a5f]">Guided flow</span>
-                  </div>
-                  <CardDescription className="text-base text-gray-600 mb-6">
-                    Name your canvas and jot down a short purpose. We'll pin it to this workspace and keep the context ready for
-                    you.
-                  </CardDescription>
-                  <form className="space-y-5" onSubmit={handleProjectDetailsSubmit}>
-                    <div className="space-y-2">
-                      <label htmlFor="canvas-project-name" className="text-sm font-medium text-gray-700">
-                        Project name
-                      </label>
-                      <Input
-                        id="canvas-project-name"
-                        placeholder="Lifecycle retrofit blueprint"
-                        value={projectNameInput}
-                        onChange={(e) => setProjectNameInput(e.target.value)}
-                        className="h-12 text-base"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="canvas-project-description" className="text-sm font-medium text-gray-700">
-                        Description
-                      </label>
-                      <textarea
-                        id="canvas-project-description"
-                        rows={4}
-                        placeholder="Interactive canvas used during the valorization pilot."
-                        value={projectDescriptionInput}
-                        onChange={(e) => setProjectDescriptionInput(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 px-4 py-3 text-base text-gray-800 transition"
-                      />
-                    </div>
-                    <div className="rounded-2xl border border-dashed border-[#e7d7c5] bg-white/80 p-4 text-sm text-gray-700">
-                      We'll auto-save these details locally and surface them inside the recent projects panel.
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={!projectNameInput.trim()}
-                      className="w-full h-12 text-base font-semibold bg-[#c17a64] text-white hover:bg-[#a8654d] disabled:bg-gray-300 disabled:text-gray-500"
-                    >
-                      Pin to canvas
-                    </Button>
-                  </form>
-                </div>
-
-                <div className="rounded-3xl border border-[#f2e7da] bg-white/90 p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-2xl bg-[#fcefe3] text-[#c27a5f] shadow">
-                        <FolderOpen className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.4em] text-[#c27a5f] font-semibold">Open</p>
-                        <h3 className="text-3xl font-semibold text-gray-900">Recent drafts</h3>
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-[#c27a5f]">
-                      {recentProjects.length ? `${recentProjects.length} saved` : 'Coming soon'}
-                    </span>
-                  </div>
-
-                  <div className="rounded-3xl border border-dashed border-[#ead9cc] bg-white/80 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setOpenProjectsExpanded((prev) => !prev)}
-                      className="w-full flex items-center justify-between px-6 py-4 text-left"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Local canvas drafts</p>
-                        <p className="text-xs text-gray-500">
-                          {recentProjects.length ? 'Tap to view your latest saved project' : 'No local drafts yet'}
-                        </p>
-                      </div>
-                      {openProjectsExpanded ? (
-                        <ChevronUp className="h-5 w-5 text-[#c27a5f]" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-[#c27a5f]" />
-                      )}
-                    </button>
-                    <div
-                      className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
-                    >
-                      <div className="px-6 pb-6 space-y-3 text-sm">
-                        {recentProjects.length ? (
-                          recentProjects.map((project) => {
-                            const savedAt = project.updatedAt
-                              ? new Date(project.updatedAt).toLocaleDateString()
-                              : 'Just now';
-                            return (
-                              <div
-                                key={`${project.name}-${project.updatedAt}`}
-                                className="rounded-2xl border border-dashed border-[#ead9cc] bg-white/80 px-4 py-3"
-                              >
-                                <p className="font-semibold text-gray-900">{project.name}</p>
-                                {project.description && (
-                                  <p className="text-gray-600 mt-1">{project.description}</p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-2">
-                                  <Sparkles className="h-3 w-3" />
-                                  Saved {savedAt}
-                                </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl w-full">
+                      {/* Aluminum Card */}
+                      <motion.div
+                        whileHover={{ y: -8, scale: 1.02 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="cursor-pointer"
+                        onClick={() => handleMetalSelection('aluminum')}
+                      >
+                        <div className="bg-white border-[#E0D5CC] hover:border-[#6B5B59] border-2 hover:shadow-xl transition-all duration-300 h-full rounded-2xl overflow-hidden">
+                          <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#E5D9CF] via-[#F7F1EA] to-[#DED2C9] border-2 border-[#CFC2B9] flex items-center justify-center shadow-md relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/40 to-transparent"></div>
+                                <Zap className="w-7 h-7 text-[#6B5B59] relative z-10" strokeWidth={2.5} />
                               </div>
-                            );
-                          })
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            Create a project on the left to populate this list.
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F1EBE5] border border-[#E3D7CF] rounded-full">
+                                <Sparkles className="w-3.5 h-3.5 text-[#6B5B59]" />
+                                <span className="text-xs font-medium text-[#6B5B59]">Available</span>
+                              </div>
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-1">Aluminum</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                              Complete lifecycle assessment for aluminum production and recycling
+                            </p>
+                            <div className="space-y-2 text-gray-700 text-sm mb-4">
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                                <p className="flex-1">Mining and ore extraction analysis</p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                                <p className="flex-1">Beneficiation and refining processes</p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                                <p className="flex-1">Manufacturing and recycling workflows</p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#6B5B59] mt-1.5" />
+                                <p className="flex-1">Visual canvas-based design</p>
+                              </div>
+                            </div>
+                            <Button className="w-full bg-gradient-to-r from-[#6B5B59] to-[#5C4F4B] hover:from-[#5C4F4B] hover:to-[#4F4441] text-white font-semibold py-4 text-base shadow-md transition-all">
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              Start with Aluminum
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      {/* Copper Card */}
+                      <motion.div
+                        whileHover={{ y: -8, scale: 1.02 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="cursor-pointer"
+                        onClick={() => handleMetalSelection('copper')}
+                      >
+                        <div className="bg-white border-[#E8D0C3] hover:border-[#BA7967] border-2 hover:shadow-xl transition-all duration-300 h-full rounded-2xl overflow-hidden">
+                          <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#EACFC1] via-[#BA7967] to-[#A86B5C] border-2 border-[#A86B5C] flex items-center justify-center shadow-md relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent"></div>
+                                <Zap className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
+                              </div>
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F5E8E2] border border-[#E6CEC1] rounded-full">
+                                <Sparkles className="w-3.5 h-3.5 text-[#BA7967]" />
+                                <span className="text-xs font-medium text-[#BA7967]">Available</span>
+                              </div>
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-1">Copper</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                              Complete lifecycle assessment for copper production and recycling
+                            </p>
+                            <div className="space-y-2 text-gray-700 text-sm mb-4">
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                                <p className="flex-1">Mining and ore extraction analysis</p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                                <p className="flex-1">Smelting and refining processes</p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                                <p className="flex-1">Manufacturing and recycling workflows</p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
+                                <p className="flex-1">Visual canvas-based design</p>
+                              </div>
+                            </div>
+                            <Button className="w-full bg-gradient-to-r from-[#BA7967] to-[#A86B5C] hover:from-[#A86B5C] hover:to-[#915B4F] text-white font-semibold py-4 text-base shadow-md transition-all">
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              Start with Copper
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+
+                    <div className="mt-6 text-center">
+                      <p className="text-gray-500 text-xs">More metals will be available soon. Stay tuned!</p>
+                    </div>
+                  </>
+                ) : (
+                  // STAGE 2: PROJECT CREATION
+                  <>
+                    <div className="w-full max-w-6xl space-y-6">
+                      <div className="flex flex-col gap-3 text-center sm:text-left sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className={`text-xs uppercase tracking-[0.3em] ${selectedMetal === 'copper' ? 'text-[#BA7967]' : 'text-[#6B5B59]'} font-semibold`}>
+                            Step 2
                           </p>
-                        )}
+                          <h2 className="text-2xl font-bold text-gray-900 mt-1">How would you like to continue?</h2>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Build a fresh {selectedMetal} canvas or relaunch one you worked on earlier.
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className={`flex items-center gap-1.5 rounded-full ${selectedMetal === 'copper' ? 'bg-[#F5E8E2] text-[#BA7967]' : 'bg-[#F1EBE5] text-[#6B5B59]'} px-3 py-1.5 text-xs`}>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            {selectedMetal === 'copper' ? 'Copper' : 'Aluminum'} mode unlocked
+                          </div>
+                          <Button variant="ghost" onClick={handleBackToMetals} className="text-gray-600 hover:text-gray-900 text-sm">
+                            <ChevronDown className="h-3.5 w-3.5 mr-1.5 rotate-90" />
+                            Change metal
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Create New Project Card */}
+                        <div className={`rounded-2xl ${selectedMetal === 'copper' ? 'border-[#EDD8CB]' : 'border-[#DDD1C9]'} bg-white shadow-lg border`}>
+                          <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`p-2 rounded-xl ${selectedMetal === 'copper' ? 'bg-[#F2E2DA] text-[#BA7967]' : 'bg-[#E8DDD6] text-[#5A4D49]'}`}>
+                                  <Plus className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className={`text-xs uppercase tracking-[0.4em] ${selectedMetal === 'copper' ? 'text-[#BA7967]' : 'text-[#6B5B59]'} font-semibold`}>
+                                    Create
+                                  </p>
+                                  <h3 className="text-xl font-semibold text-gray-900">New canvas</h3>
+                                </div>
+                              </div>
+                              <span className={`text-xs font-medium ${selectedMetal === 'copper' ? 'text-[#BA7967]' : 'text-[#6B5B59]'}`}>
+                                Guided flow
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-4">
+                              Name your canvas and jot down a short purpose. We'll pin it to this workspace for {selectedMetal}.
+                            </p>
+                            <form className="space-y-4" onSubmit={handleProjectDetailsSubmit}>
+                              <div className="space-y-1.5">
+                                <label htmlFor="canvas-project-name" className="text-xs font-medium text-gray-700">
+                                  Project name
+                                </label>
+                                <Input
+                                  id="canvas-project-name"
+                                  placeholder="Lifecycle retrofit blueprint"
+                                  value={projectNameInput}
+                                  onChange={(e) => setProjectNameInput(e.target.value)}
+                                  className="h-10 text-sm"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label htmlFor="canvas-project-description" className="text-xs font-medium text-gray-700">
+                                  Description
+                                </label>
+                                <textarea
+                                  id="canvas-project-description"
+                                  rows={3}
+                                  placeholder="Interactive canvas used during the valorization pilot."
+                                  value={projectDescriptionInput}
+                                  onChange={(e) => setProjectDescriptionInput(e.target.value)}
+                                  className={`w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white ${selectedMetal === 'copper' ? 'focus:border-[#BA7967] focus:ring-[#BA7967]/20' : 'focus:border-[#6B5B59] focus:ring-[#6B5B59]/15'} focus:ring-2 px-3 py-2 text-sm text-gray-800 transition`}
+                                />
+                              </div>
+                              <div className={`rounded-xl ${selectedMetal === 'copper' ? 'bg-[#F9F0EC] border-[#EDD8CB]' : 'bg-[#F5EEE9] border-[#DDD1C9]'} border border-dashed p-3 text-xs ${selectedMetal === 'copper' ? 'text-[#8A5A4A]' : 'text-[#4C413D]'}`}>
+                                We'll auto-save these details locally and surface them inside the recent projects panel.
+                              </div>
+                              <Button
+                                type="submit"
+                                disabled={!projectNameInput.trim()}
+                                className={`w-full h-10 text-sm font-semibold ${selectedMetal === 'copper' ? 'bg-[#BA7967] hover:bg-[#A86B5C]' : 'bg-[#6B5B59] hover:bg-[#5C4F4B]'} disabled:bg-gray-300 disabled:text-gray-500 text-white`}
+                              >
+                                Pin to canvas
+                              </Button>
+                            </form>
+                          </div>
+                        </div>
+
+                        {/* Recent Projects Card */}
+                        <div className={`rounded-2xl ${selectedMetal === 'copper' ? 'bg-gradient-to-br from-[#FBF3EF] via-[#FDF8F5] to-white' : 'bg-gradient-to-br from-[#F7F2EE] via-[#F9F6F3] to-white'} shadow-lg relative overflow-hidden border ${selectedMetal === 'copper' ? 'border-[#EDD8CB]' : 'border-[#DDD1C9]'}`}>
+                          <div className={`absolute inset-x-0 top-0 h-24 bg-gradient-to-b ${selectedMetal === 'copper' ? 'from-[#EFDCD1]/60' : 'from-[#E4D8D0]/60'} to-transparent`} />
+                          <div className="relative p-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`p-2 rounded-xl ${selectedMetal === 'copper' ? 'bg-white/80 text-[#BA7967]' : 'bg-white/80 text-[#6B5B59]'} shadow`}>
+                                  <FolderOpen className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className={`text-xs uppercase tracking-[0.4em] ${selectedMetal === 'copper' ? 'text-[#B07260]' : 'text-[#6B5B59]'} font-semibold`}>
+                                    Open
+                                  </p>
+                                  <h3 className={`text-xl font-semibold ${selectedMetal === 'copper' ? 'text-[#8A5A4A]' : 'text-[#4C413D]'}`}>
+                                    Recent drafts
+                                  </h3>
+                                </div>
+                              </div>
+                              <span className={`text-xs font-medium ${selectedMetal === 'copper' ? 'text-[#A86B5C]' : 'text-[#86756F]'}`}>
+                                {recentProjects.length ? `${recentProjects.length} saved` : 'Coming soon'}
+                              </span>
+                            </div>
+
+                            <div className={`rounded-xl ${selectedMetal === 'copper' ? 'bg-white/80 border-[#EBD5C7]' : 'bg-white/80 border-[#DAD0C8]'} border p-3`}>
+                              <p className={`text-xs ${selectedMetal === 'copper' ? 'text-[#8A5A4A]' : 'text-[#4C413D]'} font-medium`}>
+                                Pull the drawer down
+                              </p>
+                              <p className={`text-xs ${selectedMetal === 'copper' ? 'text-[#A97A69]' : 'text-[#6F615C]'}`}>
+                                We'll surface your previously opened canvas sessions here. No dummy data until you've actually run projects.
+                              </p>
+                            </div>
+
+                            <div className={`rounded-2xl border border-dashed ${selectedMetal === 'copper' ? 'border-[#E8CFC0]' : 'border-[#D7CBC3]'} bg-white/80 overflow-hidden`}>
+                              <button
+                                type="button"
+                                onClick={() => setOpenProjectsExpanded((prev) => !prev)}
+                                className="w-full flex items-center justify-between px-4 py-3 text-left"
+                              >
+                                <div>
+                                  <p className={`text-xs font-semibold ${selectedMetal === 'copper' ? 'text-[#8A5A4A]' : 'text-[#4C413D]'}`}>
+                                    Local canvas drafts
+                                  </p>
+                                  <p className={`text-xs ${selectedMetal === 'copper' ? 'text-[#B27A66]' : 'text-[#7C6F6A]'}`}>
+                                    {recentProjects.length ? 'Tap to view your latest saved project' : 'No local drafts yet'}
+                                  </p>
+                                </div>
+                                {openProjectsExpanded ? (
+                                  <ChevronUp className={`h-4 w-4 ${selectedMetal === 'copper' ? 'text-[#C08B76]' : 'text-[#A89A93]'}`} />
+                                ) : (
+                                  <ChevronDown className={`h-4 w-4 ${selectedMetal === 'copper' ? 'text-[#C08B76]' : 'text-[#A89A93]'}`} />
+                                )}
+                              </button>
+                              <div
+                                className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
+                              >
+                                <div className={`px-4 pb-4 space-y-2 text-xs ${selectedMetal === 'copper' ? 'text-[#8A5A4A]' : 'text-[#4C413D]'}`}>
+                                  {recentProjects.length ? (
+                                    recentProjects.map((project) => {
+                                      const savedAt = project.updatedAt
+                                        ? new Date(project.updatedAt).toLocaleDateString()
+                                        : 'Just now';
+                                      return (
+                                        <div
+                                          key={`${project.name}-${project.updatedAt}`}
+                                          className={`rounded-xl border border-dashed ${selectedMetal === 'copper' ? 'border-[#E4C5B4] bg-[#F9EFEA]' : 'border-[#D6C9C2] bg-[#F4ECE7]'} px-3 py-2`}
+                                        >
+                                          <p className="font-semibold text-gray-900 text-sm">{project.name}</p>
+                                          {project.description && (
+                                            <p className="text-gray-600 mt-1 text-xs">{project.description}</p>
+                                          )}
+                                          <p className="text-xs text-gray-500 mt-2 flex items-center gap-2">
+                                            <Sparkles className="h-3 w-3" />
+                                            Saved {savedAt}
+                                          </p>
+                                        </div>
+                                      );
+                                    })
+                                  ) : (
+                                    <p className={`text-xs ${selectedMetal === 'copper' ? 'text-[#B27A66]' : 'text-[#7C6F6A]'}`}>
+                                      Create a project on the left to populate this list.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className={`text-xs ${selectedMetal === 'copper' ? 'text-[#A26956]' : 'text-[#7C6F6A]'}`}>
+                              Want this to auto-populate? Connect your canvas history API and hydrate the list with real sessions.
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 mt-6 text-base font-semibold border-dashed border-[#ead9cc] text-[#a5654d] bg-white"
-                    onClick={() => {
-                      setShowWelcomeOverlay(false);
-                      setLeftSidebarOpen(true);
-                    }}
-                  >
-                    Go to canvas library
-                  </Button>
-                </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>
