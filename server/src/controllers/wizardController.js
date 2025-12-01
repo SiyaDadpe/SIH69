@@ -346,6 +346,16 @@ const getWorkflows = asyncHandler(async (req, res) => {
     sort = '-updatedAt'
   } = req.query;
 
+  console.log('[DEBUG] getWorkflows called with params:', {
+    metalType,
+    status,
+    page,
+    limit,
+    sort,
+    userId: req.user._id,
+    userEmail: req.user.email
+  });
+
   // Filter by authenticated user's ID
   const query = {
     userId: req.user._id
@@ -359,6 +369,8 @@ const getWorkflows = asyncHandler(async (req, res) => {
     query.status = status;
   }
 
+  console.log('[DEBUG] MongoDB query:', query);
+
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const [workflows, total] = await Promise.all([
@@ -370,6 +382,20 @@ const getWorkflows = asyncHandler(async (req, res) => {
     WizardWorkflow.countDocuments(query)
   ]);
 
+  console.log('[DEBUG] Query results:', {
+    workflowsFound: workflows.length,
+    totalCount: total,
+    workflowIds: workflows.map(w => w._id)
+  });
+
+  // Let's also check if there are ANY workflows for this user (without filters)
+  const allUserWorkflows = await WizardWorkflow.countDocuments({ userId: req.user._id });
+  console.log('[DEBUG] Total workflows for user (no filters):', allUserWorkflows);
+
+  // Check all workflows in the system
+  const totalSystemWorkflows = await WizardWorkflow.countDocuments({});
+  console.log('[DEBUG] Total workflows in system:', totalSystemWorkflows);
+
   res.status(200).json({
     success: true,
     count: workflows.length,
@@ -378,6 +404,11 @@ const getWorkflows = asyncHandler(async (req, res) => {
     pages: Math.ceil(total / parseInt(limit)),
     data: {
       workflows
+    },
+    debug: {
+      allUserWorkflows,
+      totalSystemWorkflows,
+      query
     }
   });
 });
@@ -1546,6 +1577,75 @@ const generateStepPrediction = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc    Get AI predictions from WizardWorkflowOutput
+ * @route   GET /api/wizard/workflows/:id/predictions
+ * @access  Private
+ */
+const getPredictions = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { WizardWorkflowOutput } = require('../models');
+
+  console.log(`[Get Predictions] Request for workflow: ${id}`);
+
+  // Validate workflow ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid workflow ID format'
+    });
+  }
+
+  try {
+    // Find the workflow output (predictions)
+    const workflowOutput = await WizardWorkflowOutput.findOne({ workflowId: id });
+
+    if (!workflowOutput) {
+      // No predictions yet - return empty
+      return res.status(200).json({
+        success: true,
+        message: 'No predictions found for this workflow',
+        data: {
+          hasPredictions: false,
+          predictions: {},
+          predictionMetadata: null
+        }
+      });
+    }
+
+    // Extract predictions for each step
+    const predictions = {
+      mining: workflowOutput.mining || {},
+      beneficiation: workflowOutput.beneficiation || {},
+      refining: workflowOutput.refining || {},
+      smelting: workflowOutput.smelting || {},
+      manufacturing: workflowOutput.manufacturing || {},
+      recycling: workflowOutput.recycling || {},
+      valorization: workflowOutput.valorization || {}
+    };
+
+    console.log(`[Get Predictions] Found predictions for workflow ${id}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Predictions retrieved successfully',
+      data: {
+        hasPredictions: true,
+        predictions,
+        predictionMetadata: workflowOutput.predictionMetadata,
+        outputId: workflowOutput._id
+      }
+    });
+
+  } catch (error) {
+    console.error(`[Get Predictions] Error:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving predictions: ' + error.message
+    });
+  }
+});
+
 module.exports = {
   createWorkflow,
   getWorkflows,
@@ -1560,5 +1660,6 @@ module.exports = {
   getPublicWorkflows,
   getStatistics,
   generateAndSaveReport,
-  generateStepPrediction
+  generateStepPrediction,
+  getPredictions
 };

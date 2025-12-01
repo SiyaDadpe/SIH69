@@ -158,8 +158,31 @@ export const validateRequiredFields = (stepName, formData) => {
   };
 };
 
+/**
+ * Fetch existing AI predictions from WizardWorkflowOutput
+ * @param {string} workflowId - The workflow ID
+ * @returns {Promise} Response with all predictions for the workflow
+ */
+export const fetchWorkflowPredictions = async (workflowId) => {
+  try {
+    console.log(`🔍 [AI Prediction] Fetching existing predictions for workflow: ${workflowId}`);
+    
+    const response = await api.get(
+      `/wizard/workflows/${workflowId}/predictions`
+    );
+    
+    console.log(`✅ [AI Prediction] Fetched predictions:`, response.data.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error(`❌ [AI Prediction] Error fetching predictions:`, error);
+    throw error;
+  }
+};
+
 export default {
   generateStepPrediction,
   getPredictionInfo,
-  validateRequiredFields
+  validateRequiredFields,
+  fetchWorkflowPredictions
 };

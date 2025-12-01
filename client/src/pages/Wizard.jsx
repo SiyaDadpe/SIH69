@@ -282,6 +282,15 @@ export default function Wizard() {
 
     console.log('🎯 Metal selected:', metalType, selection);
 
+    // Handle loading existing workflow
+    if (selection && typeof selection === 'object' && selection.mode === 'load') {
+      console.log('🔄 Loading existing workflow:', selection.workflowId);
+      setSelectedMetal(metalType);
+      loadWorkflow(selection.workflowId);
+      return;
+    }
+
+    // Handle creating new workflow
     if (selection && typeof selection === 'object' && selection.mode === 'create') {
       setProjectBrief({
         name: selection.projectName,
@@ -376,24 +385,30 @@ export default function Wizard() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Start New Workflow button */}
-            {!isSubmitted && workflowId && (
+            {/* Wizard Home / Metal Selection button - Always visible when workflow exists */}
+            {workflowId && (
               <Button
                 onClick={() => {
-                  if (confirm('Are you sure you want to start a new workflow? Current progress will be saved but you will create a new workflow.')) {
-                    localStorage.removeItem('currentWizardWorkflowId');
+                  const message = isSubmitted 
+                    ? 'Return to wizard home page to start a new project?' 
+                    : 'Are you sure you want to return to wizard home? Current progress will be saved.';
+                  
+                  if (confirm(message)) {
+                    // Don't remove from localStorage - just return to metal selection
+                    // User can load this workflow again from recent projects
                     setSelectedMetal(null);
                     setWorkflowId(null);
                     setWorkflowData(null);
                     setProjectBrief(null);
-                    console.log('🗑️ Cleared workflow - returning to metal selection');
+                    setActiveStep(0);
+                    console.log('🏠 Returning to wizard home page');
                     navigate('/wizard', { replace: true });
                   }
                 }}
                 variant="outline"
                 className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
               >
-                Start New Workflow
+                🏠 Wizard Home
               </Button>
             )}
             

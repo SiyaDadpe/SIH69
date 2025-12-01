@@ -20,10 +20,10 @@ export default function Signup() {
     confirmPassword: '',
     acceptTerms: false,
   });
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-  });
+const [loginData, setLoginData] = useState({
+  email: import.meta.env.VITE_TEST_EMAIL || "",
+  password: import.meta.env.VITE_TEST_PASSWORD || "",
+});
   const [errors, setErrors] = useState({});
 
   const handleSignupChange = (e) => {

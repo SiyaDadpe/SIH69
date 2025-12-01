@@ -126,6 +126,14 @@ router.post('/workflows/:id/steps/:stepName/complete', authenticate, completeSte
  */
 router.post('/workflows/:id/steps/:stepName/predict', authenticate, generateStepPrediction);
 
+/**
+ * @route   GET /api/wizard/workflows/:id/predictions
+ * @desc    Get AI predictions from WizardWorkflowOutput for a workflow
+ * @access  Private
+ */
+const { getPredictions } = require('../controllers/wizardController');
+router.get('/workflows/:id/predictions', authenticate, getPredictions);
+
 // ============================================================================
 // USER ROUTES (Removed - no longer needed as all routes are user-specific)
 // ============================================================================

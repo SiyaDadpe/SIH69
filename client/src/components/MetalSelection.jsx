@@ -15,7 +15,11 @@ import {
   FolderOpen,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  FileText,
 } from 'lucide-react';
+import { getCurrentUser } from '../services/authService';
+import { getWizardWorkflows, getPublicWizardWorkflows } from '../services/wizardService';
 
 export default function MetalSelection({ onSelect }) {
   const { sidebarOpen } = useSidebar();
@@ -29,6 +33,9 @@ export default function MetalSelection({ onSelect }) {
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [openProjectsExpanded, setOpenProjectsExpanded] = useState(false);
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Animate metal cards when stage is "metal"
   useEffect(() => {
@@ -77,6 +84,53 @@ export default function MetalSelection({ onSelect }) {
 
     return () => ctx.revert();
   }, [stage]);
+
+  // Fetch current user and recent projects
+  useEffect(() => {
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    if (user) {
+      const uid = user._id || user.id;
+      // Fetch projects for the selected metal, or all projects if no metal selected yet
+      fetchRecentProjects(uid, selectedMetal);
+    }
+  }, [selectedMetal]);
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      const uid = user._id || user.id;
+      fetchRecentProjects(uid, null); // Fetch all projects initially
+    }
+  }, []);
+
+  // (Reverted) No secondary fetch on action stage; initial mount fetch suffices
+
+  const fetchRecentProjects = async (userId, metal) => {
+    try {
+      setLoadingProjects(true);
+      // Determine backend metalType value
+      let metalTypeFilter = undefined;
+      if (metal === 'aluminum') metalTypeFilter = 'Aluminium';
+      else if (metal === 'copper') metalTypeFilter = 'Copper';
+
+      const response = await getWizardWorkflows({
+        limit: 10,
+        sort: '-updatedAt',
+        metalType: metalTypeFilter,
+      });
+
+      const workflows = response?.data?.workflows || [];
+
+      setRecentProjects(workflows);
+    } catch (error) {
+      console.error('Error fetching recent projects:', error);
+      setRecentProjects([]);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   const handleCardHover = (index, isEntering) => {
     if (stage !== 'metal') return;
@@ -132,6 +186,22 @@ export default function MetalSelection({ onSelect }) {
     setProjectName('');
     setProjectDescription('');
     setOpenProjectsExpanded(false);
+    // Fetch all projects when going back to metal selection
+    const user = getCurrentUser();
+    if (user) {
+      const uid = user._id || user.id;
+      fetchRecentProjects(uid, null);
+    }
+  };
+
+  const handleLoadExistingWorkflow = (workflowId) => {
+    const payload = {
+      metal: selectedMetal || 'aluminum', // Use selected metal, fallback to aluminum
+      mode: 'load',
+      workflowId: workflowId
+    };
+    
+    playExitAnimation(() => onSelect(payload));
   };
 
   const renderActionStage = () => {
@@ -319,27 +389,28 @@ export default function MetalSelection({ onSelect }) {
                     <h3 className={`text-3xl font-semibold ${colors.drawerTitle}`}>Recent Projects</h3>
                   </div>
                 </div>
-                <span className={`text-sm font-medium ${colors.drawerPill}`}>Drag to reveal</span>
+                <span className={`text-sm font-medium ${colors.drawerPill}`}>Your recent {config.label} workflows</span>
               </div>
 
-              <div className={`rounded-2xl ${colors.drawerInfoBox} border p-4`}>
-                <p className={`text-sm ${colors.drawerInfoText} font-medium`}>Pull the drawer down</p>
-                <p className={`text-sm ${colors.drawerInfoSubtext}`}>
-                  We'll surface your previously opened wizard sessions here. No dummy data until you've
-                  actually run projects — just a clean staging area.
-                </p>
-              </div>
+              {currentUser && (
+                <div className={`rounded-2xl ${colors.drawerInfoBox} border p-4`}>
+                  <p className={`text-sm ${colors.drawerInfoText} font-medium`}>Recent {config.label} Projects</p>
+                  <p className={`text-sm ${colors.drawerInfoSubtext}`}>
+                    Select a project below to reopen its wizard workflow.
+                  </p>
+                </div>
+              )}
 
-              <div className={`rounded-3xl border border-dashed ${colors.drawerBorder} bg-white/80 overflow-hidden`}>
+              <div className={`rounded-3xl border ${colors.drawerBorder} bg-white/80 overflow-hidden`}>
                 <button
                   type="button"
                   onClick={() => setOpenProjectsExpanded((prev) => !prev)}
                   className="w-full flex items-center justify-between px-6 py-4 text-left"
                 >
                   <div>
-                    <p className={`text-sm font-semibold ${colors.drawerContentText}`}>Local wizard projects</p>
+                    <p className={`text-sm font-semibold ${colors.drawerContentText}`}>Recent {config.label} Workflows</p>
                     <p className={`text-xs ${colors.drawerContentSubtext}`}>
-                      No local drafts yet
+                      {recentProjects.length} total
                     </p>
                   </div>
                   {openProjectsExpanded ? (
@@ -348,13 +419,49 @@ export default function MetalSelection({ onSelect }) {
                     <ChevronDown className={`h-5 w-5 ${colors.drawerChevron}`} />
                   )}
                 </button>
-                <div
-                  className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}
-                >
+                <div className={`transition-[max-height] duration-300 ${openProjectsExpanded ? 'max-h-96' : 'max-h-0'} overflow-hidden`}>
                   <div className={`px-6 pb-6 space-y-3 text-sm ${colors.drawerContentText}`}>
-                    <p className={`text-sm ${colors.drawerContentSubtext}`}>
-                      Create a project on the left to populate this list.
-                    </p>
+                    {loadingProjects ? (
+                      <div className="text-center py-4">
+                        <div className="w-4 h-4 border-2 border-[#6B5B59] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p className="text-xs mt-2">Loading...</p>
+                      </div>
+                    ) : recentProjects.length > 0 ? (
+                      recentProjects.map(project => (
+                        <button
+                          key={project._id}
+                          onClick={() => handleLoadExistingWorkflow(project._id)}
+                          className="w-full text-left p-3 rounded-lg border border-[#E3D7CF] hover:border-[#6B5B59] hover:bg-[#F7F2EE] transition-all group"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#6B5B59]">
+                                {project.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {project.description || 'No description'}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+                                <span>{project.completionPercentage || 0}% complete</span>
+                              </div>
+                            </div>
+                            <div className="ml-2 shrink-0">
+                              <div className={`w-2 h-2 rounded-full ${
+                                project.status === 'completed' ? 'bg-green-400' :
+                                project.status === 'submitted' ? 'bg-blue-400' :
+                                project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                              }`} />
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-xs text-gray-500">No recent {config.label.toLowerCase()} workflows</p>
+                        <p className="text-xs text-gray-400 mt-1">Create a project on the left to see it here</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -426,11 +533,89 @@ export default function MetalSelection({ onSelect }) {
               </div>
               <Button
                 onClick={() => handleMetalSelect('aluminum')}
-                className="w-full bg-linear-to-r from-[#6B5B59] to-[#5C4F4B] hover:from-[#5C4F4B] hover:to-[#4F4441] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all"
+                className="w-full bg-linear-to-r from-[#6B5B59] to-[#5C4F4B] hover:from-[#5C4F4B] hover:to-[#4F4441] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all mb-4"
               >
                 <Sparkles className="w-5 h-5 mr-2" />
                 Start with Aluminum
               </Button>
+              
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#E3D7CF] pt-4">
+                  <button
+                    onClick={() => setOpenProjectsExpanded(!openProjectsExpanded)}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F7F2EE] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#6B5B59]" />
+                      <span className="text-sm font-medium text-[#6B5B59]">Recent Projects</span>
+                      {recentProjects.length > 0 && (
+                        <span className="text-xs bg-[#F1EBE5] text-[#6B5B59] px-2 py-0.5 rounded-full">
+                          {recentProjects.length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#6B5B59] group-hover:text-[#5C4F4B]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#6B5B59] group-hover:text-[#5C4F4B]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#6B5B59] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#6B5B59] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.length > 0 ? (
+                        recentProjects.map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={() => handleLoadExistingWorkflow(project._id)}
+                            className="w-full text-left p-3 rounded-lg border border-[#E3D7CF] hover:border-[#6B5B59] hover:bg-[#F7F2EE] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#6B5B59]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent aluminum projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

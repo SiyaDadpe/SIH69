@@ -20,7 +20,8 @@ import {
 import {
   generateStepPrediction,
   validateRequiredFields,
-  getPredictionInfo
+  getPredictionInfo,
+  fetchWorkflowPredictions
 } from "@/services/aiPredictionService";
 // Removed other data imports to avoid pre-filling from dataset
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,30 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Add CSS for AI-populated fields
+const aiFieldStyles = `
+  .ai-populated-field {
+    background-color: #e0f2fe !important;
+    border-color: #0ea5e9 !important;
+    transition: background-color 0.3s ease;
+  }
+  .ai-populated-field:focus {
+    background-color: #f0f9ff !important;
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleId = 'ai-field-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = aiFieldStyles;
+    document.head.appendChild(style);
+  }
+}
+
 // Typography scale (edit these to tweak sizes globally)
 const HEADING_TEXT = "text-[22px] sm:text-[24px] md:text-[26px]"; // Step titles
 const GROUP_HEADING_TEXT = "text-[16px] sm:text-[18px]"; // Section/group labels
@@ -112,6 +137,152 @@ function CardRadio({ id, label, selected, onSelect }) {
       </div>
     </div>
   )
+}
+
+// AI Prediction Review Component
+function AIPredictionReview({ predictions, acceptedPredictions, onAcceptanceChange, stepName }) {
+  if (!predictions || Object.keys(predictions).length === 0) {
+    return null;
+  }
+
+  const getFieldDisplayName = (fieldName) => {
+    const displayNames = {
+      // Mining fields
+      mining_energy_MJ_per_t_ore: "Energy Consumption (MJ/t ore)",
+      mining_co2_kg_per_t_ore: "CO₂ Emissions (kg/t ore)",
+      mining_sox_kg_per_t_ore: "SOₓ Emissions (kg/t ore)",
+      mining_nox_kg_per_t_ore: "NOₓ Emissions (kg/t ore)",
+      mining_pm_kg_per_t_ore: "Particulate Matter (kg/t ore)",
+      // Beneficiation fields
+      beneficiation_water_m3_per_t_ore: "Water Usage (m³/t ore)",
+      beneficiation_electricity_kWh_per_t_ore: "Electricity Usage (kWh/t ore)",
+      beneficiation_tailings_management: "Tailings Management",
+      beneficiation_noise_pollution: "Noise Pollution Level",
+      beneficiation_dust_pollution: "Dust Pollution Level",
+      // Refining fields
+      refining_energy_MJ_per_t_alumina: "Energy (MJ/t alumina)",
+      refining_water_m3_per_t_alumina: "Water (m³/t alumina)",
+      refining_red_mud_kg_per_t_alumina: "Red Mud (kg/t alumina)",
+      refining_caustic_soda_kg_per_t_alumina: "Caustic Soda (kg/t alumina)",
+      refining_lime_kg_per_t_alumina: "Lime (kg/t alumina)",
+      refining_so2_kg_per_t_alumina: "SO₂ Emissions (kg/t alumina)",
+      refining_nox_kg_per_t_alumina: "NOₓ Emissions (kg/t alumina)",
+      refining_dust_kg_per_t_alumina: "Dust Emissions (kg/t alumina)",
+      // Smelting fields
+      smelting_electricity_kWh_per_t_aluminum: "Electricity (kWh/t aluminum)",
+      smelting_co2_kg_per_t_aluminum: "CO₂ Emissions (kg/t aluminum)",
+      smelting_pfc_co2_eq_kg_per_t_aluminum: "PFC Emissions (kg CO₂-eq/t aluminum)",
+      smelting_so2_kg_per_t_aluminum: "SO₂ Emissions (kg/t aluminum)",
+      smelting_nox_kg_per_t_aluminum: "NOₓ Emissions (kg/t aluminum)",
+      smelting_fluoride_recovery_percent: "Fluoride Recovery (%)",
+      smelting_thermal_recovery_percent: "Thermal Recovery (%)"
+    };
+    return displayNames[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatValue = (fieldName, value) => {
+    if (typeof value === 'number') {
+      return value.toLocaleString();
+    }
+    return value?.toString() || '';
+  };
+
+  return (
+    <div className="mt-8 p-6 bg-linear-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
+            <span className="text-white text-sm font-semibold">🤖</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">AI Predicted Fields</h3>
+          <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+            {Object.keys(predictions).length} predictions
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              Object.keys(predictions).forEach(fieldName => {
+                onAcceptanceChange(fieldName, true);
+              });
+            }}
+            className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+          >
+            Accept All
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              Object.keys(predictions).forEach(fieldName => {
+                onAcceptanceChange(fieldName, false);
+              });
+            }}
+            className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+          >
+            Reject All
+          </button>
+        </div>
+      </div>
+      
+      <p className="text-sm text-gray-600 mb-4">
+        Review and accept the AI predictions below. Accepted values will be applied to your form.
+      </p>
+
+      <div className="space-y-3">
+        {Object.entries(predictions).map(([fieldName, predictionData]) => (
+          <div
+            key={fieldName}
+            className={`p-4 rounded-xl border transition-all duration-200 ${
+              acceptedPredictions.has(fieldName)
+                ? 'bg-green-50 border-green-200 shadow-sm'
+                : 'bg-white border-gray-200 hover:border-blue-300'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-sm font-medium text-gray-900">
+                    {getFieldDisplayName(fieldName)}
+                  </label>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {Math.round(predictionData.confidence * 100)}% confidence
+                  </span>
+                </div>
+                <div className="text-sm text-gray-700">
+                  Predicted value: <span className="font-mono font-medium text-blue-600">
+                    {formatValue(fieldName, predictionData.value)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPredictions.has(fieldName)}
+                    onChange={(e) => onAcceptanceChange(fieldName, e.target.checked)}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                  />
+                  <span className={`text-sm font-medium ${
+                    acceptedPredictions.has(fieldName) ? 'text-green-700' : 'text-gray-600'
+                  }`}>
+                    {acceptedPredictions.has(fieldName) ? 'Accepted' : 'Accept'}
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+        <p className="text-xs text-blue-800">
+          💡 <strong>Tip:</strong> You can modify accepted values in the form fields above at any time.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function StepSection({
@@ -271,7 +442,7 @@ const formSchema = z.object({
   mining_pm_kg_per_t_ore: z.coerce.number().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -379,6 +550,51 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
   const applicableProcesses = watch("applicableProcesses");
 
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      // Apply the prediction to the form
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      // Reset field to empty or original value
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
+
   const footerContent = (
     <>
       {saveSuccess && (
@@ -413,7 +629,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         badgeLabel="Mining"
         title="Mining Process Details"
         description="Enter the details of the mining process. Fields marked with * are required."
-        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         footer={footerContent}
       >
@@ -433,19 +649,20 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {miningProcesses.map(item => {
-          const checked = field.value?.includes(item.id) || false
-
-          return (
+        {miningProcesses.map(item => (
+          <FormField key={item.id} control={control} name="applicableProcesses" render={({ field }) => (
             <CardCheckbox
-              key={item.id}
               id={`mining-proc-${item.id}`}
               label={item.label}
-              checked={checked}
-         onChange={() => field.onChange(item.id)}
+              checked={field.value?.includes(item.id)}
+              onChange={(checked) => {
+                const next = new Set(field.value || [])
+                if (checked) next.add(item.id); else next.delete(item.id)
+                field.onChange(Array.from(next))
+              }}
             />
-          )
-        })}
+          )} />
+        ))}
       </div>
 
       <FormMessage />
@@ -690,7 +907,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Energy (MJ per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input 
+                        {...field} 
+                        placeholder="AI predicted" 
+                        className={aiPopulatedFields.has('mining_energy_MJ_per_t_ore') ? 'ai-populated-field' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -704,7 +925,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>CO₂ (kg per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input 
+                        {...field} 
+                        placeholder="AI predicted" 
+                        className={aiPopulatedFields.has('mining_co2_kg_per_t_ore') ? 'ai-populated-field' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -718,7 +943,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>SOx (kg per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input 
+                        {...field} 
+                        placeholder="AI predicted" 
+                        className={aiPopulatedFields.has('mining_sox_kg_per_t_ore') ? 'ai-populated-field' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -732,7 +961,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>NOx (kg per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input 
+                        {...field} 
+                        placeholder="AI predicted" 
+                        className={aiPopulatedFields.has('mining_nox_kg_per_t_ore') ? 'ai-populated-field' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -746,7 +979,11 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Particulate Matter (PM)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input 
+                        {...field} 
+                        placeholder="AI predicted" 
+                        className={aiPopulatedFields.has('mining_pm_kg_per_t_ore') ? 'ai-populated-field' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -754,6 +991,14 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
               />
 
             </div>
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="mining"
+            />
           </form>
       </StepSection>
     </FormProvider>
@@ -762,7 +1007,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -833,7 +1078,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     mode: "onChange",
   })
 
-  const { control, handleSubmit, watch, reset, formState: { isValid, errors } } = form
+  const { control, handleSubmit, watch, reset, setValue, formState: { isValid, errors } } = form
   
   // Sync form with updated initialValues (e.g., when AI predictions are received)
   useEffect(() => {
@@ -854,6 +1099,51 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
   const selectedProcesses = watch("processes")
   const selectedTailings = watch("tailings")
   const selectedChemicals = watch("chemicalAgents")
+
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      // Apply the prediction to the form
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      // Reset field to empty or original value
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
 
   const onSubmit = async (data) => {
     console.log('='.repeat(80));
@@ -915,7 +1205,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         badgeLabel="Beneficiation"
         title="Beneficiation"
         description="Provide beneficiation process details. Fields marked with * are required."
-        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         footer={footerContent}
       >
@@ -934,18 +1224,20 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {processes.map((p) => {
-          const selected = field.value === p.id; // single selection
-          return (
-            <CardRadio
-              key={p.id}
+        {processes.map((p) => (
+          <FormField key={p.id} control={control} name="processes" render={({ field }) => (
+            <CardCheckbox
               id={`beneficiation-proc-${p.id}`}
               label={p.label}
-              selected={selected}
-              onSelect={() => field.onChange(p.id)} // set the value
+              checked={field.value?.includes(p.id)}
+              onChange={(checked) => {
+                const next = new Set(field.value || [])
+                if (checked) next.add(p.id); else next.delete(p.id)
+                field.onChange(Array.from(next))
+              }}
             />
-          );
-        })}
+          )} />
+        ))}
       </div>
 
       <FormMessage />
@@ -1311,6 +1603,14 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
               />
 
             </div>
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="beneficiation"
+            />
           </form>
       </StepSection>
     </FormProvider>
@@ -1319,7 +1619,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
 
 
 // Main Wizard Form Component
-export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted }) {
+export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted, onOpenWorkflow }) {
   const [formValues, setFormValues] = useState({})
   const [completed, setCompleted] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -1327,14 +1627,20 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [predictionError, setPredictionError] = useState(null)
   const [predictionSuccess, setPredictionSuccess] = useState(null)
   
+  // AI Prediction state management
+  const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
+  const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
+  const [acceptedPredictions, setAcceptedPredictions] = useState({})  // Stores accepted predictions by step
+  const [aiPopulatedFields, setAiPopulatedFields] = useState({})  // Tracks which fields were populated by AI (for styling)
+  
   // Debug: Track formValues changes
   React.useEffect(() => {
     console.log('📊 [Wizard] formValues changed:', formValues);
   }, [formValues]);
 
-  // Load existing workflow data into form values
+  // Load existing workflow data and AI predictions
   React.useEffect(() => {
-    if (workflowData) {
+    if (workflowData && workflowId) {
       const values = {}
       steps.forEach(step => {
         if (workflowData[step.key]) {
@@ -1342,8 +1648,20 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         }
       })
       setFormValues(values)
+      
+      // Fetch AI predictions from WizardWorkflowOutput
+      fetchWorkflowPredictions(workflowId).then(response => {
+        if (response.success && response.data?.hasPredictions) {
+          console.log('🤖 [Wizard] Loaded AI predictions:', response.data.predictions);
+          console.log('📊 [Wizard] Prediction metadata:', response.data.predictionMetadata);
+          setAiPredictions(response.data.predictions);
+          setPredictionMetadata(response.data.predictionMetadata || {});
+        }
+      }).catch(error => {
+        console.error('❌ [Wizard] Error loading predictions:', error);
+      });
     }
-  }, [workflowData])
+  }, [workflowData, workflowId])
 
   const handleValueChange = (stepKey, field, value) => {
     setFormValues((prev) => ({
@@ -1354,8 +1672,108 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       },
     }))
   }
+  
+  // Handle prediction acceptance for a specific field
+  const handlePredictionAcceptance = (stepName, fieldName, accepted) => {
+    setAcceptedPredictions(prev => {
+      const stepAccepted = prev[stepName] || new Set();
+      const newStepAccepted = new Set(stepAccepted);
+      
+      if (accepted) {
+        newStepAccepted.add(fieldName);
+      } else {
+        newStepAccepted.delete(fieldName);
+        
+        // When unchecked, clear the field value immediately
+        setFormValues(prevForm => ({
+          ...prevForm,
+          [stepName]: {
+            ...prevForm[stepName],
+            [fieldName]: undefined
+          }
+        }));
+        
+        // Remove from AI-populated tracking
+        setAiPopulatedFields(prevAi => {
+          const stepAi = new Set(prevAi[stepName] || new Set());
+          stepAi.delete(fieldName);
+          return {
+            ...prevAi,
+            [stepName]: stepAi
+          };
+        });
+      }
+      
+      return {
+        ...prev,
+        [stepName]: newStepAccepted
+      };
+    });
+  };
+  
+  // Get predictions for a specific step, comparing with user data
+  const getStepPredictions = (stepName) => {
+    const predictions = aiPredictions[stepName] || {};
+    const userData = formValues[stepName] || {};
+    const stepMetadata = predictionMetadata[stepName] || {};
+    const predictedFields = {};
+    
+    // Get prediction info to know which fields are predictable
+    const info = getPredictionInfo(stepName);
+    const predictableFieldNames = info?.predictableFields || [];
+    
+    // Only show fields that were predicted (exist in predictions but not in user data originally)
+    predictableFieldNames.forEach(fieldName => {
+      if (predictions.hasOwnProperty(fieldName)) {
+        predictedFields[fieldName] = {
+          value: predictions[fieldName],
+          // Use confidence from metadata if available, otherwise default
+          confidence: stepMetadata.confidence || 0.85
+        };
+      }
+    });
+    
+    return predictedFields;
+  };
 
   const handleNext = () => {
+    // Populate accepted predictions into form fields before moving to next step
+    const currentStepName = steps[activeStep].key;
+    const accepted = acceptedPredictions[currentStepName] || new Set();
+    const predictions = aiPredictions[currentStepName] || {};
+    
+    if (accepted.size > 0) {
+      const updatedFields = {};
+      const aiFieldsToTrack = new Set();
+      
+      accepted.forEach(fieldName => {
+        if (predictions[fieldName] !== undefined) {
+          const predictionValue = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+            ? predictions[fieldName].value
+            : predictions[fieldName];
+          updatedFields[fieldName] = predictionValue;
+          aiFieldsToTrack.add(fieldName);
+        }
+      });
+      
+      if (Object.keys(updatedFields).length > 0) {
+        console.log(`🤖 [Next] Populating ${Object.keys(updatedFields).length} accepted predictions into form fields`);
+        setFormValues(prev => ({
+          ...prev,
+          [currentStepName]: {
+            ...prev[currentStepName],
+            ...updatedFields
+          }
+        }));
+        
+        // Track which fields were populated by AI
+        setAiPopulatedFields(prev => ({
+          ...prev,
+          [currentStepName]: aiFieldsToTrack
+        }));
+      }
+    }
+    
     if (activeStep < steps.length - 1) {
       onStepChange(activeStep + 1)
     }
@@ -1383,6 +1801,27 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       console.error('❌ [handleSaveStep] No workflow ID available');
       return;
     }
+    
+    // Merge accepted AI predictions with user data
+    const accepted = acceptedPredictions[stepName] || new Set();
+    const predictions = aiPredictions[stepName] || {};
+    const mergedData = { ...data };
+    
+    if (accepted.size > 0) {
+      console.log('✅ [handleSaveStep] Merging accepted predictions:', Array.from(accepted));
+      accepted.forEach(fieldName => {
+        if (predictions[fieldName] !== undefined) {
+          // Extract the value from prediction object (could be {value, confidence} or just the value)
+          const predictionValue = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+            ? predictions[fieldName].value
+            : predictions[fieldName];
+          mergedData[fieldName] = predictionValue;
+          console.log(`✅ [handleSaveStep] Merged ${fieldName} = ${predictionValue}`);
+        }
+      });
+    }
+    
+    console.log('💾 [handleSaveStep] Final merged data:', mergedData);
 
     setSaving(true);
     try {
@@ -1401,9 +1840,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       console.log('💾 [handleSaveStep] Update function found:', !!updateFn);
 
       if (updateFn) {
-        // Save the step data
+        // Save the merged step data (user data + accepted predictions)
         console.log('💾 [handleSaveStep] Calling API function...');
-        const response = await updateFn(workflowId, data);
+        const response = await updateFn(workflowId, mergedData);
         console.log('💾 [handleSaveStep] API Response:', response);
 
         if (response.success && response.data?.workflow) {
@@ -1426,8 +1865,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         console.error('❌ [handleSaveStep] No update function found for step:', stepName);
       }
 
-      // Save to local state
-      setFormValues((p) => ({ ...p, [stepName]: data }));
+      // Save to local state with merged data
+      setFormValues((p) => ({ ...p, [stepName]: mergedData }));
       console.log('💾 [handleSaveStep] Saved to local state');
     } catch (error) {
       console.error(`❌ Error saving ${stepName} step:`, error);
@@ -1601,6 +2040,31 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           console.log('🔄 [AI Prediction] New formValues after update:', newFormValues[stepName]);
           return newFormValues;
         });
+        
+        // Also store predictions separately for the accept/reject UI
+        // Only store the fields that were predicted (not user-entered)
+        const stepPredictions = {};
+        updatedFields.forEach(({ field, value }) => {
+          if (!currentFormData.hasOwnProperty(field) || currentFormData[field] === undefined) {
+            stepPredictions[field] = value;
+          }
+        });
+        
+        if (Object.keys(stepPredictions).length > 0) {
+          console.log('🤖 [AI Prediction] Storing predictions for accept/reject UI:', stepPredictions);
+          setAiPredictions(prev => ({
+            ...prev,
+            [stepName]: stepPredictions
+          }));
+          
+          // Store metadata as well
+          if (predictionMetadata) {
+            setPredictionMetadata(prev => ({
+              ...prev,
+              [stepName]: predictionMetadata
+            }));
+          }
+        }
 
         // Show enhanced success message
         const predictedCount = predictionMetadata?.predictedCount || updatedFields.length;
@@ -1653,6 +2117,11 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.mining}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('mining', data)}
             predicting={predicting}
+            onOpenWorkflow={onOpenWorkflow}
+            predictions={getStepPredictions('mining')}
+            acceptedPredictions={acceptedPredictions['mining'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('mining', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['mining'] || new Set()}
           />
         );
       case 'beneficiation':
@@ -1664,6 +2133,11 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.beneficiation}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('beneficiation', data)}
             predicting={predicting}
+            onOpenWorkflow={onOpenWorkflow}
+            predictions={getStepPredictions('beneficiation')}
+            acceptedPredictions={acceptedPredictions['beneficiation'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('beneficiation', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['beneficiation'] || new Set()}
           />
         );
       case 'refining':
@@ -1675,6 +2149,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.refining}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('refining', data)}
             predicting={predicting}
+            predictions={getStepPredictions('refining')}
+            acceptedPredictions={acceptedPredictions['refining'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('refining', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['refining'] || new Set()}
           />
         );
       case 'smelting':
@@ -1686,6 +2164,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.smelting}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('smelting', data)}
             predicting={predicting}
+            predictions={getStepPredictions('smelting')}
+            acceptedPredictions={acceptedPredictions['smelting'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('smelting', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['smelting'] || new Set()}
           />
         );
       case 'manufacturing':
@@ -1697,6 +2179,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.manufacturing}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('manufacturing', data)}
             predicting={predicting}
+            predictions={getStepPredictions('manufacturing')}
+            acceptedPredictions={acceptedPredictions['manufacturing'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('manufacturing', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['manufacturing'] || new Set()}
           />
         );
       case 'recycling':
@@ -1708,6 +2194,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.recycling}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('recycling', data)}
             predicting={predicting}
+            predictions={getStepPredictions('recycling')}
+            acceptedPredictions={acceptedPredictions['recycling'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('recycling', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['recycling'] || new Set()}
           />
         );
       case 'valorization':
@@ -1719,6 +2209,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.valorization}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('valorization', data)}
             predicting={predicting}
+            predictions={getStepPredictions('valorization')}
+            acceptedPredictions={acceptedPredictions['valorization'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('valorization', fieldName, accepted)}
+            aiPopulatedFields={aiPopulatedFields['valorization'] || new Set()}
             onSubmitSuccess={async () => {
               setCompleted(true)
               // Auto-submit workflow after Step 7 completion
@@ -1752,6 +2246,23 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 
   return (
     <WizardContainer title={currentStep.title} subtitle={currentStep.description}>
+      {/* Wizard Home Button */}
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (confirm('Return to wizard home page? Your current progress is saved and you can resume from Recent Projects.')) {
+              // Clear localStorage so it shows metal selection instead of auto-loading
+              localStorage.removeItem('currentWizardWorkflowId');
+              window.location.href = '/wizard';
+            }
+          }}
+          className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
+        >
+          🏠 Wizard Home
+        </Button>
+      </div>
+      
       {/* AI Prediction Notifications */}
       {predictionError && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 animate-in slide-in-from-top">
@@ -1817,7 +2328,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const processOptions = [
     { id: 'crushing', label: 'Crushing' },
     { id: 'clarification', label: 'Clarification (separating alumina liquor from red mud)' },
@@ -1874,6 +2388,49 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
   const selectedVariants = watch('variants')
   const toxicity = watch('toxicity')
 
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
+
   const onSubmit = (data) => {
     onSave?.(data)
     onNext?.()
@@ -1894,7 +2451,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
         badgeLabel="Refining"
         title="Refining"
         description="Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required."
-        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         footer={footerContent}
       >
@@ -2082,6 +2639,14 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                 </FormItem>
               )} />
             )}
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="refining"
+            />
           </form>
         </Form>
       </StepSection>
@@ -2090,7 +2655,10 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const processOptions = [
     { id: 'pre_baking_anodes', label: 'Pre-baking anodes (heat treatment)' },
     { id: 'anode_effect_control', label: 'Anode effect control (stability maintenance)' },
@@ -2139,9 +2707,52 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     mode: 'onChange',
   })
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
   const selectedProcesses = watch('processes')
   const selectedVariants = watch('variants')
+
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
 
   const onSubmit = (data) => {
     onSave?.(data)
@@ -2163,7 +2774,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
         badgeLabel="Smelting"
         title="Smelting"
         description="Select processes, variants, and enter required energy and emissions data. Fields marked with * are required."
-        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         footer={footerContent}
       >
@@ -2349,6 +2960,14 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                 </FormItem>
               )} />
             </div>
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="smelting"
+            />
           </form>
         </Form>
       </StepSection>
@@ -2357,7 +2976,10 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const processOptions = [
     { id: 'casting', label: 'Casting (ingots, billets - high-temperature energy)' },
     { id: 'extrusion', label: 'Extrusion (tubes, profiles - efficient shaping)' },
@@ -2443,10 +3065,54 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     mode: 'onChange',
   })
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
   const selectedProcesses = watch('processes')
   const selectedSectors = watch('lightweightingSectors')
   const transportMode = watch('transportMode')
+
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
+
   const onSubmit = (data) => { onSave?.(data); onNext?.() }
 
   const footerContent = (
@@ -2700,6 +3366,14 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 </FormItem>
               )} />
             )}
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="manufacturing"
+            />
           </form>
         </Form>
       </StepSection>
@@ -2708,7 +3382,10 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const processOptions = [
     { id: 'collection', label: 'Collection (scrap gathering – manual or automated)' },
     { id: 'cleaning', label: 'Cleaning (removal of coatings, oils)' },
@@ -2772,10 +3449,54 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
     mode: 'onChange',
   })
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
   const selectedProcesses = watch('processes')
   const selectedVariants = watch('variants')
   const selectedSorting = watch('sortingMethods')
+
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
+
   const onSubmit = (data) => { onSave?.(data); onNext?.() }
 
   const footerContent = (
@@ -3055,6 +3776,14 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                 </FormItem>
               )} />
             )}
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="recycling"
+            />
           </form>
         </Form>
       </StepSection>
@@ -3063,7 +3792,10 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const wasteTypeOptions = [
     { id: 'red_mud', label: 'Red Mud (iron, titanium, rare earths)' },
     { id: 'spl', label: 'Spent Pot Lining (SPL – hazardous cyanide, fluoride)' },
@@ -3142,9 +3874,53 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     mode: 'onChange',
   })
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
   const selectedWaste = watch('wasteTypes')
   const selectedMethods = watch('valorizationMethods')
+
+  // Handle AI predictions
+  const handleAIPredictions = (predictionsData) => {
+    if (predictionsData?.predictionMetadata?.predictedFields) {
+      const newPredictions = {};
+      predictionsData.predictionMetadata.predictedFields.forEach(field => {
+        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
+          newPredictions[field] = {
+            value: predictionsData.combinedData[field],
+            confidence: predictionsData.predictionMetadata.confidence
+          };
+        }
+      });
+      setAiPredictions(newPredictions);
+    }
+  };
+
+  // Handle accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (fieldName, accepted) => {
+    const newAccepted = new Set(acceptedPredictions);
+    if (accepted) {
+      newAccepted.add(fieldName);
+      if (aiPredictions[fieldName]) {
+        setValue(fieldName, aiPredictions[fieldName].value);
+      }
+    } else {
+      newAccepted.delete(fieldName);
+      setValue(fieldName, initialValues?.[fieldName] || '');
+    }
+    setAcceptedPredictions(newAccepted);
+  };
+
+  // Modified AI prediction handler
+  const handleGenerateAIPrediction = async (formData) => {
+    try {
+      const result = await onGenerateAIPrediction?.(formData);
+      if (result) {
+        handleAIPredictions(result);
+      }
+    } catch (error) {
+      console.error('AI Prediction Error:', error);
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
       // Save the valorization step data
@@ -3507,6 +4283,14 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                 ))}
               </div>
             </div>
+            
+            {/* AI Predictions Review Section */}
+            <AIPredictionReview
+              predictions={predictions}
+              acceptedPredictions={acceptedPredictions}
+              onAcceptanceChange={onPredictionAcceptance}
+              stepName="valorization"
+            />
           </form>
         </Form>
       </StepSection>
