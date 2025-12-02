@@ -1,0 +1,924 @@
+================================================================================
+                    CANVAS FUNCTIONALITY DOCUMENTATION
+          Complete Technical Specification for LCA Process Canvas
+================================================================================
+
+TABLE OF CONTENTS
+=================
+1. SYSTEM OVERVIEW
+2. ARCHITECTURE & COMPONENT HIERARCHY
+3. INPUT PARAMETERS & DATA STRUCTURES
+4. CORE FUNCTIONALITY & WORKFLOWS
+5. DRAG-AND-DROP SYSTEM
+6. PROCESS CONFIGURATION SYSTEM
+7. CONNECTION MANAGEMENT
+8. API INTEGRATION & PREDICTIONS
+9. STATE MANAGEMENT
+10. UI/UX PATTERNS
+11. DATA FLOW
+12. IMPLEMENTATION DETAILS
+
+
+================================================================================
+1. SYSTEM OVERVIEW
+================================================================================
+
+PURPOSE:
+--------
+The Canvas system is an interactive visual workflow builder for Life Cycle 
+Assessment (LCA) processes in aluminum/steel production. Users drag process 
+blocks from a library onto a canvas, configure their parameters, connect them 
+in sequence, and generate environmental impact predictions.
+
+KEY FEATURES:
+-------------
+- Visual drag-and-drop process placement
+- Real-time ReactFlow-based canvas with node positioning
+- Stage-based process library (7 stages: Extraction, Processing, Refining, 
+  Smelting, Manufacturing, Recycling, Valorization)
+- Detailed parameter configuration for each process
+- Process connection/flow visualization
+- AI-powered workflow predictions
+- Environmental metrics aggregation (CO2, energy, water)
+- Export/import workflow data
+
+
+================================================================================
+2. ARCHITECTURE & COMPONENT HIERARCHY
+================================================================================
+
+MAIN COMPONENTS:
+----------------
+
+ProcessCanvas (Root Component)
+│
+├── ProcessLibrary (Left Sidebar)
+│   ├── Metal Selector
+│   ├── Stage Selector
+│   ├── DraggableProcess Cards
+│   ├── SimplifiedStageCard
+│   └── SubprocessSelectionModal
+│
+└── CanvasArea (Main Canvas)
+    ├── ReactFlow Canvas
+    │   ├── Nodes (Process blocks)
+    │   ├── Edges (Connections)
+    │   ├── Controls
+    │   ├── MiniMap
+    │   └── Background Grid
+    │
+    ├── Process Details Modal
+    ├── Right Sidebar (Parameter Configuration)
+    ├── Workflow Predictions Panel
+    └── Toolbar (Connect, Clear, Export)
+
+
+COMPONENT FILES:
+----------------
+- ProcessCanvas.jsx          - Main container
+- CanvasArea.jsx             - Canvas and workflow management
+- ProcessLibrary.jsx         - Process library sidebar
+- DraggableProcess.jsx       - Draggable process cards
+- EnhancedAluminumProcess.jsx - Process node rendering
+- SimplifiedStageCard.jsx    - Stage selection cards
+- SubprocessSelectionModal.jsx - Process configuration modal
+
+
+================================================================================
+3. INPUT PARAMETERS & DATA STRUCTURES
+================================================================================
+
+PROCESS OBJECT STRUCTURE:
+-------------------------
+{
+  // Core identification
+  id: String,              // Unique process identifier
+  canvasId: String,        // Unique instance ID on canvas (id_timestamp)
+  name: String,            // Display name
+  description: String,     // Process description
+  category: String,        // Stage category (e.g., "Stage 1: Extraction")
+  type: String,            // Process type identifier
+  
+  // Visual properties
+  icon: String,            // FontAwesome icon class
+  color: String,           // Hex color code
+  
+  // Position data
+  x: Number,               // X coordinate on canvas
+  y: Number,               // Y coordinate on canvas
+  position: Object,        // ReactFlow position {x, y}
+  
+  // Environmental metrics
+  co2Emissions: Number,    // kg CO2 per unit
+  energyConsumption: Number, // MJ per unit
+  waterUsage: Number,      // Liters per unit
+  
+  // Configuration
+  parameters: Object,      // User-configured parameters
+  recommended: Object,     // Recommended/default parameter values
+  
+  // For enhanced processes
+  selectedMethods: Array,  // Selected method IDs
+  selectedVariants: Array, // Selected variant IDs
+  methods: Array,          // Available methods
+  variants: Array,         // Available variants
+  lcaParameters: Object    // Parameter definitions
+}
+
+
+PROCESS TYPES:
+--------------
+1. 'extraction-method'       - Mining/extraction processes
+2. 'processing-method'       - Beneficiation/processing
+3. 'alumina-refining'        - Alumina refining (Bayer process)
+4. 'alumina-refining-method' - Refining method variations
+5. 'alumina-refining-variant' - Refining enhancements
+6. 'smelting-method'         - Smelting (Hall-Héroult)
+7. 'smelting-variant'        - Smelting enhancements
+8. 'manufacturing-method'    - Manufacturing/fabrication
+9. 'recycling-method'        - Recycling processes
+10. 'valorization-method'    - Waste valorization
+11. 'aluminum-process'       - Configured enhanced process
+
+
+STAGE CATEGORIES:
+-----------------
+Stage 1: Extraction       - Bauxite mining
+Stage 2: Processing       - Beneficiation/ore processing
+Stage 3A: Alumina Refining - Bayer process
+Stage 4: Smelting         - Hall-Héroult electrolysis
+Stage 5: Manufacturing    - Fabrication/forming
+Stage 6: Recycling        - Secondary aluminum
+Stage 7: Valorization     - Waste utilization
+
+
+CONNECTION OBJECT:
+------------------
+{
+  id: String,        // Unique connection ID
+  from: String,      // Source process canvasId
+  to: String,        // Target process canvasId
+  source: String,    // ReactFlow source node
+  target: String,    // ReactFlow target node
+  animated: Boolean  // Animation enabled
+}
+
+
+================================================================================
+4. CORE FUNCTIONALITY & WORKFLOWS
+================================================================================
+
+A. INITIAL SETUP:
+-----------------
+1. User lands on ProcessCanvas component
+2. Metal selector defaults to "Aluminum"
+3. Stage selector defaults to "Stage 1: Extraction"
+4. Process library loads method tiles for selected stage
+5. Empty canvas displays with grid background
+
+
+B. ADDING PROCESSES TO CANVAS:
+-------------------------------
+WORKFLOW 1: Simple Drag-and-Drop
+1. User selects a stage from dropdown
+2. Process tiles display in grid layout (2 columns)
+3. User drags a process tile
+4. Drag event captures process data via dataTransfer
+5. Canvas onDrop handler:
+   - Reads JSON data from dataTransfer
+   - Calculates drop position relative to canvas
+   - Generates unique canvasId (id_timestamp)
+   - Adds position coordinates (x, y)
+   - Calls onProcessAdd(processWithPosition)
+6. Process appears on canvas as ReactFlow node
+
+WORKFLOW 2: Enhanced Process Configuration
+1. User clicks on a SimplifiedStageCard (for complex processes)
+2. SubprocessSelectionModal opens
+3. Modal displays:
+   - Methods tab (selectable checkboxes)
+   - Variants tab (selectable checkboxes)
+   - Parameters tab (input fields based on lcaParameters)
+4. User selects methods, variants, configures parameters
+5. AI prediction runs automatically (debounced 500ms)
+6. User drags subprocess or clicks "Add to Canvas"
+7. Process added with all configuration embedded
+
+
+C. PROCESS CONFIGURATION:
+--------------------------
+EXTRACTION/PROCESSING METHODS:
+1. User clicks on process node
+2. Right sidebar opens (if type matches eligible types)
+3. Displays parameter inputs based on process type:
+   - Extraction: ore grade, overburden ratio, equipment type, 
+     water usage, land impact, red mud generation
+   - Processing: water consumption, electricity, chemical agents,
+     waste management, noise/dust levels
+4. User modifies values
+5. onProcessUpdate() called on change
+6. Parameters stored in process.parameters object
+
+ALUMINA REFINING:
+- Enhancement dropdown (variants selection)
+- Energy use, water use, red mud generation
+- Chemical consumption (caustic soda, lime)
+- Emissions (SO2, NOx, dust)
+- Toxicity indicators
+
+SMELTING:
+- Variant dropdown
+- Electricity demand, CO2, PFC emissions
+- SO2, NOx emissions
+- Fluoride recovery efficiency
+- Thermal energy recovery potential
+
+MANUFACTURING:
+- Lightweighting sectors (multi-select)
+- Corrosion behavior impact
+- Energy use per step
+- Scrap rate, recycled content
+- Fabrication emissions
+- Transport parameters
+
+RECYCLING:
+- Sorting methods (multi-select)
+- Recycling approaches (closed/open loop)
+- Scrap input %, recovery yield %
+- Furnace energy demand
+- Emission savings
+- Collection rate, efficiency %
+
+VALORIZATION:
+- Waste types (multi-select: red mud, SPL, dross, fluoride, slag)
+- Valorization methods (multi-select)
+- Recovery efficiency per waste type
+- Toxicity forecasts per waste type
+- Groundwater contamination risk
+- Processing technique
+- End product use
+- Economic viability
+
+
+D. CONNECTING PROCESSES:
+-------------------------
+1. User clicks "Connect" button in toolbar
+2. isConnecting state set to true
+3. Instructions appear: "Click a process to start connecting"
+4. User clicks source process
+5. connectingFrom state stores source
+6. User clicks target process
+7. New connection created:
+   {id: conn_timestamp, from: source.canvasId, to: target.canvasId}
+8. Connection added to edges in ReactFlow
+9. Animated edge rendered with blue stroke
+10. Connection state cleared
+
+
+E. WORKFLOW PREDICTION:
+------------------------
+1. processes array changes (add/remove/update)
+2. useEffect with 500ms debounce triggers
+3. Stages mapped from processes:
+   - Category parsed to determine stage (mining, beneficiation, etc.)
+   - Parameters extracted
+   - Position in sequence determined
+4. Workflow object created:
+   {
+     stages: [{stage, subprocess, parameters, position}],
+     connections: [{from, to}]
+   }
+5. aluminumLCAAPI.processWorkflow(workflow) called
+6. Response contains:
+   - total_predictions: {gwp, energy, water, etc.}
+   - stage_breakdown: per-stage metrics
+   - workflow_efficiency: overall score
+7. Predictions displayed in floating panel (bottom-right)
+
+
+F. GENERATING REPORTS:
+-----------------------
+1. User clicks "Generate Workflow Report" button
+2. workflowData object created:
+   {
+     type: 'canvas-workflow',
+     metal: selectedMetal,
+     processes: mapped process data,
+     predictions: workflowPredictions,
+     timestamp: ISO string,
+     workflowType: 'custom'
+   }
+3. navigate('/lca-results', {state: {reportData: workflowData}})
+4. Report page displays comprehensive LCA analysis
+
+
+================================================================================
+5. DRAG-AND-DROP SYSTEM
+================================================================================
+
+DRAGGABLE ELEMENTS:
+-------------------
+- Process tiles in library (DraggableProcess component)
+- Subprocess tiles in modal (SubprocessSelectionModal)
+
+DRAG EVENT HANDLERS:
+--------------------
+
+onDragStart (Source):
+  - e.dataTransfer.setData('application/json', JSON.stringify(process))
+  - e.dataTransfer.effectAllowed = 'copy'
+  - Visual feedback: shadow, rotation, scale transform
+
+onDragOver (Canvas):
+  - e.preventDefault()
+  - e.dataTransfer.dropEffect = 'copy'
+  - setIsDragOver(true)
+  - Display blue dashed border overlay
+
+onDragLeave (Canvas):
+  - Check if leaving canvas container (not child elements)
+  - setIsDragOver(false)
+
+onDrop (Canvas):
+  - e.preventDefault()
+  - Try multiple data transfer formats:
+    1. 'text/plain'
+    2. 'text'
+    3. 'application/json'
+  - Parse JSON data
+  - Calculate drop position:
+    - Get canvas bounding rect
+    - position.x = clientX - rect.left - offsetX
+    - position.y = clientY - rect.top - offsetY
+  - Use ReactFlow's project() for coordinate mapping
+  - Generate canvasId
+  - Call onProcessAdd()
+
+REACTFLOW INTEGRATION:
+----------------------
+- onRFDragOver: Same as regular onDragOver
+- onRFDrop: Uses reactFlowInstance.project() to map screen coordinates
+  to canvas coordinates
+- onNodeDragStop: Updates process position in state
+
+
+DRAG STATE HOOK (useDragDrop.js):
+----------------------------------
+{
+  draggedItem: Current dragged process,
+  dropZone: Current drop zone identifier,
+  isDragging: Boolean flag,
+  handleDragStart(item, event),
+  handleDragEnd(),
+  handleDragOver(event, zone),
+  handleDragLeave(event),
+  handleDrop(event, onDrop),
+  resetDragState()
+}
+
+
+================================================================================
+6. PROCESS CONFIGURATION SYSTEM
+================================================================================
+
+CONFIGURATION LEVELS:
+---------------------
+
+Level 1: Process Selection
+- Choose from 7 stages
+- Each stage has 3-8 method options
+- Basic process with default parameters
+
+Level 2: Method & Variant Selection
+- SubprocessSelectionModal
+- Multi-select methods (checkboxes)
+- Multi-select variants (checkboxes)
+- Generates combined subprocesses
+
+Level 3: Parameter Configuration
+- Number inputs (ore grade, energy, water, etc.)
+- Select dropdowns (equipment type, impact level)
+- Multi-select checkboxes (chemical agents, sectors)
+- Radio buttons (toxicity indicators)
+- Text inputs (custom "other" options)
+
+Level 4: Real-time Preview
+- AI predictions update as parameters change
+- Confidence scores displayed
+- Visual progress bars
+
+
+PARAMETER TYPES:
+----------------
+
+1. NUMBER:
+   - Input: <input type="number" step="0.1">
+   - Unit displayed as suffix
+   - Placeholder from recommended values
+   - onChange updates parameters object
+
+2. SELECT (Single):
+   - Dropdown with predefined options
+   - "Others" option triggers text input
+   - Value stored as string
+
+3. MULTISELECT:
+   - Checkboxes for each option
+   - Value stored as array
+   - Additional "Other" text input
+
+4. RADIO:
+   - Mutually exclusive options
+   - Value stored as single string
+
+5. TEXT:
+   - Free-form input
+   - Used for "specify other" fields
+
+
+VALIDATION:
+-----------
+- No strict validation enforced
+- Placeholders suggest reasonable ranges
+- parseFloat() handles number conversion
+- isNaN() checks prevent invalid numbers
+- Empty strings allowed for optional parameters
+
+
+================================================================================
+7. CONNECTION MANAGEMENT
+================================================================================
+
+CONNECTION MODES:
+-----------------
+
+Mode 1: Manual Connection (Legacy)
+- Click "Connect" button
+- Click source node
+- Click destination node
+- Edge created between nodes
+
+Mode 2: ReactFlow Native (Current)
+- Drag from node handle (connection point)
+- ReactFlow manages edge creation
+- onConnect callback receives params
+- addEdge() utility creates edge
+
+
+CONNECTION VISUALIZATION:
+--------------------------
+- Edges styled with:
+  - Blue stroke (#2563EB)
+  - 2px width
+  - Animated: true
+  - Bezier curve interpolation
+
+
+CONNECTION DELETION:
+--------------------
+- Click edge to select
+- Press Delete key (ReactFlow native)
+- Or filter connections array manually
+
+
+CONNECTION VALIDATION:
+----------------------
+- No cycle detection implemented
+- Allows multiple connections from/to same node
+- No connection type restrictions
+
+
+================================================================================
+8. API INTEGRATION & PREDICTIONS
+================================================================================
+
+API SERVICE:
+------------
+File: aluminumLCAAPI.js
+Currently uses: dummyLCAAPI.js (realistic mock data)
+
+ENDPOINTS USED:
+---------------
+
+1. processWorkflow(workflow)
+   Input: {stages, connections}
+   Output: {total_predictions, stage_breakdown, workflow_efficiency}
+   
+2. predictStage(stage, parameters)
+   Input: stage name, formatted parameters
+   Output: {predictions, confidence}
+
+3. getHealthStatus()
+   Output: {main_api: 'healthy'/'offline'}
+
+
+PREDICTION WORKFLOW:
+--------------------
+1. Process changes detected
+2. 500ms debounce timer starts
+3. Workflow object constructed:
+   {
+     stages: [
+       {
+         stage: 'mining',
+         subprocess: 'open-pit',
+         parameters: {...},
+         position: 1
+       },
+       ...
+     ],
+     connections: [
+       {from: 'mining', to: 'beneficiation'},
+       ...
+     ]
+   }
+4. API call: processWorkflow(workflow)
+5. Response parsed and formatted
+6. State updated: setWorkflowPredictions(predictions)
+7. UI updates: metrics displayed in panel
+
+
+PREDICTION DATA STRUCTURE:
+--------------------------
+{
+  total_predictions: {
+    gwp: Number,              // Global Warming Potential (kg CO2e)
+    energy_consumption: Number, // MJ
+    water_usage: Number,      // m3
+    acidification: Number,    // kg SO2e
+    eutrophication: Number    // kg PO4e
+  },
+  stage_breakdown: {
+    mining: {...},
+    beneficiation: {...},
+    ...
+  },
+  workflow_efficiency: Number, // 0-1 scale
+  timestamp: String           // ISO timestamp
+}
+
+
+ERROR HANDLING:
+---------------
+- Try-catch around API calls
+- Error state: predictionError
+- Fallback to dummy data if API offline
+- User sees "API Offline" indicator
+
+
+================================================================================
+9. STATE MANAGEMENT
+================================================================================
+
+PROCESSCANVAS STATE:
+--------------------
+const [selectedMetal, setSelectedMetal] = useState(metals[0])
+const [canvasProcesses, setCanvasProcesses] = useState([])
+const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false)
+const [connections, setConnections] = useState([])
+
+
+CANVASAREA STATE:
+-----------------
+// ReactFlow
+const [nodes, setNodes, onNodesChange] = useNodesState([])
+const [edges, setEdges, onEdgesChange] = useEdgesState([])
+const [reactFlowInstance, setReactFlowInstance] = useState(null)
+
+// UI State
+const [selectedProcess, setSelectedProcess] = useState(null)
+const [showProcessModal, setShowProcessModal] = useState(false)
+const [showRightSidebar, setShowRightSidebar] = useState(false)
+const [isDragOver, setIsDragOver] = useState(false)
+const [isConnecting, setIsConnecting] = useState(false)
+const [connectingFrom, setConnectingFrom] = useState(null)
+
+// API State
+const [workflowPredictions, setWorkflowPredictions] = useState(null)
+const [isLoadingWorkflowPrediction, setIsLoadingWorkflowPrediction] = useState(false)
+const [workflowPredictionError, setWorkflowPredictionError] = useState(null)
+const [apiHealthy, setApiHealthy] = useState(false)
+
+
+PROCESSLIBRARY STATE:
+---------------------
+const [showAluminumProcesses, setShowAluminumProcesses] = useState(false)
+const [showSubprocessModal, setShowSubprocessModal] = useState(false)
+const [selectedStageData, setSelectedStageData] = useState(null)
+const [selectedStage, setSelectedStage] = useState('Stage 1: Extraction')
+
+
+SUBPROCESSSELECTIONMODAL STATE:
+--------------------------------
+const [selectedMethods, setSelectedMethods] = useState([])
+const [selectedVariants, setSelectedVariants] = useState([])
+const [parameters, setParameters] = useState({})
+const [activeTab, setActiveTab] = useState('methods')
+const [predictions, setPredictions] = useState(null)
+const [isLoadingPrediction, setIsLoadingPrediction] = useState(false)
+const [predictionError, setPredictionError] = useState(null)
+
+
+STATE SYNCHRONIZATION:
+----------------------
+- processes prop flows down from ProcessCanvas
+- onProcessAdd/Update/Delete callbacks flow up
+- connections synchronized between components
+- ReactFlow nodes/edges built from processes
+- useEffect syncs external connections to edges
+
+
+================================================================================
+10. UI/UX PATTERNS
+================================================================================
+
+LAYOUT:
+-------
+- Fixed 3-column layout:
+  1. Left: Process Library (collapsible, 320px)
+  2. Center: Canvas Area (flex-1)
+  3. Right: Parameter Sidebar (380px, conditional)
+
+- Floating elements:
+  - Workflow Predictions Panel (bottom-right)
+  - Connection Instructions (top-left when connecting)
+  - Process Details Modal (centered overlay)
+
+
+VISUAL FEEDBACK:
+----------------
+
+Drag Operations:
+- Source tile: rotate(1deg), scale(1.05), shadow-xl
+- Drop zone: blue dashed border, bg-blue-50
+- Cursor: cursor-move on draggable elements
+
+Process Selection:
+- Selected: ring-2 ring-blue-500, shadow-lg, z-40
+- Hover: shadow-md, border-blue-300, -translate-y-1
+
+Connection Mode:
+- Blue gradient banner with instructions
+- Node connection points visible on hover
+- Animated edges with blue stroke
+
+Loading States:
+- Spinning circle for API calls
+- Skeleton loaders (not implemented)
+- "Analyzing..." text with animation
+
+
+COLOR SCHEME:
+-------------
+- Primary: Blue (#2563EB, #3B82F6)
+- Success: Green (#10B981)
+- Warning: Yellow (#F59E0B)
+- Error: Red (#EF4444)
+- Info: Indigo (#6366F1)
+- Process colors: Category-specific (brown for extraction, etc.)
+
+
+ICONS:
+------
+FontAwesome 5 used throughout:
+- fa-mountain: Extraction
+- fa-filter: Processing
+- fa-vial: Refining
+- fa-fire: Smelting
+- fa-cogs: Manufacturing
+- fa-recycle: Recycling
+- fa-leaf: Valorization
+- fa-link: Connections
+- fa-robot: AI Predictions
+
+
+RESPONSIVE BEHAVIOR:
+--------------------
+- Library collapses to 48px width when toggled
+- Modal max-width: 6xl (1152px)
+- Grid layouts adapt: grid-cols-1 md:grid-cols-2 lg:grid-cols-3
+- Scrollable areas: max-height with overflow-y-auto
+
+
+================================================================================
+11. DATA FLOW
+================================================================================
+
+TOP-DOWN FLOW:
+--------------
+ProcessCanvas
+  ├─> selectedMetal → ProcessLibrary
+  ├─> canvasProcesses → CanvasArea
+  └─> connections → CanvasArea
+
+
+BOTTOM-UP FLOW:
+---------------
+ProcessLibrary
+  └─> onProcessAdd(process) → ProcessCanvas.addProcess()
+
+CanvasArea
+  ├─> onProcessAdd(process) → ProcessCanvas.addProcess()
+  ├─> onProcessUpdate(id, updates) → ProcessCanvas.updateProcess()
+  ├─> onProcessDelete(id) → ProcessCanvas.removeProcess()
+  └─> onProcessConnect(connections) → ProcessCanvas.handleProcessConnect()
+
+
+INTERNAL FLOW (CanvasArea):
+----------------------------
+1. processes prop → ReactFlow nodes (useEffect)
+2. connections prop → ReactFlow edges (useEffect)
+3. Node drag → onNodeDragStop → onProcessUpdate
+4. Edge creation → handleConnect → setEdges → connections sync
+5. Node click → setSelectedProcess → open modal/sidebar
+6. Parameter change → handleParameterUpdate → onProcessUpdate
+
+
+API FLOW:
+---------
+1. processes change
+2. useEffect(generateWorkflowPredictions)
+3. 500ms debounce
+4. Workflow object constructed
+5. aluminumLCAAPI.processWorkflow()
+6. Response received
+7. setWorkflowPredictions()
+8. UI updates
+
+
+EXPORT FLOW:
+------------
+1. User clicks "Generate Workflow Report"
+2. workflowData object created
+3. navigate('/lca-results', {state: {reportData}})
+4. LCA Results component receives data
+5. Comprehensive report rendered
+
+
+================================================================================
+12. IMPLEMENTATION DETAILS
+================================================================================
+
+KEY ALGORITHMS:
+---------------
+
+Stage Name Mapping:
+```
+const getAPIStage = (processName) => {
+  if (category.includes('extraction') || name.includes('mining')) 
+    return 'mining'
+  if (category.includes('processing') || name.includes('beneficiation')) 
+    return 'beneficiation'
+  // ... etc for all stages
+}
+```
+
+Position Calculation:
+```
+const position = reactFlowInstance.project({
+  x: event.clientX - bounds.left,
+  y: event.clientY - bounds.top
+})
+```
+
+Total Metrics Aggregation:
+```
+const totalMetrics = processes.reduce((acc, process) => ({
+  co2Emissions: acc.co2Emissions + (process.co2Emissions || 0),
+  energyConsumption: acc.energyConsumption + (process.energyConsumption || 0),
+  waterUsage: acc.waterUsage + (process.waterUsage || 0)
+}), {co2Emissions: 0, energyConsumption: 0, waterUsage: 0})
+```
+
+
+REACTFLOW CONFIGURATION:
+------------------------
+```jsx
+<ReactFlow
+  nodes={nodes}
+  edges={edges}
+  onNodesChange={onNodesChange}
+  onEdgesChange={onEdgesChange}
+  onConnect={handleConnect}
+  onNodeClick={onNodeClick}
+  onNodeDragStop={onNodeDragStop}
+  onDragOver={onRFDragOver}
+  onDrop={onRFDrop}
+  onInit={setReactFlowInstance}
+  fitView
+>
+  <MiniMap nodeColor={(n) => n.data.process?.color || '#3b82f6'} />
+  <Controls />
+  <Background gap={16} size={1} />
+</ReactFlow>
+```
+
+
+NODE DATA STRUCTURE:
+--------------------
+```javascript
+{
+  id: process.canvasId,
+  type: 'default',
+  position: {x: number, y: number},
+  data: {
+    label: (JSX component rendering process card),
+    process: (full process object)
+  }
+}
+```
+
+
+EDGE DATA STRUCTURE:
+--------------------
+```javascript
+{
+  id: 'e-' + index,
+  source: connection.from,
+  target: connection.to,
+  animated: true,
+  style: {stroke: '#2563EB', strokeWidth: 2}
+}
+```
+
+
+PARAMETER UPDATE HANDLER:
+-------------------------
+```javascript
+const handleParameterUpdate = useCallback((processId, paramName, value) => {
+  onProcessUpdate(processId, {[paramName]: value})
+}, [onProcessUpdate])
+```
+
+
+DEBOUNCED PREDICTION:
+---------------------
+```javascript
+useEffect(() => {
+  const timeoutId = setTimeout(generateWorkflowPredictions, 500)
+  return () => clearTimeout(timeoutId)
+}, [processes])
+```
+
+
+================================================================================
+ADDITIONAL NOTES
+================================================================================
+
+BROWSER COMPATIBILITY:
+----------------------
+- Modern browsers required (Chrome 90+, Firefox 88+, Safari 14+)
+- Drag-and-drop API support required
+- CSS Grid and Flexbox support required
+
+
+PERFORMANCE CONSIDERATIONS:
+---------------------------
+- Debounced API calls (500ms)
+- React.memo for process cards (not implemented)
+- Virtual scrolling for large lists (not implemented)
+- Memoized calculations (not fully implemented)
+
+
+ACCESSIBILITY:
+--------------
+- Keyboard navigation limited
+- Screen reader support minimal
+- Focus management basic
+- ARIA labels sparse
+- Needs improvement for WCAG compliance
+
+
+FUTURE ENHANCEMENTS:
+--------------------
+- Undo/Redo functionality
+- Process templates/presets
+- Workflow validation
+- Duplicate detection
+- Auto-layout algorithms
+- Real-time collaboration
+- Version control for workflows
+- Advanced filtering/search
+- Batch operations
+- Keyboard shortcuts
+
+
+KNOWN LIMITATIONS:
+------------------
+- No cycle detection in connections
+- No connection validation
+- Limited error messages
+- No offline support
+- No auto-save
+- Manual position management
+- Limited mobile support
+
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
+
+Version: 1.0
+Last Updated: 2025-11-29
+Author: AI Generated from codebase analysis
+Project: SIH-69 Aluminum LCA Assessment Tool

@@ -50,8 +50,15 @@ const Header = () => {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           {/* Logo Icon */}
-          <div className="w-8 h-8 bg-[#BA7967] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">AL</span>
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img 
+              src="/logo.png" 
+              alt="ALvance Logo" 
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
           </div>
           {/* Logo Text - Hide on small screens */}
           <div className="hidden sm:block">

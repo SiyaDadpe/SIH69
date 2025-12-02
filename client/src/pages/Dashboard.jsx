@@ -511,7 +511,7 @@ const Dashboard = () => {
                       onClick={() => window.location.href = '/canvas'}
                       className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white flex items-center gap-2"
                     >
-                      <Paintbrush className="w-4 h-4" />
+                      <Grid3x3 className="w-4 h-4" />
                       Open Canvas
                     </Button>
                   </div>

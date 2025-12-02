@@ -143,7 +143,7 @@ export default function MetalSelection({ onSelect }) {
   };
 
   const handleMetalSelect = (metalType) => {
-    if (metalType !== 'aluminum' && metalType !== 'copper') return;
+    if (metalType !== 'aluminum' && metalType !== 'steel') return;
     setSelectedMetal(metalType);
     setStage('action');
     setTimeout(() => {
@@ -211,12 +211,6 @@ export default function MetalSelection({ onSelect }) {
         label: 'Aluminum',
         description: 'aluminum workflows',
         wizardLabel: 'Launch aluminum wizard',
-      },
-      copper: {
-        color: 'clay',
-        label: 'Copper',
-        description: 'copper workflows',
-        wizardLabel: 'Launch copper wizard',
       },
     };
 
@@ -627,61 +621,6 @@ export default function MetalSelection({ onSelect }) {
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-{/* Copper  */}
-
-        <div
-          ref={(el) => (cardRefs.current[1] = el)}
-          onMouseEnter={() => handleCardHover(1, true)}
-          onMouseLeave={() => handleCardHover(1, false)}
-          className="cursor-pointer"
-        >
-          <Card className="bg-white border-[#E8D0C3] hover:border-[#BA7967] hover:shadow-xl transition-all duration-300 h-full group">
-            <CardHeader className="pb-3 pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#EACFC1] via-[#BA7967] to-[#A86B5C] border-2 border-[#A86B5C] flex items-center justify-center shadow-md relative overflow-hidden">
-                  <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/30 to-transparent"></div>
-                  <Zap className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F5E8E2] border border-[#E6CEC1] rounded-full">
-                  <Sparkles className="w-3.5 h-3.5 text-[#BA7967]" />
-                  <span className="text-xs font-medium text-[#BA7967]">Available</span>
-                </div>
-              </div>
-              <CardTitle className="text-2xl text-gray-900 mb-1">Copper</CardTitle>
-              <CardDescription className="text-gray-600 text-sm">
-                Complete lifecycle assessment for copper production and recycling
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-2">
-              <div className="space-y-2 text-gray-700 text-sm">
-                <div className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
-                  <p className="flex-1">Mining and ore extraction analysis</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
-                  <p className="flex-1">Smelting and refining processes</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
-                  <p className="flex-1">Manufacturing and recycling workflows</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#BA7967] mt-1.5" />
-                  <p className="flex-1">AI-powered predictions and insights</p>
-                </div>
-              </div>
-              <Button
-                onClick={() => handleMetalSelect('copper')}
-                className="w-full bg-linear-to-r from-[#BA7967] to-[#A86B5C] hover:from-[#A86B5C] hover:to-[#915B4F] text-white font-semibold py-4 text-base shadow-md group-hover:shadow-lg transition-all"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Start with Copper
-              </Button>
             </CardContent>
           </Card>
         </div>
