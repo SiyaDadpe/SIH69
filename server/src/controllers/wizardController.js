@@ -129,10 +129,28 @@ const smartMergeStepData = (stepName, existingData, inputData) => {
     }
   });
   
-
+  // Ensure all top-level fields and nested objects exist
   stepFields.forEach(field => {
-    if (!(field in mergedData)) {
-      mergedData[field] = null;
+    // Handle nested fields (e.g., "sustainabilityParameters.renewable_energy_percent")
+    if (field.includes('.')) {
+      const [parentKey, childKey] = field.split('.');
+      
+      // Ensure parent object exists
+      if (!(parentKey in mergedData)) {
+        mergedData[parentKey] = {};
+      }
+      
+      // Initialize child field to null if not present
+      if (typeof mergedData[parentKey] === 'object' && mergedData[parentKey] !== null) {
+        if (!(childKey in mergedData[parentKey])) {
+          mergedData[parentKey][childKey] = null;
+        }
+      }
+    } else {
+      // Handle top-level fields
+      if (!(field in mergedData)) {
+        mergedData[field] = null;
+      }
     }
   });
   

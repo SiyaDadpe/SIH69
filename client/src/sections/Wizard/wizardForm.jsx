@@ -142,152 +142,6 @@ function CardRadio({ id, label, selected, onSelect }) {
   )
 }
 
-// AI Prediction Review Component
-function AIPredictionReview({ predictions, acceptedPredictions, onAcceptanceChange, stepName }) {
-  if (!predictions || Object.keys(predictions).length === 0) {
-    return null;
-  }
-
-  const getFieldDisplayName = (fieldName) => {
-    const displayNames = {
-      // Mining fields
-      mining_energy_MJ_per_t_ore: "Energy Consumption (MJ/t ore)",
-      mining_co2_kg_per_t_ore: "CO₂ Emissions (kg/t ore)",
-      mining_sox_kg_per_t_ore: "SOₓ Emissions (kg/t ore)",
-      mining_nox_kg_per_t_ore: "NOₓ Emissions (kg/t ore)",
-      mining_pm_kg_per_t_ore: "Particulate Matter (kg/t ore)",
-      // Beneficiation fields
-      beneficiation_water_m3_per_t_ore: "Water Usage (m³/t ore)",
-      beneficiation_electricity_kWh_per_t_ore: "Electricity Usage (kWh/t ore)",
-      beneficiation_tailings_management: "Tailings Management",
-      beneficiation_noise_pollution: "Noise Pollution Level",
-      beneficiation_dust_pollution: "Dust Pollution Level",
-      // Refining fields
-      refining_energy_MJ_per_t_alumina: "Energy (MJ/t alumina)",
-      refining_water_m3_per_t_alumina: "Water (m³/t alumina)",
-      refining_red_mud_kg_per_t_alumina: "Red Mud (kg/t alumina)",
-      refining_caustic_soda_kg_per_t_alumina: "Caustic Soda (kg/t alumina)",
-      refining_lime_kg_per_t_alumina: "Lime (kg/t alumina)",
-      refining_so2_kg_per_t_alumina: "SO₂ Emissions (kg/t alumina)",
-      refining_nox_kg_per_t_alumina: "NOₓ Emissions (kg/t alumina)",
-      refining_dust_kg_per_t_alumina: "Dust Emissions (kg/t alumina)",
-      // Smelting fields
-      smelting_electricity_kWh_per_t_aluminum: "Electricity (kWh/t aluminum)",
-      smelting_co2_kg_per_t_aluminum: "CO₂ Emissions (kg/t aluminum)",
-      smelting_pfc_co2_eq_kg_per_t_aluminum: "PFC Emissions (kg CO₂-eq/t aluminum)",
-      smelting_so2_kg_per_t_aluminum: "SO₂ Emissions (kg/t aluminum)",
-      smelting_nox_kg_per_t_aluminum: "NOₓ Emissions (kg/t aluminum)",
-      smelting_fluoride_recovery_percent: "Fluoride Recovery (%)",
-      smelting_thermal_recovery_percent: "Thermal Recovery (%)"
-    };
-    return displayNames[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const formatValue = (fieldName, value) => {
-    if (typeof value === 'number') {
-      return value.toLocaleString();
-    }
-    return value?.toString() || '';
-  };
-
-  return (
-    <div className="mt-8 p-6 bg-linear-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
-            <span className="text-white text-sm font-semibold">🤖</span>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">AI Predicted Fields</h3>
-          <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-            {Object.keys(predictions).length} predictions
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              Object.keys(predictions).forEach(fieldName => {
-                onAcceptanceChange(fieldName, true);
-              });
-            }}
-            className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
-          >
-            Accept All
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              Object.keys(predictions).forEach(fieldName => {
-                onAcceptanceChange(fieldName, false);
-              });
-            }}
-            className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
-          >
-            Reject All
-          </button>
-        </div>
-      </div>
-      
-      <p className="text-sm text-gray-600 mb-4">
-        Review and accept the AI predictions below. Accepted values will be applied to your form.
-      </p>
-
-      <div className="space-y-3">
-        {Object.entries(predictions).map(([fieldName, predictionData]) => (
-          <div
-            key={fieldName}
-            className={`p-4 rounded-xl border transition-all duration-200 ${
-              acceptedPredictions.has(fieldName)
-                ? 'bg-green-50 border-green-200 shadow-sm'
-                : 'bg-white border-gray-200 hover:border-blue-300'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <label className="text-sm font-medium text-gray-900">
-                    {getFieldDisplayName(fieldName)}
-                  </label>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                    {Math.round(predictionData.confidence * 100)}% confidence
-                  </span>
-                </div>
-                <div className="text-sm text-gray-700">
-                  Predicted value: <span className="font-mono font-medium text-blue-600">
-                    {formatValue(fieldName, predictionData.value)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={acceptedPredictions.has(fieldName)}
-                    onChange={(e) => onAcceptanceChange(fieldName, e.target.checked)}
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                  />
-                  <span className={`text-sm font-medium ${
-                    acceptedPredictions.has(fieldName) ? 'text-green-700' : 'text-gray-600'
-                  }`}>
-                    {acceptedPredictions.has(fieldName) ? 'Accepted' : 'Accept'}
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-        <p className="text-xs text-blue-800">
-          💡 <strong>Tip:</strong> You can modify accepted values in the form fields above at any time.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function StepSection({
   stepNumber,
   badgeLabel,
@@ -550,7 +404,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {} }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -559,6 +413,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
     resolver: zodResolver(formSchema),
     defaultValues: initialValues || {
       applicableProcesses: [],
+      sustainabilityParameters: {},
     },
     mode: "onTouched",
   });
@@ -577,20 +432,15 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
   useEffect(() => {
     if (initialValues) {
       console.log('🔄 [Mining Form] Syncing with updated initial values:', initialValues);
-      console.log('🔄 [Mining Form] Current form values before reset:', form.getValues());
       
-      // Reset form with new values - force update all fields including AI predictions
-      reset(initialValues, {
-        keepDirtyValues: false, // Allow AI predictions to override user inputs for predicted fields
+      // Update each field individually using setValue to properly trigger re-renders
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
       });
       
-      // Trigger validation to enable Next/Calculate buttons
-      trigger();
-      
-      console.log('🔄 [Mining Form] Form values after reset:', form.getValues());
       console.log('✅ [Mining Form] Form synced with AI predictions');
     }
-  }, [initialValues, reset, trigger, form]);
+  }, [JSON.stringify(initialValues), setValue]);
 
 
 
@@ -662,26 +512,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
   const applicableProcesses = watch("applicableProcesses");
 
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      // Apply the prediction to the form
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      // Reset field to empty or original value
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
-
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
     if (onGenerateAIPrediction) {
@@ -729,6 +559,126 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-gradient-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your mining process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.water_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.biodiversity_offset_area_ha"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Biodiversity Offset Area (hectares)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Hectares" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.rehabilitation_progress_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rehabilitation Progress (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.community_development_investment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Community Development Investment</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Amount" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.carbon_offset_tonnes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carbon Offset (tonnes)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Tonnes CO₂" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
 <FormField
   control={control}
   name="applicableProcesses"
@@ -991,7 +941,14 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
             <hr className="my-4 border-gray-200" />
 
-            <h3 className="text-lg font-semibold mb-4">AI Predicted Values</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">AI Predicted Values</h3>
+              {predictionMetadata?.confidence && (
+                <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                  {(predictionMetadata.confidence * 100).toFixed(1)}% confidence
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
@@ -1086,144 +1043,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
               />
 
             </div>
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.renewable_energy_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Renewable Energy (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.water_recycling_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Water Recycling Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.biodiversity_offset_area_ha"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Biodiversity Offset Area (ha)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="Hectares" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.rehabilitation_progress_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rehabilitation Progress (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.community_development_investment"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Community Development Investment</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="Amount" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.carbon_offset_tonnes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carbon Offset (tonnes)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="Tonnes CO₂" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="mining"
-            />
           </form>
       </StepSection>
     </FormProvider>
@@ -1232,7 +1051,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {} }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1333,6 +1152,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     defaultValues: initialValues || {
       processes: [],
       crushingStage: '',
+      sustainabilityParameters: {},
     },
     mode: "onTouched",
   })
@@ -1343,44 +1163,19 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
   useEffect(() => {
     if (initialValues) {
       console.log('🔄 [Beneficiation Form] Syncing with updated initial values:', initialValues);
-      console.log('🔄 [Beneficiation Form] Current form values before reset:', form.getValues());
       
-      // Reset form with new values - force update all fields including AI predictions
-      reset(initialValues, {
-        keepDirtyValues: false, // Allow AI predictions to override user inputs for predicted fields
+      // Update each field individually using setValue to properly trigger re-renders
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
       });
       
-      // Trigger validation to enable Next/Calculate buttons
-      trigger();
-      
-      console.log('🔄 [Beneficiation Form] Form values after reset:', form.getValues());
       console.log('✅ [Beneficiation Form] Form synced with AI predictions');
     }
-  }, [initialValues, reset, trigger, form]);
+  }, [JSON.stringify(initialValues), setValue]);
 
   const selectedProcesses = watch("processes")
   const selectedTailings = watch("tailings")
   const selectedChemicals = watch("chemicalAgents")
-
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      // Apply the prediction to the form
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      // Reset field to empty or original value
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
 
   // Modified AI prediction handler - just call parent's handler
   const handleGenerateAIPrediction = async (formData) => {
@@ -1455,6 +1250,114 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-gradient-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your beneficiation process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.water_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.energy_from_renewables_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Energy from Renewables (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.tailings_dry_stacking"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Tailings Dry Stacking</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.chemical_recovery_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chemical Recovery Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.dust_emission_control_efficiency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dust Emission Control Efficiency (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. Select Applicable Processes */}
 <FormField
   control={control}
@@ -1774,7 +1677,14 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
 
             <hr className="my-4 border-gray-200" />
 
-            <h3 className="text-lg font-semibold mb-4">AI Predicted Values</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">AI Predicted Values</h3>
+              {predictionMetadata?.confidence && (
+                <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                  {(predictionMetadata.confidence * 100).toFixed(1)}% confidence
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
@@ -1849,132 +1759,6 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
               />
 
             </div>
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.water_recycling_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Water Recycling Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.energy_from_renewables_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Energy from Renewables (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.tailings_dry_stacking"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">Tailings Dry Stacking</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.chemical_recovery_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Chemical Recovery Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.dust_emission_control_efficiency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Dust Emission Control Efficiency (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="beneficiation"
-            />
           </form>
       </StepSection>
     </FormProvider>
@@ -2000,7 +1784,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   // AI Prediction state management
   const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
   const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
-  const [acceptedPredictions, setAcceptedPredictions] = useState({})  // Stores accepted predictions by step
   const [aiPopulatedFields, setAiPopulatedFields] = useState({})  // Tracks which fields were populated by AI (for styling)
   
   // Debug: Track formValues changes
@@ -2027,29 +1810,18 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           
           // Extract aiPredictions from each step
           const extractedPredictions = {};
-          const extractedMetadata = {};
+          const extractedMetadata = response.data.predictionMetadata || {}; // Use step-level metadata from backend
           
           Object.keys(response.data.predictions).forEach(stepName => {
             const stepData = response.data.predictions[stepName];
             if (stepData && stepData.aiPredictions) {
               extractedPredictions[stepName] = {};
               
-              // Extract each prediction with its metadata
+              // Extract each prediction value
               Object.keys(stepData.aiPredictions).forEach(fieldName => {
                 const predData = stepData.aiPredictions[fieldName];
                 if (predData && predData.prediction !== undefined) {
                   extractedPredictions[stepName][fieldName] = predData.prediction;
-                  
-                  // Store confidence and interval for display
-                  if (!extractedMetadata[stepName]) {
-                    extractedMetadata[stepName] = {};
-                  }
-                  extractedMetadata[stepName][fieldName] = {
-                    confidence: predData.confidence,
-                    interval: predData.interval,
-                    rmse: predData.rmse,
-                    mae: predData.mae
-                  };
                 }
               });
             }
@@ -2060,6 +1832,29 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           
           setAiPredictions(extractedPredictions);
           setPredictionMetadata(extractedMetadata);
+          
+          // Auto-populate predictions into formValues and track for blue tint
+          const updatedFormValues = { ...values };
+          const aiFieldsByStep = {};
+          
+          Object.keys(extractedPredictions).forEach(stepName => {
+            const stepPredictions = extractedPredictions[stepName];
+            if (Object.keys(stepPredictions).length > 0) {
+              // Merge predictions into form values
+              updatedFormValues[stepName] = {
+                ...updatedFormValues[stepName],
+                ...stepPredictions
+              };
+              
+              // Track which fields were populated by AI
+              aiFieldsByStep[stepName] = new Set(Object.keys(stepPredictions));
+              
+              console.log(`✅ [Wizard] Auto-populated ${Object.keys(stepPredictions).length} predictions for ${stepName}`);
+            }
+          });
+          
+          setFormValues(updatedFormValues);
+          setAiPopulatedFields(aiFieldsByStep);
         }
       }).catch(error => {
         console.error('❌ [Wizard] Error loading predictions:', error);
@@ -2077,107 +1872,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     }))
   }
   
-  // Handle prediction acceptance for a specific field
-  const handlePredictionAcceptance = (stepName, fieldName, accepted) => {
-    setAcceptedPredictions(prev => {
-      const stepAccepted = prev[stepName] || new Set();
-      const newStepAccepted = new Set(stepAccepted);
-      
-      if (accepted) {
-        newStepAccepted.add(fieldName);
-      } else {
-        newStepAccepted.delete(fieldName);
-        
-        // When unchecked, clear the field value immediately
-        setFormValues(prevForm => ({
-          ...prevForm,
-          [stepName]: {
-            ...prevForm[stepName],
-            [fieldName]: undefined
-          }
-        }));
-        
-        // Remove from AI-populated tracking
-        setAiPopulatedFields(prevAi => {
-          const stepAi = new Set(prevAi[stepName] || new Set());
-          stepAi.delete(fieldName);
-          return {
-            ...prevAi,
-            [stepName]: stepAi
-          };
-        });
-      }
-      
-      return {
-        ...prev,
-        [stepName]: newStepAccepted
-      };
-    });
-  };
-  
-  // Get predictions for a specific step, comparing with user data
-  const getStepPredictions = (stepName) => {
-    const predictions = aiPredictions[stepName] || {};
-    const userData = formValues[stepName] || {};
-    const stepMetadata = predictionMetadata[stepName] || {};
-    const predictedFields = {};
-    
-    // Get prediction info to know which fields are predictable
-    const info = getPredictionInfo(stepName);
-    const predictableFieldNames = info?.predictableFields || [];
-    
-    // Only show fields that were predicted (exist in predictions but not in user data originally)
-    predictableFieldNames.forEach(fieldName => {
-      if (predictions.hasOwnProperty(fieldName)) {
-        predictedFields[fieldName] = {
-          value: predictions[fieldName],
-          // Use confidence from metadata if available, otherwise default
-          confidence: stepMetadata.confidence || 0.85
-        };
-      }
-    });
-    
-    return predictedFields;
-  };
 
+  
   const handleNext = () => {
-    // Populate accepted predictions into form fields before moving to next step
-    const currentStepName = steps[activeStep].key;
-    const accepted = acceptedPredictions[currentStepName] || new Set();
-    const predictions = aiPredictions[currentStepName] || {};
-    
-    if (accepted.size > 0) {
-      const updatedFields = {};
-      const aiFieldsToTrack = new Set();
-      
-      accepted.forEach(fieldName => {
-        if (predictions[fieldName] !== undefined) {
-          const predictionValue = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-            ? predictions[fieldName].value
-            : predictions[fieldName];
-          updatedFields[fieldName] = predictionValue;
-          aiFieldsToTrack.add(fieldName);
-        }
-      });
-      
-      if (Object.keys(updatedFields).length > 0) {
-        console.log(`🤖 [Next] Populating ${Object.keys(updatedFields).length} accepted predictions into form fields`);
-        setFormValues(prev => ({
-          ...prev,
-          [currentStepName]: {
-            ...prev[currentStepName],
-            ...updatedFields
-          }
-        }));
-        
-        // Track which fields were populated by AI
-        setAiPopulatedFields(prev => ({
-          ...prev,
-          [currentStepName]: aiFieldsToTrack
-        }));
-      }
-    }
-    
+    // Simply move to next step - AI predictions are already populated
     if (activeStep < steps.length - 1) {
       onStepChange(activeStep + 1)
     }
@@ -2206,26 +1904,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       return;
     }
     
-    // Merge accepted AI predictions with user data
-    const accepted = acceptedPredictions[stepName] || new Set();
-    const predictions = aiPredictions[stepName] || {};
-    const mergedData = { ...data };
-    
-    if (accepted.size > 0) {
-      console.log('✅ [handleSaveStep] Merging accepted predictions:', Array.from(accepted));
-      accepted.forEach(fieldName => {
-        if (predictions[fieldName] !== undefined) {
-          // Extract the value from prediction object (could be {value, confidence} or just the value)
-          const predictionValue = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-            ? predictions[fieldName].value
-            : predictions[fieldName];
-          mergedData[fieldName] = predictionValue;
-          console.log(`✅ [handleSaveStep] Merged ${fieldName} = ${predictionValue}`);
-        }
-      });
-    }
-    
-    console.log('💾 [handleSaveStep] Final merged data:', mergedData);
+    // Data already includes AI predictions (auto-populated), just save directly
+    console.log('💾 [handleSaveStep] Saving data:', data);
 
     setSaving(true);
     try {
@@ -2244,9 +1924,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       console.log('💾 [handleSaveStep] Update function found:', !!updateFn);
 
       if (updateFn) {
-        // Save the merged step data (user data + accepted predictions)
+        // Save the step data (already includes AI predictions)
         console.log('💾 [handleSaveStep] Calling API function...');
-        const response = await updateFn(workflowId, mergedData);
+        const response = await updateFn(workflowId, data);
         console.log('💾 [handleSaveStep] API Response:', response);
 
         if (response.success && response.data?.workflow) {
@@ -2269,8 +1949,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         console.error('❌ [handleSaveStep] No update function found for step:', stepName);
       }
 
-      // Save to local state with merged data
-      setFormValues((p) => ({ ...p, [stepName]: mergedData }));
+      // Save to local state
+      setFormValues((p) => ({ ...p, [stepName]: data }));
       console.log('💾 [handleSaveStep] Saved to local state');
     } catch (error) {
       console.error(`❌ Error saving ${stepName} step:`, error);
@@ -2499,40 +2179,39 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           throw new Error('No valid predictions found in aiPredictions');
         }
         
-        // Step 5: Merge predictions with current form data
+        // Step 5: Auto-populate predictions directly into form and track with blue tint
         const mergedData = { ...currentFormData, ...processedPredictions };
-        console.log('🔄 [AI Prediction] Merged data with predictions:', mergedData);
+        console.log('🔄 [AI Prediction] Auto-populating predictions into form:', mergedData);
         
-        // Update form values
+        // Update form values immediately with predictions
         setFormValues((prev) => ({
           ...prev,
           [stepName]: mergedData
         }));
         
-        // Store predictions for accept/reject UI (only newly predicted fields)
-        const newPredictions = {};
-        Object.entries(processedPredictions).forEach(([fieldName, value]) => {
-          if (!currentFormData.hasOwnProperty(fieldName) || currentFormData[fieldName] === undefined || currentFormData[fieldName] === null) {
-            newPredictions[fieldName] = value;
-          }
-        });
+        // Track all predicted fields for blue tint styling (override any existing values)
+        const predictedFieldNames = new Set(Object.keys(processedPredictions));
+        setAiPopulatedFields(prev => ({
+          ...prev,
+          [stepName]: predictedFieldNames
+        }));
         
-        if (Object.keys(newPredictions).length > 0) {
-          console.log('🤖 [AI Prediction] Storing predictions for accept/reject UI:', newPredictions);
-          setAiPredictions(prev => ({
+        // Store predictions and metadata for reference
+        setAiPredictions(prev => ({
+          ...prev,
+          [stepName]: processedPredictions
+        }));
+        
+        const stepMetadata = pollResponse.data.predictionMetadata?.[stepName];
+        if (stepMetadata) {
+          setPredictionMetadata(prev => ({
             ...prev,
-            [stepName]: newPredictions
+            [stepName]: stepMetadata
           }));
-          
-          // Store metadata if available
-          const stepMetadata = pollResponse.data.predictionMetadata?.[stepName];
-          if (stepMetadata) {
-            setPredictionMetadata(prev => ({
-              ...prev,
-              [stepName]: stepMetadata
-            }));
-          }
         }
+        
+        console.log('✅ [AI Prediction] Auto-populated fields:', Array.from(predictedFieldNames));
+
         
         // Show success message
         const predictedCount = Object.keys(processedPredictions).length;
@@ -2583,10 +2262,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predicting={predicting}
             pollingProgress={pollingProgress}
             onOpenWorkflow={onOpenWorkflow}
-            predictions={getStepPredictions('mining')}
-            acceptedPredictions={acceptedPredictions['mining'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('mining', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['mining'] || new Set()}
+            predictionMetadata={predictionMetadata['mining'] || {}}
           />
         );
       case 'beneficiation':
@@ -2600,10 +2277,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predicting={predicting}
             pollingProgress={pollingProgress}
             onOpenWorkflow={onOpenWorkflow}
-            predictions={getStepPredictions('beneficiation')}
-            acceptedPredictions={acceptedPredictions['beneficiation'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('beneficiation', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['beneficiation'] || new Set()}
+            predictionMetadata={predictionMetadata['beneficiation'] || {}}
           />
         );
       case 'refining':
@@ -2616,9 +2291,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('refining', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
-            predictions={getStepPredictions('refining')}
-            acceptedPredictions={acceptedPredictions['refining'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('refining', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['refining'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -2634,9 +2306,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('smelting', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
-            predictions={getStepPredictions('smelting')}
-            acceptedPredictions={acceptedPredictions['smelting'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('smelting', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['smelting'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -2652,9 +2321,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('manufacturing', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
-            predictions={getStepPredictions('manufacturing')}
-            acceptedPredictions={acceptedPredictions['manufacturing'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('manufacturing', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['manufacturing'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -2670,9 +2336,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('recycling', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
-            predictions={getStepPredictions('recycling')}
-            acceptedPredictions={acceptedPredictions['recycling'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('recycling', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['recycling'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -2688,9 +2351,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('valorization', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
-            predictions={getStepPredictions('valorization')}
-            acceptedPredictions={acceptedPredictions['valorization'] || new Set()}
-            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('valorization', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['valorization'] || new Set()}
             onSubmitSuccess={() => {
               setCompleted(true)
@@ -2803,7 +2463,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2870,6 +2530,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     defaultValues: initialValues || {
       processes: [],
       variants: [],
+      sustainabilityParameters: {},
     },
     mode: 'onTouched',
   })
@@ -2885,24 +2546,6 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       trigger();
     }
   }, []);
-
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
@@ -2940,6 +2583,112 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your refining process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.water_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.caustic_recovery_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Caustic Recovery Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.red_mud_utilization_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Red Mud Utilization (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.emission_control_efficiency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emission Control Efficiency (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. Processes */}
             <FormField
               control={control}
@@ -3238,130 +2987,6 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                 </FormItem>
               )} />
             )}
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.renewable_energy_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Renewable Energy (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.water_recycling_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Water Recycling Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.caustic_recovery_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Caustic Recovery Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.red_mud_utilization_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Red Mud Utilization (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.emission_control_efficiency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emission Control Efficiency (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="refining"
-            />
           </form>
         </Form>
       </StepSection>
@@ -3370,7 +2995,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3435,6 +3060,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     defaultValues: initialValues || {
       processes: [],
       variants: [],
+      sustainabilityParameters: {},
     },
     mode: 'onTouched',
   })
@@ -3449,24 +3075,6 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       trigger();
     }
   }, []);
-
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
@@ -3504,6 +3112,128 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your smelting process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.inert_anode_technology"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Inert Anode Technology</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.pfc_capture_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>PFC Capture Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.thermal_energy_recovery_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Thermal Energy Recovery (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.fluoride_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fluoride Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.carbon_capture_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carbon Capture Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. Processes */}
             <FormField control={control} name="processes" render={() => (
               <FormItem>
@@ -3775,146 +3505,6 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                 )} />
               </div>
             </div>
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.renewable_energy_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Renewable Energy (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.inert_anode_technology"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">Inert Anode Technology</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.pfc_capture_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>PFC Capture Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.thermal_energy_recovery_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thermal Energy Recovery (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.fluoride_recycling_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fluoride Recycling Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.carbon_capture_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carbon Capture Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="smelting"
-            />
           </form>
         </Form>
       </StepSection>
@@ -3923,7 +3513,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4042,6 +3632,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       castingProcesses: [], 
       lightweightingSectors: [],
       scrapRate: 0,
+      sustainabilityParameters: {},
       transportDistance: 0
     },
     mode: 'onTouched',
@@ -4058,24 +3649,6 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       trigger();
     }
   }, []);
-
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
@@ -4110,6 +3683,128 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your manufacturing process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.recycled_content_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Recycled Content (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.scrap_recovery_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Scrap Recovery Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.low_carbon_transport_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Low Carbon Transport (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.design_for_recyclability"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Design for Recyclability</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.product_lifetime_years"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Product Lifetime (years)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Years" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. Select Applicable Processes */}
             <FormField control={control} name="processes" render={() => (
               <FormItem>
@@ -4409,146 +4104,6 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 </FormItem>
               )} />
             )}
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.renewable_energy_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Renewable Energy (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.recycled_content_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Recycled Content (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.scrap_recovery_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Scrap Recovery Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.low_carbon_transport_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Low Carbon Transport (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.design_for_recyclability"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">Design for Recyclability</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.product_lifetime_years"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Product Lifetime (years)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="Years" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="manufacturing"
-            />
           </form>
         </Form>
       </StepSection>
@@ -4557,7 +4112,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4629,7 +4184,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: initialValues || { processes: [], variants: [], sortingMethods: [] },
+    defaultValues: initialValues || { processes: [], variants: [], sortingMethods: [], sustainabilityParameters: {} },
     mode: 'onTouched',
   })
 
@@ -4644,24 +4199,6 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       trigger();
     }
   }, []);
-
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
@@ -4696,6 +4233,112 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your recycling process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.collection_efficiency_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Collection Efficiency (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.sorting_accuracy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sorting Accuracy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.energy_from_renewables_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Energy from Renewables (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.closed_loop_target_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Closed Loop Target (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.contamination_rate_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contamination Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. Select Applicable Processes */}
             <FormField control={control} name="processes" render={() => (
               <FormItem>
@@ -5059,130 +4702,6 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                 </FormItem>
               )} />
             )}
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.collection_efficiency_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Collection Efficiency (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.sorting_accuracy_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sorting Accuracy (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.energy_from_renewables_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Energy from Renewables (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.closed_loop_target_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Closed Loop Target (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.contamination_rate_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contamination Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="recycling"
-            />
           </form>
         </Form>
       </StepSection>
@@ -5191,7 +4710,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -5278,7 +4797,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: initialValues || { wasteTypes: [], valorizationMethods: [] },
+    defaultValues: initialValues || { wasteTypes: [], valorizationMethods: [], sustainabilityParameters: {} },
     mode: 'onTouched',
   })
 
@@ -5292,24 +4811,6 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       trigger();
     }
   }, []);
-
-  // Handle accepting/rejecting individual predictions
-  const handlePredictionAcceptance = (fieldName, accepted) => {
-    const newAccepted = new Set(acceptedPredictions);
-    if (accepted) {
-      newAccepted.add(fieldName);
-      if (predictions[fieldName]) {
-        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
-          ? predictions[fieldName].value
-          : predictions[fieldName];
-        setValue(fieldName, value);
-      }
-    } else {
-      newAccepted.delete(fieldName);
-      setValue(fieldName, initialValues?.[fieldName] || '');
-    }
-    onPredictionAcceptance?.(fieldName, accepted);
-  };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
@@ -5353,6 +4854,114 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* Sustainability Checkbox */}
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters in your valorization process
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sustainability Parameters */}
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.waste_valorization_rate_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Waste Valorization Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.emission_reduction_per_tonne"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emission Reduction per Tonne (kg CO₂)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="kg CO₂" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.circular_economy_integration"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Circular Economy Integration</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.zero_waste_target_progress_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Zero Waste Target Progress (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.environmental_impact_reduction_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Environmental Impact Reduction (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. Waste Types and Valorization Processes */}
             <div className="space-y-6">
               <FormField control={control} name="wasteTypes" render={() => (
@@ -5734,132 +5343,6 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                 ))}
               </div>
             </div>
-            
-            {/* Sustainability Section */}
-            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Compliance
-              </h3>
-              
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-3 mt-2">
-                        <Button
-                          type="button"
-                          variant={field.value === true ? "default" : "outline"}
-                          onClick={() => field.onChange(true)}
-                          className={field.value === true 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-gray-300 hover:border-green-600"}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={field.value === false ? "default" : "outline"}
-                          onClick={() => field.onChange(false)}
-                          className={field.value === false 
-                            ? "bg-red-600 hover:bg-red-700 text-white" 
-                            : "border-gray-300 hover:border-red-600"}
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watch("followingSustainableRules") === true && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.waste_valorization_rate_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Waste Valorization Rate (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.emission_reduction_per_tonne"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Emission Reduction per Tonne (kg CO₂)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="kg CO₂" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.circular_economy_integration"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">Circular Economy Integration</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.zero_waste_target_progress_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Zero Waste Target Progress (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={control}
-                    name="sustainabilityParameters.environmental_impact_reduction_percent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Environmental Impact Reduction (%)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="0-100" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* AI Predictions Review Section */}
-            <AIPredictionReview
-              predictions={predictions}
-              acceptedPredictions={acceptedPredictions}
-              onAcceptanceChange={onPredictionAcceptance}
-              stepName="valorization"
-            />
           </form>
         </Form>
       </StepSection>
