@@ -10,10 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+import asyncio
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_smelting")
+
+# Import continuous monitor
+try:
+    from continuous_monitor import ContinuousWorkflowMonitor, start_monitor_in_background
+    MONITOR_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Continuous monitor not available: {e}")
+    MONITOR_AVAILABLE = False
+
 
 app = FastAPI(
     title="Smelting LCA API",
@@ -49,6 +59,9 @@ _model_metadata = None
 _load_errors = []
 _preprocessing_metadata = None
 
+# Global monitor instance
+_workflow_monitor = None
+
 # Optional .env loader (non-fatal if missing)
 try:
     from dotenv import load_dotenv  # type: ignore
@@ -69,13 +82,13 @@ except Exception:  # pragma: no cover
     MongoClient = None  # type: ignore
     ObjectId = None  # type: ignore
 
-# Best-effort: load environment from aluminium/scripts/.env and repo .env if available
+# Best-effort: load environment from server/.env and repo .env if available
 if load_dotenv is not None:
-    scripts_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.env'))
+    server_env_path = os.path.abspath(os.path.join(ROOT, '..', 'server', '.env'))
     root_env_path = os.path.abspath(os.path.join(ROOT, '..', '.env'))
     try:
-        if os.path.exists(scripts_env_path):
-            load_dotenv(scripts_env_path)
+        if os.path.exists(server_env_path):
+            load_dotenv(server_env_path)
         if os.path.exists(root_env_path):
             load_dotenv(root_env_path)
     except Exception:
@@ -226,10 +239,6 @@ async def get_mongo_db():
 
     return None
 
-@app.on_event("startup")
-async def startup_event():
-    _load_artifacts()
-
 @app.get("/")
 async def root():
     return {
@@ -280,10 +289,36 @@ async def predict(request: PredictRequest):
         raise HTTPException(status_code=500, detail="Feature/target names not loaded")
 
     data = request.data
-    filled = _build_feature_row_from_dict(data)
+
+    # Exclude prediction targets from input
+    input_data = {k: v for k, v in data.items() if k not in _target_names}
+
+    # If the incoming data already contains model feature keys (e.g., one-hot 'location_*' or
+    # 'smelting_variant_*'), do NOT remap via wizard fields. Instead, align directly to
+    # _feature_names to preserve the provided one-hot values.
+    try:
+        has_direct_features = any(
+            (isinstance(k, str) and (k in (_feature_names or []) or k.startswith('location_') or k.startswith('smelting_variant_')))
+            for k in input_data.keys()
+        )
+    except Exception:
+        has_direct_features = False
+
+    if has_direct_features:
+        filled = {}
+        for feat in (_feature_names or []):
+            filled[feat] = input_data.get(feat, 0)
+        # Ensure year present
+        if 'year' in (_feature_names or []) and filled.get('year') in (None, ''):
+            filled['year'] = input_data.get('year', 2024)
+    else:
+        # Fall back to mapping wizard fields -> model features
+        filled = _build_feature_row_from_dict(input_data)
 
     try:
         df = pd.DataFrame([filled], columns=_feature_names)
+        logger.info(f"DF columns order: {list(df.columns)}")
+        logger.info(f"DF row values: {df.values[0].tolist()}")
         
         # Convert data types to ensure compatibility
         for col in df.columns:
@@ -300,8 +335,13 @@ async def predict(request: PredictRequest):
 
     try:
         if _model is not None:
+            logger.info(f"Predicting with df.values shape={df.values.shape}, dtype={df.values.dtype}")
+            logger.info(f"  df.values[0]: {df.values[0].tolist()}")
+            logger.info(f"  _model type: {type(_model)}")
             preds = _model.predict(df.values)
+            logger.info(f"  Model output: energy={preds[0][0]:.2f}, CO2={preds[0][2]:.2f}")
         else:
+            logger.warning("Model is None, returning zeros")
             preds = np.zeros((1, len(_target_names)))
     except Exception as e:
         logger.warning(f"Model prediction failed: {e}. Returning placeholder zeros.")
@@ -310,7 +350,13 @@ async def predict(request: PredictRequest):
     if preds.ndim == 1:
         preds = preds.reshape(1, -1)
 
-    result = {name: float(preds[0, i]) for i, name in enumerate(_target_names)}
+    result = {}
+    for i, name in enumerate(_target_names):
+        pred_value = float(preds[0, i])
+        # Handle NaN/inf values
+        if not np.isfinite(pred_value):
+            pred_value = 0.0
+        result[name] = pred_value
     
     confidence = {}
     if request.return_confidence:
@@ -337,11 +383,133 @@ async def predict(request: PredictRequest):
         
     return response
 
-def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Build a feature row matching _feature_names from input dict."""
-    row: Dict[str, Any] = {}
-    location_value = data.get('location')
+def _unwrap_mongo_value(val):
+    """Unwrap MongoDB BSON types to Python primitives.
+    Handles $numberInt, $numberDouble, $numberLong, $oid, $date formats.
+    Returns None for null values.
+    """
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        if "$numberInt" in val:
+            try:
+                return int(val["$numberInt"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberDouble" in val:
+            try:
+                return float(val["$numberDouble"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberLong" in val:
+            try:
+                return int(val["$numberLong"])
+            except (ValueError, TypeError):
+                return None
+        if "$oid" in val:
+            return str(val["$oid"])
+        if "$date" in val:
+            if isinstance(val["$date"], dict) and "$numberLong" in val["$date"]:
+                return int(val["$date"]["$numberLong"])
+            return val["$date"]
+    return val
 
+# Startup event to initialize continuous monitoring
+@app.on_event("startup")
+async def startup_continuous_monitor():
+    """Start continuous workflow monitoring on API startup."""
+    global _workflow_monitor
+    
+    # Load model artifacts first
+    _load_artifacts()
+    
+    # Check if continuous monitoring is enabled
+    enable_monitor = os.getenv("ENABLE_CONTINUOUS_MONITOR", "true").lower() == "true"
+    if not enable_monitor:
+        logger.info("Continuous monitoring disabled via environment variable")
+        return
+    
+    if not MONITOR_AVAILABLE:
+        logger.warning("Continuous monitoring not available (module import failed)")
+        return
+    
+    # Check if feature/target names are loaded (required for predictions)
+    # Model can be None - we have fallback logic to return zeros
+    if _feature_names is None or _target_names is None:
+        logger.warning("Feature/target names not loaded, skipping continuous monitoring")
+        return
+    
+    # Log model status but proceed anyway (we have fallback for None model)
+    if _model is None:
+        logger.warning("Model not loaded - will use fallback predictions (zeros)")
+    
+    try:
+        # Get configuration from environment
+        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "30"))  # seconds
+        freshness_window = int(os.getenv("MONITOR_FRESHNESS_WINDOW", "600"))  # 10 minutes
+        
+        # Create monitor instance
+        _workflow_monitor = ContinuousWorkflowMonitor(
+            get_db_func=get_mongo_db,
+            predict_func=predict_smelting_and_save,
+            stage_name="smelting",
+            poll_interval=poll_interval,
+            freshness_window=freshness_window,
+            object_id_class=ObjectId if 'ObjectId' in globals() else None,
+            is_async_db=('_MONGO_DRIVER' in globals() and globals().get('_MONGO_DRIVER') == 'motor')
+        )
+        
+        # Start monitoring in background
+        await start_monitor_in_background(_workflow_monitor)
+        logger.info("✅ Continuous workflow monitoring started for smelting stage")
+        
+    except Exception as e:
+        logger.error(f"Failed to start continuous monitoring: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_continuous_monitor():
+    """Stop continuous monitoring on API shutdown."""
+    global _workflow_monitor
+    if _workflow_monitor:
+        _workflow_monitor.stop()
+        logger.info("Continuous monitoring stopped for smelting stage")
+
+
+def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a feature row matching _feature_names from input dict.
+    Maps wizard field names to model feature names."""
+    row: Dict[str, Any] = {}
+    
+    # Map wizard field names to expected values
+    location_value = data.get('location')
+    year_value = data.get('year', 2024)
+    
+    # Map wizard variants array to model feature names
+    # Wizard uses: variants: ['soderberg_cells', 'pre_baked_anodes', etc.]
+    # Model expects: smelting_variant_Soderberg_anodes, smelting_variant_Pre_baked_anodes, etc.
+    variant_mapping = {
+        'soderberg_cells': 'Soderberg_anodes',
+        'soderberg_anodes': 'Soderberg_anodes',
+        'pre_baked_anodes': 'Pre_baked_anodes',
+        'prebaked_anodes': 'Pre_baked_anodes',
+        'inert_anodes': 'Inert_anodes_exp',
+        'inert_anodes_exp': 'Inert_anodes_exp',
+        'renewable_powered': 'Renewable_powered',
+        'dynamic_load': 'Dynamic_load_mgmt',
+        'dynamic_load_mgmt': 'Dynamic_load_mgmt',
+    }
+    
+    variants_raw = data.get('variants', [])
+    if isinstance(variants_raw, str):
+        variants_raw = [variants_raw]
+    variants_set = set()
+    for v in variants_raw:
+        if v:
+            v_lower = str(v).lower().replace(' ', '_').replace('-', '_')
+            if v_lower in variant_mapping:
+                variants_set.add(variant_mapping[v_lower])
+    
     # Prepare numeric medians if available
     numeric_medians: Dict[str, Any] = {}
     try:
@@ -358,12 +526,18 @@ def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
         pass
 
     for feat in (_feature_names or []):
-        if isinstance(feat, str) and feat.startswith('location_'):
+        if feat == 'year':
+            row[feat] = year_value
+        elif isinstance(feat, str) and feat.startswith('location_'):
             loc_name = feat.replace('location_', '')
             row[feat] = 1 if (isinstance(location_value, str) and location_value == loc_name) else 0
+        elif isinstance(feat, str) and feat.startswith('smelting_variant_'):
+            variant_name = feat.replace('smelting_variant_', '')
+            row[feat] = 1 if variant_name in variants_set else 0
         else:
             if feat in data and data[feat] is not None:
-                row[feat] = data[feat]
+                unwrapped = _unwrap_mongo_value(data[feat])
+                row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
             else:
                 row[feat] = numeric_medians.get(feat, 0)
     return row
@@ -450,23 +624,17 @@ async def predict_smelting_and_save(workflow_id: str):
             oid = ObjectId(workflow_id)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
-        wf = None
-        coll_name = None
         wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
-        coll_name = "wizardworkflows" if wf else None
         if not wf:
-            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflows" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
             raise HTTPException(status_code=404, detail="Workflow not found")
         smelting_raw = wf.get("smelting", {}) or {}
+        
+        # Inherit location from mining data if smelting location is null
+        if not smelting_raw.get("location"):
+            mining_location = wf.get("mining", {}).get("location")
+            if mining_location:
+                smelting_raw["location"] = mining_location
+                logger.info(f"Inherited location '{mining_location}' from mining data for workflow {workflow_id}")
     except HTTPException:
         raise
     except Exception as e:
@@ -475,7 +643,10 @@ async def predict_smelting_and_save(workflow_id: str):
 
     # Build feature row and predict
     feature_row = _build_feature_row_from_smelting(smelting_raw)
+    logger.info(f"Built feature row for workflow {workflow_id}: year={feature_row.get('year')}, location fields={sum(1 for k,v in feature_row.items() if k.startswith('location_') and v==1)}, variant fields={sum(1 for k,v in feature_row.items() if k.startswith('smelting_variant_') and v==1)}")
+    logger.info(f"Feature row details: {feature_row}")
     pred_resp = await predict(PredictRequest(data=feature_row, return_confidence=True))
+    logger.info(f"Prediction response for workflow {workflow_id}: energy={pred_resp['predictions'].get('smelting_energy_kWh_per_t_al')}, CO2={pred_resp['predictions'].get('smelting_co2_kg_per_t_al')}")
 
     # Collect predictions
     predicted_fields = list(pred_resp["predictions"].keys())
@@ -484,54 +655,104 @@ async def predict_smelting_and_save(workflow_id: str):
         vals = [v.get("confidence") for v in pred_resp["confidence_intervals"].values() if v.get("confidence") is not None]
         if vals:
             avg_conf = float(np.mean(vals))
+            # Handle NaN in confidence
+            if not np.isfinite(avg_conf):
+                avg_conf = 0.0
 
     smelting_updates: Dict[str, Any] = {}
     ai_predictions: Dict[str, Any] = {}
     for target_name, pred_value in pred_resp["predictions"].items():
-        smelting_updates[target_name] = pred_value
+        # Handle NaN/inf in predictions
+        if isinstance(pred_value, float):
+            if np.isfinite(pred_value):
+                smelting_updates[target_name] = pred_value
+            else:
+                smelting_updates[target_name] = None
+        else:
+            smelting_updates[target_name] = pred_value
+            
         ci = pred_resp.get("confidence_intervals", {}).get(target_name)
         ai_predictions[target_name] = {
-            "prediction": pred_value,
+            "prediction": smelting_updates[target_name],
             "confidence": (ci.get("confidence") if ci else None),
             "interval": ({"lower": ci.get("lower"), "upper": ci.get("upper")} if ci else None)
         }
 
-    # Build $set operations
-    set_ops: Dict[str, Any] = {}
-    for field_name, value in smelting_updates.items():
-        set_ops[f"smelting.{field_name}"] = value
-    set_ops["smelting.aiPredictions"] = ai_predictions
-    set_ops["predictionMetadata.generatedAt"] = datetime.utcnow()
-    set_ops["updatedAt"] = datetime.utcnow()
-    set_ops["status"] = wf.get("status", "submitted")
-
-    # Execute updates
+    # Prepare smelting output: Keep only essential input fields + predictions
     try:
-        workflows = db[coll_name]
+        existing_output = await db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]})
+    except:
+        existing_output = None
+    
+    # Essential input fields that user provided
+    essential_input_fields = ['variants', 'location', 'processes']
+    smelting_input_only = {k: smelting_raw.get(k) for k in essential_input_fields}
+    
+    # Merge essential inputs + predictions
+    smelting_output = {**smelting_input_only, **smelting_updates}
+    smelting_output["aiPredictions"] = ai_predictions
+    
+    # Create/Update document in wizardworkflowoutputs collection
+    output_doc = {
+        "_id": wf["_id"],
+        "workflowId": str(wf["_id"]),
+        "userId": wf.get("userId"),
+        "metalType": wf.get("metalType"),
+        "name": wf.get("name"),
+        "status": wf.get("status", "submitted"),
+        "createdAt": wf.get("createdAt"),
+        "mining": existing_output.get("mining", {}) if existing_output else wf.get("mining", {}),
+        "beneficiation": existing_output.get("beneficiation", {}) if existing_output else wf.get("beneficiation", {}),
+        "refining": existing_output.get("refining", {}) if existing_output else wf.get("refining", {}),
+        "smelting": smelting_output,
+        "manufacturing": existing_output.get("manufacturing", {}) if existing_output else wf.get("manufacturing", {}),
+        "recycling": existing_output.get("recycling", {}) if existing_output else wf.get("recycling", {}),
+        "valorization": existing_output.get("valorization", {}) if existing_output else wf.get("valorization", {}),
+        "predictionMetadata": {
+            "generatedAt": datetime.utcnow(),
+            "lastStageProcessed": "smelting",
+            "allStages": (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) + ["smelting"] if "smelting" not in (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) else (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []),
+            "smelting": {
+                "predictedFields": predicted_fields,
+                "confidence": avg_conf,
+                "processedAt": datetime.utcnow()
+            }
+        },
+        "updatedAt": datetime.utcnow()
+    }
+
+    # Execute upsert to wizardworkflowoutputs
+    try:
         if _MONGO_DRIVER == 'motor':
-            await workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "smelting"}}})
-            await workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            await workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "smelting", "predictedFields": [f"smelting.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            await outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         elif MongoClient is not None:
-            workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "smelting"}}})
-            workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "smelting", "predictedFields": [f"smelting.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         else:
             raise HTTPException(status_code=503, detail="No MongoDB driver available")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update workflow predictions: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update workflow predictions")
+        logger.error(f"Failed to save predictions to wizardworkflowoutputs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save predictions")
 
     return {
         "success": True,
         "workflowId": workflow_id,
-        "updatedFields": [f"smelting.{f}" for f in predicted_fields],
+        "updatedFields": predicted_fields,
         "avgConfidence": round(avg_conf, 3),
         "inputUsed": feature_row,
         "timestamp": datetime.utcnow().isoformat(),
-        "metadataUpdated": True,
+        "outputCollection": "wizardworkflowoutputs",
     }
 
 if __name__ == "__main__":

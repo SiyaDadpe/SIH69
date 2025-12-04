@@ -117,7 +117,8 @@ def train_smelting_model(processed_data_path: str, model_output_path: str,
         metrics = {}
         
         for i, target in enumerate(target_names):
-            rmse = mean_squared_error(y_test[:, i], y_pred[:, i], squared=False)
+            mse = mean_squared_error(y_test[:, i], y_pred[:, i])
+            rmse = np.sqrt(mse)
             mae = mean_absolute_error(y_test[:, i], y_pred[:, i])
             r2 = r2_score(y_test[:, i], y_pred[:, i])
             

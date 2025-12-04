@@ -10,10 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+import asyncio
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_recycling")
+
+# Import continuous monitor
+try:
+    from continuous_monitor import ContinuousWorkflowMonitor, start_monitor_in_background
+    MONITOR_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Continuous monitor not available: {e}")
+    MONITOR_AVAILABLE = False
+
 
 app = FastAPI(
     title="Recycling LCA API",
@@ -49,6 +59,9 @@ _model_metadata = None
 _load_errors = []
 _preprocessing_metadata = None
 
+# Global monitor instance
+_workflow_monitor = None
+
 # Optional .env loader (non-fatal if missing)
 try:
     from dotenv import load_dotenv  # type: ignore
@@ -69,13 +82,13 @@ except Exception:  # pragma: no cover
     MongoClient = None  # type: ignore
     ObjectId = None  # type: ignore
 
-# Best-effort: load environment from aluminium/scripts/.env and repo .env if available
+# Best-effort: load environment from server/.env and repo .env if available
 if load_dotenv is not None:
-    scripts_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.env'))
+    server_env_path = os.path.abspath(os.path.join(ROOT, '..', 'server', '.env'))
     root_env_path = os.path.abspath(os.path.join(ROOT, '..', '.env'))
     try:
-        if os.path.exists(scripts_env_path):
-            load_dotenv(scripts_env_path)
+        if os.path.exists(server_env_path):
+            load_dotenv(server_env_path)
         if os.path.exists(root_env_path):
             load_dotenv(root_env_path)
     except Exception:
@@ -226,10 +239,6 @@ async def get_mongo_db():
 
     return None
 
-@app.on_event("startup")
-async def startup_event():
-    _load_artifacts()
-
 @app.get("/")
 async def root():
     return {
@@ -280,7 +289,11 @@ async def predict(request: PredictRequest):
         raise HTTPException(status_code=500, detail="Feature/target names not loaded")
 
     data = request.data
-    filled = _build_feature_row_from_dict(data)
+    
+    # Exclude prediction targets from input
+    input_data = {k: v for k, v in data.items() if k not in _target_names}
+    
+    filled = _build_feature_row_from_dict(input_data)
 
     try:
         df = pd.DataFrame([filled], columns=_feature_names)
@@ -300,7 +313,17 @@ async def predict(request: PredictRequest):
 
     try:
         if _model is not None:
-            preds = _model.predict(df.values)
+            # Check if model expects more features than we have
+            expected_features = getattr(_model, 'n_features_in_', None)
+            if expected_features and df.shape[1] < expected_features:
+                # Pad with zeros for missing features
+                missing_count = expected_features - df.shape[1]
+                logger.warning(f"Model expects {expected_features} features but got {df.shape[1]}. Padding with {missing_count} zeros.")
+                padding = np.zeros((df.shape[0], missing_count))
+                X_padded = np.hstack([df.values, padding])
+                preds = _model.predict(X_padded)
+            else:
+                preds = _model.predict(df.values)
         else:
             preds = np.zeros((1, len(_target_names)))
     except Exception as e:
@@ -310,7 +333,13 @@ async def predict(request: PredictRequest):
     if preds.ndim == 1:
         preds = preds.reshape(1, -1)
 
-    result = {name: float(preds[0, i]) for i, name in enumerate(_target_names)}
+    result = {}
+    for i, name in enumerate(_target_names):
+        pred_value = float(preds[0, i])
+        # Handle NaN/inf values
+        if not np.isfinite(pred_value):
+            pred_value = 0.0
+        result[name] = pred_value
     
     confidence = {}
     if request.return_confidence:
@@ -337,10 +366,121 @@ async def predict(request: PredictRequest):
         
     return response
 
+def _unwrap_mongo_value(val):
+    """Unwrap MongoDB BSON types to Python primitives.
+    Handles $numberInt, $numberDouble, $numberLong, $oid, $date formats.
+    Returns None for null values.
+    """
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        if "$numberInt" in val:
+            try:
+                return int(val["$numberInt"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberDouble" in val:
+            try:
+                return float(val["$numberDouble"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberLong" in val:
+            try:
+                return int(val["$numberLong"])
+            except (ValueError, TypeError):
+                return None
+        if "$oid" in val:
+            return str(val["$oid"])
+        if "$date" in val:
+            if isinstance(val["$date"], dict) and "$numberLong" in val["$date"]:
+                return int(val["$date"]["$numberLong"])
+            return val["$date"]
+    return val
+
+# Startup event to initialize continuous monitoring
+@app.on_event("startup")
+async def startup_continuous_monitor():
+    """Start continuous workflow monitoring on API startup."""
+    global _workflow_monitor
+    
+    # Load model artifacts first
+    _load_artifacts()
+    
+    # Check if continuous monitoring is enabled
+    enable_monitor = os.getenv("ENABLE_CONTINUOUS_MONITOR", "true").lower() == "true"
+    if not enable_monitor:
+        logger.info("Continuous monitoring disabled via environment variable")
+        return
+    
+    if not MONITOR_AVAILABLE:
+        logger.warning("Continuous monitoring not available (module import failed)")
+        return
+    
+    # Check if feature/target names are loaded (required for predictions)
+    # Model can be None - we have fallback logic to return zeros
+    if _feature_names is None or _target_names is None:
+        logger.warning("Feature/target names not loaded, skipping continuous monitoring")
+        return
+    
+    # Log model status but proceed anyway (we have fallback for None model)
+    if _model is None:
+        logger.warning("Model not loaded - will use fallback predictions (zeros)")
+    
+    try:
+        # Get configuration from environment
+        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "30"))  # seconds
+        freshness_window = int(os.getenv("MONITOR_FRESHNESS_WINDOW", "600"))  # 10 minutes
+        
+        # Create monitor instance
+        _workflow_monitor = ContinuousWorkflowMonitor(
+            get_db_func=get_mongo_db,
+            predict_func=predict_recycling_and_save,
+            stage_name="recycling",
+            poll_interval=poll_interval,
+            freshness_window=freshness_window,
+            object_id_class=ObjectId if 'ObjectId' in globals() else None,
+            is_async_db=('_MONGO_DRIVER' in globals() and globals().get('_MONGO_DRIVER') == 'motor')
+        )
+        
+        # Start monitoring in background
+        await start_monitor_in_background(_workflow_monitor)
+        logger.info("✅ Continuous workflow monitoring started for recycling stage")
+        
+    except Exception as e:
+        logger.error(f"Failed to start continuous monitoring: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_continuous_monitor():
+    """Stop continuous monitoring on API shutdown."""
+    global _workflow_monitor
+    if _workflow_monitor:
+        _workflow_monitor.stop()
+        logger.info("Continuous monitoring stopped for recycling stage")
+
+
 def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     """Build a feature row matching _feature_names from input dict."""
     row: Dict[str, Any] = {}
     location_value = data.get('location')
+    # Normalize common recycling wizard inputs
+    sorting_method = (data.get('sortingMethod') or data.get('sortingMethods') or data.get('recycling_sorting_method') or '').strip()
+    processes = data.get('processes') or []
+    if isinstance(processes, str):
+        processes = [processes]
+    processes = [str(p).strip().lower() for p in processes if p is not None]
+    # Variants or loop type - check multiple possible field names
+    variants = data.get('variants') or []
+    if isinstance(variants, str):
+        variants = [variants]
+    variants = [str(v).strip().lower().replace('-', '_').replace(' ', '_') for v in variants if v is not None]
+    closed_loop = data.get('closedLoop') or data.get('closedLoopPercent')
+    open_loop = data.get('openLoop') or data.get('openLoopPercent')
+    scrap_input = data.get('scrapInput') or data.get('scrapInputPercent') or data.get('recycling_scrap_input_%')
+    collection_rate = data.get('collectionRate') or data.get('collectionRatePercent') or data.get('recycling_collection_rate_%')
+    
+    # Log what we extracted
+    logger.info(f"Recycling inputs extracted: processes={processes}, variants={variants}, sorting={sorting_method}, scrap={scrap_input}, collection={collection_rate}")
 
     # Prepare numeric medians if available
     numeric_medians: Dict[str, Any] = {}
@@ -361,11 +501,39 @@ def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(feat, str) and feat.startswith('location_'):
             loc_name = feat.replace('location_', '')
             row[feat] = 1 if (isinstance(location_value, str) and location_value == loc_name) else 0
+        # Sorting method one-hot created by preprocessor
+        elif isinstance(feat, str) and feat.startswith('recycling_sorting_method_'):
+            cat = feat.replace('recycling_sorting_method_', '')
+            row[feat] = 1 if (isinstance(sorting_method, str) and sorting_method.lower() == cat.lower()) else 0
+        # Process flags (binary) e.g., recycling_process_Collection
+        elif isinstance(feat, str) and feat.startswith('recycling_process_'):
+            proc = feat.replace('recycling_process_', '')
+            row[feat] = 1 if any(proc.lower() == str(p).replace('-', '_').replace(' ', '_').lower() for p in processes) else 0
+        # Variant flags (binary) created upstream
+        elif isinstance(feat, str) and feat.startswith('recycling_variant_'):
+            var = feat.replace('recycling_variant_', '').lower()
+            # Check if this variant is in the variants list
+            matched = any(var in v for v in variants)
+            row[feat] = 1 if matched else 0
+        # Numeric inputs that often exist
+        elif feat == 'recycling_scrap_input_%':
+            unwrapped = _unwrap_mongo_value(scrap_input)
+            row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
+        elif feat == 'recycling_collection_rate_%':
+            unwrapped = _unwrap_mongo_value(collection_rate)
+            row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
         else:
             if feat in data and data[feat] is not None:
-                row[feat] = data[feat]
+                unwrapped = _unwrap_mongo_value(data[feat])
+                row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
             else:
                 row[feat] = numeric_medians.get(feat, 0)
+    
+    # Log feature row statistics
+    nonzero_count = sum(1 for v in row.values() if isinstance(v, (int, float)) and v != 0)
+    recycling_specific = sum(1 for k, v in row.items() if 'recycling_' in k and isinstance(v, (int, float)) and v != 0)
+    logger.info(f"Feature row built: {len(row)} features, {nonzero_count} non-zero ({recycling_specific} recycling-specific)")
+    
     return row
 
 def _build_feature_row_from_recycling(recycling: Dict[str, Any]) -> Dict[str, Any]:
@@ -450,31 +618,42 @@ async def predict_recycling_and_save(workflow_id: str):
             oid = ObjectId(workflow_id)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
-        wf = None
-        coll_name = None
         wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
-        coll_name = "wizardworkflows" if wf else None
         if not wf:
-            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflows" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
             raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        # Get predictions from previous stages (from output collection)
+        output_wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
+        
+        # Merge data from all stages - recycling model needs ALL previous stage data
+        all_stage_data = {}
+        if output_wf:
+            # Use output data (which has predictions) for all stages
+            for stage in ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing']:
+                stage_data = output_wf.get(stage, {})
+                if stage_data:
+                    all_stage_data.update(stage_data)
+        else:
+            # Fallback to input data if no outputs yet
+            for stage in ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing']:
+                stage_data = wf.get(stage, {})
+                if stage_data:
+                    all_stage_data.update(stage_data)
+        
+        # Add recycling input data
         recycling_raw = wf.get("recycling", {}) or {}
+        all_stage_data.update(recycling_raw)
+        
+        logger.info(f"Building feature row with {len(all_stage_data)} fields from all stages")
+        
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error reading workflow: {e}")
         raise HTTPException(status_code=500, detail="Error reading workflow")
 
-    # Build feature row and predict
-    feature_row = _build_feature_row_from_recycling(recycling_raw)
+    # Build feature row from ALL stages (not just recycling)
+    feature_row = _build_feature_row_from_dict(all_stage_data)
     pred_resp = await predict(PredictRequest(data=feature_row, return_confidence=True))
 
     # Collect predictions
@@ -484,56 +663,106 @@ async def predict_recycling_and_save(workflow_id: str):
         vals = [v.get("confidence") for v in pred_resp["confidence_intervals"].values() if v.get("confidence") is not None]
         if vals:
             avg_conf = float(np.mean(vals))
+            # Handle NaN in confidence
+            if not np.isfinite(avg_conf):
+                avg_conf = 0.0
 
     recycling_updates: Dict[str, Any] = {}
     ai_predictions: Dict[str, Any] = {}
     for target_name, pred_value in pred_resp["predictions"].items():
-        recycling_updates[target_name] = pred_value
+        # Handle NaN/inf in predictions
+        if isinstance(pred_value, float):
+            if np.isfinite(pred_value):
+                recycling_updates[target_name] = pred_value
+            else:
+                recycling_updates[target_name] = None
+        else:
+            recycling_updates[target_name] = pred_value
+            
         ci = pred_resp.get("confidence_intervals", {}).get(target_name)
         ai_predictions[target_name] = {
-            "prediction": pred_value,
+            "prediction": recycling_updates[target_name],
             "confidence": (ci.get("confidence") if ci else None),
             "interval": ({"lower": ci.get("lower"), "upper": ci.get("upper")} if ci else None)
         }
 
-    # Build $set operations
-    set_ops: Dict[str, Any] = {}
-    for field_name, value in recycling_updates.items():
-        set_ops[f"recycling.{field_name}"] = value
-    set_ops["recycling.aiPredictions"] = ai_predictions
-    set_ops["predictionMetadata.generatedAt"] = datetime.utcnow()
-    set_ops["updatedAt"] = datetime.utcnow()
-    set_ops["status"] = wf.get("status", "submitted")
-
-    # Execute updates
+    # Prepare recycling output: Keep only essential input fields + predictions
     try:
-        workflows = db[coll_name]
+        existing_output = await db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]})
+    except:
+        existing_output = None
+    
+    # Essential input fields that user provided (customize based on recycling wizard fields)
+    essential_input_fields = ['sortingMethod', 'collectionRate', 'processes', 'location', 'scrapInput', 'closedLoop']
+    recycling_input_only = {k: recycling_raw.get(k) for k in essential_input_fields}
+    
+    # Merge essential inputs + predictions
+    recycling_output = {**recycling_input_only, **recycling_updates}
+    recycling_output["aiPredictions"] = ai_predictions
+    
+    # Create/Update document in wizardworkflowoutputs collection
+    output_doc = {
+        "_id": wf["_id"],
+        "workflowId": str(wf["_id"]),
+        "userId": wf.get("userId"),
+        "metalType": wf.get("metalType"),
+        "name": wf.get("name"),
+        "status": wf.get("status", "submitted"),
+        "createdAt": wf.get("createdAt"),
+        "mining": existing_output.get("mining", {}) if existing_output else wf.get("mining", {}),
+        "beneficiation": existing_output.get("beneficiation", {}) if existing_output else wf.get("beneficiation", {}),
+        "refining": existing_output.get("refining", {}) if existing_output else wf.get("refining", {}),
+        "smelting": existing_output.get("smelting", {}) if existing_output else wf.get("smelting", {}),
+        "manufacturing": existing_output.get("manufacturing", {}) if existing_output else wf.get("manufacturing", {}),
+        "recycling": recycling_output,
+        "valorization": existing_output.get("valorization", {}) if existing_output else wf.get("valorization", {}),
+        "predictionMetadata": {
+            "generatedAt": datetime.utcnow(),
+            "lastStageProcessed": "recycling",
+            "allStages": (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) + ["recycling"] if "recycling" not in (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) else (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []),
+            "recycling": {
+                "predictedFields": predicted_fields,
+                "confidence": avg_conf,
+                "processedAt": datetime.utcnow()
+            }
+        },
+        "updatedAt": datetime.utcnow()
+    }
+
+    # Execute upsert to wizardworkflowoutputs
+    try:
         if _MONGO_DRIVER == 'motor':
-            await workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "recycling"}}})
-            await workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            await workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "recycling", "predictedFields": [f"recycling.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            await outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         elif MongoClient is not None:
-            workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "recycling"}}})
-            workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "recycling", "predictedFields": [f"recycling.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         else:
             raise HTTPException(status_code=503, detail="No MongoDB driver available")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update workflow predictions: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update workflow predictions")
+        logger.error(f"Failed to save predictions to wizardworkflowoutputs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save predictions")
 
     return {
         "success": True,
         "workflowId": workflow_id,
-        "updatedFields": [f"recycling.{f}" for f in predicted_fields],
+        "updatedFields": predicted_fields,
         "avgConfidence": round(avg_conf, 3),
         "inputUsed": feature_row,
         "timestamp": datetime.utcnow().isoformat(),
-        "metadataUpdated": True,
+        "outputCollection": "wizardworkflowoutputs",
     }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8003)
+    uvicorn.run(app, host="0.0.0.0", port=8005)

@@ -10,10 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+import asyncio
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_manufacturing")
+
+# Import continuous monitor
+try:
+    from continuous_monitor import ContinuousWorkflowMonitor, start_monitor_in_background
+    MONITOR_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Continuous monitor not available: {e}")
+    MONITOR_AVAILABLE = False
+
 
 app = FastAPI(
     title="Manufacturing LCA API",
@@ -48,6 +58,9 @@ _target_names = None
 _model_metadata = None
 _load_errors = []
 _preprocessing_metadata = None
+
+# Global monitor instance
+_workflow_monitor = None
 
 # Optional .env loader (non-fatal if missing)
 try:
@@ -230,10 +243,6 @@ async def get_mongo_db():
 
     return None
 
-@app.on_event("startup")
-async def startup_event():
-    _load_artifacts()
-
 @app.get("/")
 async def root():
     return {
@@ -285,8 +294,12 @@ async def predict(request: PredictRequest):
         raise HTTPException(status_code=500, detail="Feature/target names not loaded")
 
     data = request.data
+    
+    # Exclude prediction targets from input
+    input_data = {k: v for k, v in data.items() if k not in _target_names}
+    
     # Build model-ready feature row directly to bypass preprocessor/model pickle issues
-    filled = _build_feature_row_from_dict(data)
+    filled = _build_feature_row_from_dict(input_data)
 
     # Build DataFrame aligned with feature names
     try:
@@ -319,7 +332,13 @@ async def predict(request: PredictRequest):
     if preds.ndim == 1:
         preds = preds.reshape(1, -1)
 
-    result = {name: float(preds[0, i]) for i, name in enumerate(_target_names)}
+    result = {}
+    for i, name in enumerate(_target_names):
+        pred_value = float(preds[0, i])
+        # Handle NaN/inf values
+        if not np.isfinite(pred_value):
+            pred_value = 0.0
+        result[name] = pred_value
     
     # Add confidence intervals if requested (placeholder implementation)
     confidence = {}
@@ -334,8 +353,9 @@ async def predict(request: PredictRequest):
                     conf = None
             else:
                 conf = None
-            lower = float(preds[0, i] * 0.9)
-            upper = float(preds[0, i] * 1.1)
+            pred_value = result[name]
+            lower = float(pred_value * 0.9)
+            upper = float(pred_value * 1.1)
             confidence[name] = {"lower": lower, "upper": upper, "confidence": conf}
     
     response = {
@@ -351,6 +371,99 @@ async def predict(request: PredictRequest):
 # ------------------------------
 # Wizard + Mongo integration
 # ------------------------------
+def _unwrap_mongo_value(val):
+    """Unwrap MongoDB BSON types to Python primitives.
+    Handles $numberInt, $numberDouble, $numberLong, $oid, $date formats.
+    Returns None for null values.
+    """
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        if "$numberInt" in val:
+            try:
+                return int(val["$numberInt"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberDouble" in val:
+            try:
+                return float(val["$numberDouble"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberLong" in val:
+            try:
+                return int(val["$numberLong"])
+            except (ValueError, TypeError):
+                return None
+        if "$oid" in val:
+            return str(val["$oid"])
+        if "$date" in val:
+            if isinstance(val["$date"], dict) and "$numberLong" in val["$date"]:
+                return int(val["$date"]["$numberLong"])
+            return val["$date"]
+    return val
+
+# Startup event to initialize continuous monitoring
+@app.on_event("startup")
+async def startup_continuous_monitor():
+    """Start continuous workflow monitoring on API startup."""
+    global _workflow_monitor
+    
+    # Load model artifacts first
+    _load_artifacts()
+    
+    # Check if continuous monitoring is enabled
+    enable_monitor = os.getenv("ENABLE_CONTINUOUS_MONITOR", "true").lower() == "true"
+    if not enable_monitor:
+        logger.info("Continuous monitoring disabled via environment variable")
+        return
+    
+    if not MONITOR_AVAILABLE:
+        logger.warning("Continuous monitoring not available (module import failed)")
+        return
+    
+    # Check if feature/target names are loaded (required for predictions)
+    # Model can be None - we have fallback logic to return zeros
+    if _feature_names is None or _target_names is None:
+        logger.warning("Feature/target names not loaded, skipping continuous monitoring")
+        return
+    
+    # Log model status but proceed anyway (we have fallback for None model)
+    if _model is None:
+        logger.warning("Model not loaded - will use fallback predictions (zeros)")
+    
+    try:
+        # Get configuration from environment
+        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "30"))  # seconds
+        freshness_window = int(os.getenv("MONITOR_FRESHNESS_WINDOW", "600"))  # 10 minutes
+        
+        # Create monitor instance
+        _workflow_monitor = ContinuousWorkflowMonitor(
+            get_db_func=get_mongo_db,
+            predict_func=predict_manufacturing_and_save,
+            stage_name="manufacturing",
+            poll_interval=poll_interval,
+            freshness_window=freshness_window,
+            object_id_class=ObjectId if 'ObjectId' in globals() else None,
+            is_async_db=('_MONGO_DRIVER' in globals() and globals().get('_MONGO_DRIVER') == 'motor')
+        )
+        
+        # Start monitoring in background
+        await start_monitor_in_background(_workflow_monitor)
+        logger.info("✅ Continuous workflow monitoring started for manufacturing stage")
+        
+    except Exception as e:
+        logger.error(f"Failed to start continuous monitoring: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_continuous_monitor():
+    """Stop continuous monitoring on API shutdown."""
+    global _workflow_monitor
+    if _workflow_monitor:
+        _workflow_monitor.stop()
+        logger.info("Continuous monitoring stopped for manufacturing stage")
+
+
 def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     """Build a feature row matching _feature_names from input dict.
     - Handles one-hot location_* columns from data['location'] when present.
@@ -381,7 +494,8 @@ def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
             row[feat] = 1 if (isinstance(location_value, str) and location_value == loc_name) else 0
         else:
             if feat in data and data[feat] is not None:
-                row[feat] = data[feat]
+                unwrapped = _unwrap_mongo_value(data[feat])
+                row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
             else:
                 row[feat] = numeric_medians.get(feat, 0)
     return row
@@ -473,21 +587,8 @@ async def predict_manufacturing_and_save(workflow_id: str):
             oid = ObjectId(workflow_id)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
-        wf = None
-        coll_name = None
         wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
-        coll_name = "wizardworkflows" if wf else None
         if not wf:
-            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflows" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
             raise HTTPException(status_code=404, detail="Workflow not found")
         manu_raw = wf.get("manufacturing", {}) or {}
     except HTTPException:
@@ -508,54 +609,105 @@ async def predict_manufacturing_and_save(workflow_id: str):
         vals = [v.get("confidence") for v in pred_resp["confidence_intervals"].values() if v.get("confidence") is not None]
         if vals:
             avg_conf = float(np.mean(vals))
+            # Handle NaN/inf values
+            if not np.isfinite(avg_conf):
+                avg_conf = 0.0
 
     manu_updates: Dict[str, Any] = {}
     ai_predictions: Dict[str, Any] = {}
     for target_name, pred_value in pred_resp["predictions"].items():
-        manu_updates[target_name] = pred_value
+        # Handle NaN/inf values
+        if isinstance(pred_value, float):
+            if np.isfinite(pred_value):
+                manu_updates[target_name] = pred_value
+            else:
+                manu_updates[target_name] = None
+        else:
+            manu_updates[target_name] = pred_value
+            
         ci = pred_resp.get("confidence_intervals", {}).get(target_name)
         ai_predictions[target_name] = {
-            "prediction": pred_value,
+            "prediction": manu_updates[target_name],
             "confidence": (ci.get("confidence") if ci else None),
             "interval": ({"lower": ci.get("lower"), "upper": ci.get("upper")} if ci else None)
         }
 
-    # Build $set operations
-    set_ops: Dict[str, Any] = {}
-    for field_name, value in manu_updates.items():
-        set_ops[f"manufacturing.{field_name}"] = value
-    set_ops["manufacturing.aiPredictions"] = ai_predictions
-    set_ops["predictionMetadata.generatedAt"] = datetime.utcnow()
-    set_ops["updatedAt"] = datetime.utcnow()
-    set_ops["status"] = wf.get("status", "submitted")
-
-    # Execute updates
+    # Prepare manufacturing output: Keep only essential input fields + predictions
     try:
-        workflows = db[coll_name]
+        existing_output = await db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]})
+    except Exception as e:
+        logger.warning(f"Could not fetch existing output: {e}")
+        existing_output = None
+    
+    # Essential input fields that user provided
+    essential_input_fields = ['processes', 'transportMode', 'transportDistance', 'usePhaseSector', 'location']
+    manu_input_only = {k: manu_raw.get(k) for k in essential_input_fields}
+    
+    # Merge essential inputs + predictions
+    manu_output = {**manu_input_only, **manu_updates}
+    manu_output["aiPredictions"] = ai_predictions
+    
+    # Create/Update document in wizardworkflowoutputs collection
+    output_doc = {
+        "_id": wf["_id"],
+        "workflowId": str(wf["_id"]),
+        "userId": wf.get("userId"),
+        "metalType": wf.get("metalType"),
+        "name": wf.get("name"),
+        "status": wf.get("status", "submitted"),
+        "createdAt": wf.get("createdAt"),
+        "mining": existing_output.get("mining", {}) if existing_output else wf.get("mining", {}),
+        "beneficiation": existing_output.get("beneficiation", {}) if existing_output else wf.get("beneficiation", {}),
+        "refining": existing_output.get("refining", {}) if existing_output else wf.get("refining", {}),
+        "smelting": existing_output.get("smelting", {}) if existing_output else wf.get("smelting", {}),
+        "manufacturing": manu_output,
+        "recycling": existing_output.get("recycling", {}) if existing_output else wf.get("recycling", {}),
+        "valorization": existing_output.get("valorization", {}) if existing_output else wf.get("valorization", {}),
+        "predictionMetadata": {
+            "generatedAt": datetime.utcnow(),
+            "lastStageProcessed": "manufacturing",
+            "allStages": (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) + ["manufacturing"] if "manufacturing" not in (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) else (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []),
+            "manufacturing": {
+                "predictedFields": predicted_fields,
+                "confidence": avg_conf,
+                "processedAt": datetime.utcnow()
+            }
+        },
+        "updatedAt": datetime.utcnow()
+    }
+
+    # Execute upsert to wizardworkflowoutputs
+    try:
         if _MONGO_DRIVER == 'motor':
-            await workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "manufacturing"}}})
-            await workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            await workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "manufacturing", "predictedFields": [f"manufacturing.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            await outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         elif MongoClient is not None:
-            workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "manufacturing"}}})
-            workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "manufacturing", "predictedFields": [f"manufacturing.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         else:
             raise HTTPException(status_code=503, detail="No MongoDB driver available")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update workflow predictions: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update workflow predictions")
+        logger.error(f"Failed to save predictions to wizardworkflowoutputs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save predictions")
 
     return {
         "success": True,
         "workflowId": workflow_id,
-        "updatedFields": [f"manufacturing.{f}" for f in predicted_fields],
+        "updatedFields": predicted_fields,
         "avgConfidence": round(avg_conf, 3),
         "inputUsed": feature_row,
         "timestamp": datetime.utcnow().isoformat(),
-        "metadataUpdated": True,
+        "outputCollection": "wizardworkflowoutputs",
     }
 
 @app.post("/batch-predict")
@@ -624,4 +776,4 @@ async def batch_predict(data: List[Dict[str, Any]]):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8004)
+    uvicorn.run(app, host="0.0.0.0", port=8003)

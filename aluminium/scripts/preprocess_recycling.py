@@ -91,10 +91,10 @@ def preprocess_recycling_data(input_path: str, output_path: str, save_encoders: 
             pass
         
         # Check for any other binary columns that might be relevant
-        # Exclude known feature groups to avoid misclassifying categorical text columns as binary
+        # Exclude known feature groups to avoid misclassifying categorical/numeric metrics as binary
         exclude = set(target_cols) | set(process_cols) | set(existing_sorting_cols) | set(variant_cols) | set(additional_categorical_cols)
-        potential_binary_cols = [col for col in df.columns if (col.startswith(('recycling_', 'valorization_'))
-                    and col not in exclude)]
+        # Start with an empty list; we will add only true 0/1 columns after robust checks below
+        potential_binary_cols: List[str] = []
         
         # Identify numeric columns that are not targets (safer detection)
         from pandas.api.types import is_numeric_dtype
@@ -117,9 +117,41 @@ def preprocess_recycling_data(input_path: str, output_path: str, save_encoders: 
         logger.info(f"Found {len(potential_binary_cols)} potential binary columns")
         logger.info(f"Found {len(numeric_cols)} numeric feature columns")
 
+        # Determine true binary columns by inspecting values after coercion
+        # Start from known flag groups; we'll add additional columns only if their values are strictly {0,1}
+        binary_cols = existing_process_cols + existing_sorting_cols + existing_variant_cols
+
+        # Robust binary detection for other candidates (avoid misclassifying numeric metrics)
+        for col in df.columns:
+            if col in exclude:
+                continue
+            if col in binary_cols:
+                continue
+            # Only consider non-target columns that look categorical/binary by dtype or small unique set
+            try:
+                series = df[col].copy()
+                # Normalize common textual binary encodings
+                if series.dtype == object:
+                    series = series.astype(str).str.strip().str.lower().map({
+                        '1': 1, '0': 0, 'true': 1, 'false': 0,
+                        'yes': 1, 'no': 0, 'on': 1, 'off': 0,
+                        'enabled': 1, 'disabled': 0, 'present': 1, 'absent': 0,
+                        'y': 1, 'n': 0, 't': 1, 'f': 0
+                    })
+                series = pd.to_numeric(series, errors='coerce')
+                # Consider binary if all non-null values are subset of {0,1}
+                uniq = set(series.dropna().unique().tolist())
+                if len(uniq) > 0 and uniq.issubset({0, 1}):
+                    potential_binary_cols.append(col)
+            except Exception as ex:
+                logger.debug(f"Skipping binary detection for column {col} due to: {ex}")
+
+        # Finalize binary columns (dedupe and avoid overlaps with numeric/categorical)
+        binary_cols = list(dict.fromkeys(binary_cols + potential_binary_cols))
+        binary_cols = [c for c in binary_cols if c not in numeric_cols and c not in existing_categorical_cols]
+
         # Separate features and targets
-        feature_cols = (existing_process_cols + existing_sorting_cols + existing_variant_cols + 
-                       existing_categorical_cols + potential_binary_cols + numeric_cols)
+        feature_cols = (numeric_cols + existing_categorical_cols + binary_cols)
 
         # Ensure we don't include targets as features and preserve order & uniqueness
         feature_cols = [col for col in feature_cols if col not in target_cols and col in df.columns]
@@ -131,7 +163,6 @@ def preprocess_recycling_data(input_path: str, output_path: str, save_encoders: 
         y = df[existing_target_cols].copy()
 
         # Convert binary columns to integers robustly
-        binary_cols = existing_process_cols + existing_sorting_cols + existing_variant_cols + potential_binary_cols
         for col in binary_cols:
             if col in X.columns:
                 try:
@@ -179,9 +210,10 @@ def preprocess_recycling_data(input_path: str, output_path: str, save_encoders: 
         if binary_cols:
             transformers.append(('bin', binary_pipeline, binary_cols))
 
+        # Drop remainder to avoid accidental passthrough duplicates
         preprocessor = ColumnTransformer(
             transformers=transformers, 
-            remainder='passthrough',
+            remainder='drop',
             verbose_feature_names_out=False
         )
 
@@ -202,10 +234,7 @@ def preprocess_recycling_data(input_path: str, output_path: str, save_encoders: 
         if binary_cols:
             feature_names.extend(binary_cols)
 
-        # Handle any remainder features
-        remainder_features = [col for col in X.columns if col not in numeric_cols + 
-                             existing_categorical_cols + binary_cols]
-        feature_names.extend(remainder_features)
+        # No remainder features since remainder='drop'
 
         processed_df = pd.DataFrame(X_processed, columns=feature_names)
         

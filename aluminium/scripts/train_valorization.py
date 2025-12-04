@@ -183,7 +183,8 @@ def train_valorization_model(processed_data_path: str, model_output_path: str,
         metrics = {}
 
         for i, target in enumerate(target_names):
-            rmse = mean_squared_error(y_test[:, i], y_pred[:, i], squared=False)
+            # Compute RMSE without using the unsupported 'squared' argument for older sklearn
+            rmse = np.sqrt(mean_squared_error(y_test[:, i], y_pred[:, i]))
             mae = mean_absolute_error(y_test[:, i], y_pred[:, i])
             r2 = r2_score(y_test[:, i], y_pred[:, i])
 

@@ -1,5 +1,5 @@
 {
-    "training_date": "2025-11-11T21:55:47.934376",
+    "training_date": "2025-12-04T01:01:16.798461",
     "model_type": "GradientBoostingRegressor",
     "features": [
         "year",
@@ -92,24 +92,15 @@
         "valorization_method_SPL_Encapsulation",
         "valorization_method_Dross_Recovery",
         "valorization_method_Fluoride_Capture",
-        "recycling_sorting_method_0",
+        "recycling_sorting_method_Manual",
+        "recycling_sorting_method_Mixed",
+        "recycling_sorting_method_Optical_ML",
         "recycling_process_Collection",
         "recycling_process_Sorting",
         "recycling_process_Cleaning",
         "recycling_process_Remelting",
         "recycling_process_Re_alloying",
-        "recycling_process_Casting_New",
-        "recycling_sorting_method",
-        "recycling_approach",
-        "valorization_emission_reduction_kgCO2e_per_t_waste",
-        "valorization_economic_viability",
-        "valorization_method_Cement_Additive",
-        "valorization_method_Soil_Stabilization",
-        "valorization_method_Iron_Extraction",
-        "valorization_method_REE_Extraction",
-        "valorization_method_SPL_Encapsulation",
-        "valorization_method_Dross_Recovery",
-        "valorization_method_Fluoride_Capture"
+        "recycling_process_Casting_New"
     ],
     "targets": [
         "recycling_scrap_input_%",
@@ -130,18 +121,7 @@
             "recycling_process_Cleaning",
             "recycling_process_Remelting",
             "recycling_process_Re_alloying",
-            "recycling_process_Casting_New",
-            "recycling_sorting_method",
-            "recycling_approach",
-            "valorization_emission_reduction_kgCO2e_per_t_waste",
-            "valorization_economic_viability",
-            "valorization_method_Cement_Additive",
-            "valorization_method_Soil_Stabilization",
-            "valorization_method_Iron_Extraction",
-            "valorization_method_REE_Extraction",
-            "valorization_method_SPL_Encapsulation",
-            "valorization_method_Dross_Recovery",
-            "valorization_method_Fluoride_Capture"
+            "recycling_process_Casting_New"
         ],
         "numeric_columns": [
             "year",

@@ -10,10 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+import asyncio
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_valorization")
+
+# Import continuous monitor
+try:
+    from continuous_monitor import ContinuousWorkflowMonitor, start_monitor_in_background
+    MONITOR_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Continuous monitor not available: {e}")
+    MONITOR_AVAILABLE = False
+
 
 app = FastAPI(
     title="Valorization LCA API",
@@ -48,6 +58,9 @@ _target_names = None
 _model_metadata = None
 _load_errors = []
 _preprocessing_metadata = None
+
+# Global monitor instance
+_workflow_monitor = None
 
 # Optional .env loader (non-fatal if missing)
 try:
@@ -117,8 +130,14 @@ def _load_artifacts():
 
     # Model loading (non-fatal)
     try:
-        _model = joblib.load(MODEL_PATH)
-        logger.info("Model loaded successfully")
+        loaded = joblib.load(MODEL_PATH)
+        # Handle both bundle dict and direct model formats
+        if isinstance(loaded, dict):
+            _model = loaded.get('model')
+            logger.info("Model loaded successfully (from bundle)")
+        else:
+            _model = loaded
+            logger.info("Model loaded successfully")
     except Exception as e:
         msg = f"Failed to load model at {MODEL_PATH}: {e}"
         logger.warning(msg)
@@ -226,10 +245,6 @@ async def get_mongo_db():
 
     return None
 
-@app.on_event("startup")
-async def startup_event():
-    _load_artifacts()
-
 @app.get("/")
 async def root():
     return {
@@ -280,10 +295,31 @@ async def predict(request: PredictRequest):
         raise HTTPException(status_code=500, detail="Feature/target names not loaded")
 
     data = request.data
-    filled = _build_feature_row_from_dict(data)
+
+    # If incoming already has model-ready keys, align directly; otherwise map wizard -> model
+    try:
+        has_direct_features = any(
+            (isinstance(k, str) and (
+                k in (_feature_names or []) or
+                k.startswith('valorization_method_') or
+                k.startswith('waste_utilization_') or
+                k.startswith('toxicity_') or
+                k.startswith('groundwater_risk_')
+            ))
+            for k in data.keys()
+        )
+    except Exception:
+        has_direct_features = False
+
+    if has_direct_features:
+        filled = {feat: data.get(feat, 0) for feat in (_feature_names or [])}
+    else:
+        filled = _build_feature_row_from_dict(data)
 
     try:
         df = pd.DataFrame([filled], columns=_feature_names)
+        logger.info(f"DF columns order (valo): {list(df.columns)}")
+        logger.info(f"DF row values (valo): {df.values[0].tolist()}")
         
         # Convert data types to ensure compatibility
         for col in df.columns:
@@ -300,7 +336,17 @@ async def predict(request: PredictRequest):
 
     try:
         if _model is not None:
+            logger.info(f"Predicting (valo) with df.values shape={df.values.shape}, dtype={df.values.dtype}")
             preds = _model.predict(df.values)
+            try:
+                # Log a couple of targets if available
+                tnames = _target_names or []
+                if len(tnames) > 0:
+                    logger.info(f"Model output (valo) first target {tnames[0]}: {preds[0][0]:.3f}")
+                if len(tnames) > 1:
+                    logger.info(f"Model output (valo) second target {tnames[1]}: {preds[0][1]:.3f}")
+            except Exception:
+                pass
         else:
             preds = np.zeros((1, len(_target_names)))
     except Exception as e:
@@ -337,10 +383,210 @@ async def predict(request: PredictRequest):
         
     return response
 
+def _unwrap_mongo_value(val):
+    """Unwrap MongoDB BSON types to Python primitives.
+    Handles $numberInt, $numberDouble, $numberLong, $oid, $date formats.
+    Returns None for null values.
+    """
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        if "$numberInt" in val:
+            try:
+                return int(val["$numberInt"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberDouble" in val:
+            try:
+                return float(val["$numberDouble"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberLong" in val:
+            try:
+                return int(val["$numberLong"])
+            except (ValueError, TypeError):
+                return None
+        if "$oid" in val:
+            return str(val["$oid"])
+        if "$date" in val:
+            if isinstance(val["$date"], dict) and "$numberLong" in val["$date"]:
+                return int(val["$date"]["$numberLong"])
+            return val["$date"]
+    return val
+
+# Startup event to initialize continuous monitoring
+@app.on_event("startup")
+async def startup_continuous_monitor():
+    """Start continuous workflow monitoring on API startup."""
+    global _workflow_monitor
+    
+    # Load model artifacts first
+    _load_artifacts()
+    
+    # Check if continuous monitoring is enabled
+    enable_monitor = os.getenv("ENABLE_CONTINUOUS_MONITOR", "true").lower() == "true"
+    if not enable_monitor:
+        logger.info("Continuous monitoring disabled via environment variable")
+        return
+    
+    if not MONITOR_AVAILABLE:
+        logger.warning("Continuous monitoring not available (module import failed)")
+        return
+    
+    # Check if models are loaded (use API's own _model)
+    models_loaded = _model is not None
+    
+    if not models_loaded:
+        logger.warning("Models not loaded, skipping continuous monitoring")
+        return
+    
+    try:
+        # Get configuration from environment
+        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "30"))  # seconds
+        freshness_window = int(os.getenv("MONITOR_FRESHNESS_WINDOW", "600"))  # 10 minutes
+        
+        # Create monitor instance
+        _workflow_monitor = ContinuousWorkflowMonitor(
+            get_db_func=get_mongo_db,
+            predict_func=predict_valorization_and_save,
+            stage_name="valorization",
+            poll_interval=poll_interval,
+            freshness_window=freshness_window,
+            object_id_class=ObjectId if 'ObjectId' in globals() else None,
+            is_async_db=('_MONGO_DRIVER' in globals() and globals().get('_MONGO_DRIVER') == 'motor')
+        )
+        
+        # Start monitoring in background
+        await start_monitor_in_background(_workflow_monitor)
+        logger.info("✅ Continuous workflow monitoring started for valorization stage")
+        
+    except Exception as e:
+        logger.error(f"Failed to start continuous monitoring: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_continuous_monitor():
+    """Stop continuous monitoring on API shutdown."""
+    global _workflow_monitor
+    if _workflow_monitor:
+        _workflow_monitor.stop()
+        logger.info("Continuous monitoring stopped for valorization stage")
+
+
 def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Build a feature row matching _feature_names from input dict."""
+    """Build a feature row matching _feature_names from input dict.
+    Maps wizard valorization fields to model feature names.
+    """
     row: Dict[str, Any] = {}
-    location_value = data.get('location')
+
+    # Known feature names from metadata for guidance
+    method_keys = {
+        'cement_additive': 'valorization_method_Cement_Additive',
+        'soil_stabilization': 'valorization_method_Soil_Stabilization',
+        'iron_extraction': 'valorization_method_Iron_Extraction',
+        'rare_earth_extraction': 'valorization_method_Rare_Earth_Extraction',
+        'spl_encapsulation': 'valorization_method_SPL_Encapsulation',
+        'dross_recovery': 'valorization_method_Dross_Recovery',
+        'fluoride_capture': 'valorization_method_Fluoride_Capture',
+    }
+
+    waste_pct_keys = {
+        'red_mud': 'waste_utilization_Red_Mud_%',
+        'spl': 'waste_utilization_SPL_%',
+        'dross': 'waste_utilization_Dross_%',
+        'fluoride_gases': 'waste_utilization_Fluoride_Gases_%',
+        'slag': 'waste_utilization_Slag_%',
+    }
+
+    toxicity_keys = {
+        'red_mud': 'toxicity_Red_Mud',
+        'spl': 'toxicity_SPL',
+        'dross': 'toxicity_Dross',
+        'fluoride_gases': 'toxicity_Fluoride_Gases',
+        'slag': 'toxicity_Slag',
+    }
+
+    groundwater_risk_keys = {
+        'red_mud': 'groundwater_risk_Red_Mud',
+        'spl': 'groundwater_risk_SPL',
+        'dross': 'groundwater_risk_Dross',
+        'fluoride_gases': 'groundwater_risk_Fluoride_Gases',
+        'slag': 'groundwater_risk_Slag',
+    }
+
+    # Map wizard arrays/fields to model features
+    # Methods: wizard may send e.g. valorizationMethods: ['cement_additive', 'iron_extraction']
+    methods_raw = data.get('valorizationMethods') or data.get('methods') or []
+    if isinstance(methods_raw, str):
+        methods_raw = [methods_raw]
+    methods_set = set(str(m).lower().replace(' ', '_').replace('-', '_') for m in methods_raw if m)
+
+    # Waste utilization percentages: handle both nested object and individual fields
+    waste_utilization = data.get('wasteUtilization') or {}
+    # Also check for individual fields (redMudUtilized, splUtilized, etc.)
+    if not waste_utilization:
+        waste_utilization = {
+            'red_mud': data.get('redMudUtilized') or data.get('redMudRecovery'),
+            'spl': data.get('splUtilized') or data.get('splRecovery'),
+            'dross': data.get('drossUtilized') or data.get('drossRecovery'),
+            'fluoride_gases': data.get('fluorideUtilized') or data.get('fluorideRecovery'),
+            'slag': data.get('slagUtilized') or data.get('slagRecovery')
+        }
+    
+    # If we have an overall percentage but no breakdown, apply to all waste types proportionally
+    overall_util = data.get('wasteUtilizationOverallPercent')
+    if overall_util and not any(waste_utilization.values()):
+        # Distribute overall percentage to active waste types
+        waste_types = data.get('wasteTypes') or []
+        if isinstance(waste_types, str):
+            waste_types = [waste_types]
+        waste_types = [str(w).lower().replace(' ', '_').replace('-', '_') for w in waste_types if w]
+        
+        if waste_types:
+            per_type = overall_util / len(waste_types) if len(waste_types) > 0 else overall_util
+            for wt in waste_types:
+                waste_utilization[wt] = per_type
+
+    # Toxicity and groundwater risk: handle both nested object and individual camelCase fields
+    toxicity = data.get('toxicity') or {}
+    if not toxicity:
+        toxicity = {
+            'red_mud': data.get('toxicityRedMud'),
+            'spl': data.get('toxicitySPL'),
+            'dross': data.get('toxicityDross'),
+            'fluoride_gases': data.get('toxicityFluoride'),
+            'slag': data.get('toxicitySlag')
+        }
+    
+    groundwater_risk = data.get('groundwaterRisk') or {}
+    if not groundwater_risk:
+        groundwater_risk = {
+            'red_mud': data.get('groundwaterRedMud'),
+            'spl': data.get('groundwaterSPL'),
+            'dross': data.get('groundwaterDross'),
+            'fluoride_gases': data.get('groundwaterFluoride'),
+            'slag': data.get('groundwaterSlag')
+        }
+    
+    # Log extracted values for debugging
+    logger.info(f"Valorization inputs: methods={list(methods_set)}, waste_util={waste_utilization}, overall={overall_util}")
+
+    # Normalize ordinal values to numeric: Low=1, Moderate=2, High=3
+    def ord_map(val):
+        if val is None:
+            return 2
+        sval = str(val).strip().lower()
+        if sval in ['low', 'l']:
+            return 1
+        if sval in ['moderate', 'medium', 'm']:
+            return 2
+        if sval in ['high', 'severe', 'h']:
+            return 3
+        # fallback
+        try:
+            return int(val)
+        except Exception:
+            return 2
 
     # Prepare numeric medians if available
     numeric_medians: Dict[str, Any] = {}
@@ -357,15 +603,40 @@ def _build_feature_row_from_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         pass
 
+    # Fill the row according to expected feature names
     for feat in (_feature_names or []):
-        if isinstance(feat, str) and feat.startswith('location_'):
-            loc_name = feat.replace('location_', '')
-            row[feat] = 1 if (isinstance(location_value, str) and location_value == loc_name) else 0
+        # Methods one-hot
+        if feat in method_keys.values():
+            # reverse lookup
+            canon = [k for k, v in method_keys.items() if v == feat][0]
+            row[feat] = 1 if canon in methods_set else 0
+            continue
+        # Waste utilization percentages
+        if feat in waste_pct_keys.values():
+            key = [k for k, v in waste_pct_keys.items() if v == feat][0]
+            val = waste_utilization.get(key)
+            unwrapped = _unwrap_mongo_value(val)
+            row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
+            continue
+        # Toxicity ratings
+        if feat in toxicity_keys.values():
+            key = [k for k, v in toxicity_keys.items() if v == feat][0]
+            val = toxicity.get(key)
+            row[feat] = ord_map(val)
+            continue
+        # Groundwater risk ratings
+        if feat in groundwater_risk_keys.values():
+            key = [k for k, v in groundwater_risk_keys.items() if v == feat][0]
+            val = groundwater_risk.get(key)
+            row[feat] = ord_map(val)
+            continue
+
+        # Fallback: direct copy if present
+        if feat in data and data[feat] is not None:
+            unwrapped = _unwrap_mongo_value(data[feat])
+            row[feat] = unwrapped if unwrapped is not None else numeric_medians.get(feat, 0)
         else:
-            if feat in data and data[feat] is not None:
-                row[feat] = data[feat]
-            else:
-                row[feat] = numeric_medians.get(feat, 0)
+            row[feat] = numeric_medians.get(feat, 0)
     return row
 
 def _build_feature_row_from_valorization(valorization: Dict[str, Any]) -> Dict[str, Any]:
@@ -450,21 +721,8 @@ async def predict_valorization_and_save(workflow_id: str):
             oid = ObjectId(workflow_id)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
-        wf = None
-        coll_name = None
         wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
-        coll_name = "wizardworkflows" if wf else None
         if not wf:
-            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflows" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
             raise HTTPException(status_code=404, detail="Workflow not found")
         valorization_raw = wf.get("valorization", {}) or {}
     except HTTPException:
@@ -475,6 +733,7 @@ async def predict_valorization_and_save(workflow_id: str):
 
     # Build feature row and predict
     feature_row = _build_feature_row_from_valorization(valorization_raw)
+    logger.info(f"Built valorization feature row for workflow {workflow_id}: nonzero_count={sum(1 for v in feature_row.values() if isinstance(v,(int,float)) and v!=0)}")
     pred_resp = await predict(PredictRequest(data=feature_row, return_confidence=True))
 
     # Collect predictions
@@ -496,44 +755,78 @@ async def predict_valorization_and_save(workflow_id: str):
             "interval": ({"lower": ci.get("lower"), "upper": ci.get("upper")} if ci else None)
         }
 
-    # Build $set operations
-    set_ops: Dict[str, Any] = {}
-    for field_name, value in valorization_updates.items():
-        set_ops[f"valorization.{field_name}"] = value
-    set_ops["valorization.aiPredictions"] = ai_predictions
-    set_ops["predictionMetadata.generatedAt"] = datetime.utcnow()
-    set_ops["updatedAt"] = datetime.utcnow()
-    set_ops["status"] = wf.get("status", "submitted")
-
-    # Execute updates
+    # Prepare valorization output: merge complete input + predictions
     try:
-        workflows = db[coll_name]
+        existing_output = await db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]})
+    except:
+        existing_output = None
+    
+    valorization_output = {**valorization_raw, **valorization_updates}
+    valorization_output["aiPredictions"] = ai_predictions
+    
+    # Create/Update document in wizardworkflowoutputs collection
+    output_doc = {
+        "_id": wf["_id"],
+        "workflowId": str(wf["_id"]),
+        "userId": wf.get("userId"),
+        "metalType": wf.get("metalType"),
+        "name": wf.get("name"),
+        "status": wf.get("status", "submitted"),
+        "createdAt": wf.get("createdAt"),
+        "mining": existing_output.get("mining", {}) if existing_output else wf.get("mining", {}),
+        "beneficiation": existing_output.get("beneficiation", {}) if existing_output else wf.get("beneficiation", {}),
+        "refining": existing_output.get("refining", {}) if existing_output else wf.get("refining", {}),
+        "smelting": existing_output.get("smelting", {}) if existing_output else wf.get("smelting", {}),
+        "manufacturing": existing_output.get("manufacturing", {}) if existing_output else wf.get("manufacturing", {}),
+        "recycling": existing_output.get("recycling", {}) if existing_output else wf.get("recycling", {}),
+        "valorization": valorization_output,
+        "predictionMetadata": {
+            "generatedAt": datetime.utcnow(),
+            "lastStageProcessed": "valorization",
+            "allStages": (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) + ["valorization"] if "valorization" not in (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) else (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []),
+            "valorization": {
+                "predictedFields": predicted_fields,
+                "confidence": avg_conf,
+                "processedAt": datetime.utcnow()
+            }
+        },
+        "updatedAt": datetime.utcnow()
+    }
+
+    # Execute upsert to wizardworkflowoutputs
+    try:
         if _MONGO_DRIVER == 'motor':
-            await workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization"}}})
-            await workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            await workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization", "predictedFields": [f"valorization.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            await outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         elif MongoClient is not None:
-            workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization"}}})
-            workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "valorization", "predictedFields": [f"valorization.{f}" for f in predicted_fields], "confidence": avg_conf}}})
+            outputs = db["wizardworkflowoutputs"]
+            outputs.update_one(
+                {"_id": wf["_id"]},
+                {"$set": output_doc},
+                upsert=True
+            )
         else:
             raise HTTPException(status_code=503, detail="No MongoDB driver available")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update workflow predictions: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update workflow predictions")
+        logger.error(f"Failed to save predictions to wizardworkflowoutputs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save predictions")
 
     return {
         "success": True,
         "workflowId": workflow_id,
-        "updatedFields": [f"valorization.{f}" for f in predicted_fields],
+        "updatedFields": predicted_fields,
         "avgConfidence": round(avg_conf, 3),
         "inputUsed": feature_row,
         "timestamp": datetime.utcnow().isoformat(),
-        "metadataUpdated": True,
+        "outputCollection": "wizardworkflowoutputs",
     }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    uvicorn.run(app, host="0.0.0.0", port=8006)

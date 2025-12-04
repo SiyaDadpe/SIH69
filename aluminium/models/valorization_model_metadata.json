@@ -1,5 +1,5 @@
 {
-    "training_date": "2025-11-11T22:37:27.930742",
+    "training_date": "2025-12-04T01:01:24.168043",
     "model_type": "GradientBoostingRegressor",
     "features": [
         "waste_utilization_Red_Mud_%",

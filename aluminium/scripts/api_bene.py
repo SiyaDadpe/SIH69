@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+import asyncio
 import logging
 
 # Optional .env loader (non-fatal if missing)
@@ -33,6 +34,14 @@ except Exception:  # pragma: no cover
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Import continuous monitor
+try:
+    from continuous_monitor import ContinuousWorkflowMonitor, start_monitor_in_background
+    MONITOR_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Continuous monitor not available: {e}")
+    MONITOR_AVAILABLE = False
 
 app = FastAPI(
     title="Beneficiation Stage Prediction API",
@@ -78,8 +87,10 @@ metadata = None
 metrics = None
 preprocessing_metadata = None
 
-@app.on_event("startup")
-async def startup_event():
+# Global monitor instance
+_workflow_monitor = None
+
+def _load_artifacts():
     global preprocessor, feature_names, regressor, classifier, metadata, metrics, preprocessing_metadata
     try:
         if os.path.exists(preprocessor_path):
@@ -203,6 +214,100 @@ class PredictionResponse(BaseModel):
     input_used: Dict[str, Any]
     timestamp: str
 
+def _unwrap_mongo_value(val):
+    """Unwrap MongoDB BSON types to Python primitives.
+    Handles $numberInt, $numberDouble, $numberLong, $oid, $date formats.
+    Returns None for null values.
+    """
+    if val is None:
+        return None
+    if isinstance(val, dict):
+        if "$numberInt" in val:
+            try:
+                return int(val["$numberInt"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberDouble" in val:
+            try:
+                return float(val["$numberDouble"])
+            except (ValueError, TypeError):
+                return None
+        if "$numberLong" in val:
+            try:
+                return int(val["$numberLong"])
+            except (ValueError, TypeError):
+                return None
+        if "$oid" in val:
+            return str(val["$oid"])
+        if "$date" in val:
+            if isinstance(val["$date"], dict) and "$numberLong" in val["$date"]:
+                return int(val["$date"]["$numberLong"])
+            return val["$date"]
+    return val
+
+# Startup event to initialize continuous monitoring
+@app.on_event("startup")
+async def startup_continuous_monitor():
+    """Start continuous workflow monitoring on API startup."""
+    global _workflow_monitor
+    
+    # Load model artifacts first
+    _load_artifacts()
+    
+    # Check if continuous monitoring is enabled
+    enable_monitor = os.getenv("ENABLE_CONTINUOUS_MONITOR", "true").lower() == "true"
+    if not enable_monitor:
+        logger.info("Continuous monitoring disabled via environment variable")
+        return
+    
+    if not MONITOR_AVAILABLE:
+        logger.warning("Continuous monitoring not available (module import failed)")
+        return
+    
+    # Check if models are loaded (handle different variable names across APIs)
+    models_loaded = False
+    if 'model' in globals() and globals().get('model') is not None:
+        models_loaded = True
+    elif 'regressor' in globals() and globals().get('regressor') is not None:
+        models_loaded = True
+    
+    if not models_loaded:
+        logger.warning("Models not loaded, skipping continuous monitoring")
+        return
+    
+    try:
+        # Get configuration from environment
+        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "30"))  # seconds
+        freshness_window = int(os.getenv("MONITOR_FRESHNESS_WINDOW", "600"))  # 10 minutes
+        
+        # Create monitor instance
+        _workflow_monitor = ContinuousWorkflowMonitor(
+            get_db_func=get_mongo_db,
+            predict_func=predict_beneficiation_and_save,
+            stage_name="beneficiation",
+            poll_interval=poll_interval,
+            freshness_window=freshness_window,
+            object_id_class=ObjectId if 'ObjectId' in globals() else None,
+            is_async_db=('_MONGO_DRIVER' in globals() and globals().get('_MONGO_DRIVER') == 'motor')
+        )
+        
+        # Start monitoring in background
+        await start_monitor_in_background(_workflow_monitor)
+        logger.info("✅ Continuous workflow monitoring started for beneficiation stage")
+        
+    except Exception as e:
+        logger.error(f"Failed to start continuous monitoring: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_continuous_monitor():
+    """Stop continuous monitoring on API shutdown."""
+    global _workflow_monitor
+    if _workflow_monitor:
+        _workflow_monitor.stop()
+        logger.info("Continuous monitoring stopped for beneficiation stage")
+
+
 def _map_wizard_beneficiation_to_model_input(beneficiation: Dict[str, Any]) -> BeneficiationInput:
     if not beneficiation:
         return BeneficiationInput()
@@ -223,14 +328,14 @@ def _map_wizard_beneficiation_to_model_input(beneficiation: Dict[str, Any]) -> B
     floc = 1 if any('floc' in x.lower() for x in cset) else 0
     disp = 1 if any('disp' in x.lower() for x in cset) else 0
     coag = 1 if any('coag' in x.lower() for x in cset) else 0
-    water = beneficiation.get('waterUsage', beneficiation.get('waterConsumption'))
-    electricity = beneficiation.get('electricityConsumption', beneficiation.get('electricity'))
-    efficiency = beneficiation.get('efficiency')
-    tailings = beneficiation.get('tailingsManagement')
-    noise = beneficiation.get('noisePollution')
-    dust = beneficiation.get('dustPollution')
-    location = beneficiation.get('location')
-    year = beneficiation.get('year')
+    water = _unwrap_mongo_value(beneficiation.get('waterUsage')) or _unwrap_mongo_value(beneficiation.get('waterConsumption'))
+    electricity = _unwrap_mongo_value(beneficiation.get('electricityConsumption')) or _unwrap_mongo_value(beneficiation.get('electricity'))
+    efficiency = _unwrap_mongo_value(beneficiation.get('efficiency'))
+    tailings = _unwrap_mongo_value(beneficiation.get('tailingsManagement'))
+    noise = _unwrap_mongo_value(beneficiation.get('noisePollution'))
+    dust = _unwrap_mongo_value(beneficiation.get('dustPollution'))
+    location = _unwrap_mongo_value(beneficiation.get('location'))
+    year = _unwrap_mongo_value(beneficiation.get('year'))
     return BeneficiationInput(
         beneficiation_process_Crushing=crushing,
         beneficiation_process_Grinding=grinding,
@@ -297,37 +402,49 @@ async def get_features():
     return {"features": features_info}
 
 def _build_input_row(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Build input row - let preprocessor handle encoding, just pass raw values."""
     row: Dict[str, Any] = {}
     for feat in feature_names:
-        if feat.startswith('location_'):
-            val = feat.replace('location_', '')
-            row[feat] = 1 if input_dict.get('location') == val else 0
-        elif feat.startswith('beneficiation_tailings_management_'):
-            val = feat.replace('beneficiation_tailings_management_', '')
-            row[feat] = 1 if input_dict.get('beneficiation_tailings_management') == val else 0
-        else:
-            row[feat] = input_dict.get(feat, None)
+        # Pass raw values directly - preprocessor will handle encoding
+        row[feat] = input_dict.get(feat, None)
     return row
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(input_data: BeneficiationInput):
-    if any(v is None for v in [preprocessor, feature_names, metadata]) or (regressor is None and classifier is None):
+    if any(v is None for v in [preprocessor, metadata]) or (regressor is None and classifier is None):
         raise HTTPException(status_code=503, detail="Model artifacts not loaded")
     try:
         input_dict = input_data.dict()
-        raw_row = _build_input_row(input_dict)
-        df_input = pd.DataFrame([raw_row], columns=feature_names)
-        X_processed = preprocessor.transform(df_input)
-        predictions: Dict[str, TargetPrediction] = {}
+        
+        # Remove prediction targets from input - they should not be features
         reg_targets = metadata.get('regression_targets', [])
+        clf_targets = metadata.get('classification_targets', [])
+        all_targets = reg_targets + clf_targets
+        
+        # Build DataFrame with only input features (exclude prediction targets)
+        input_features = {k: v for k, v in input_dict.items() if k not in all_targets}
+        df_input = pd.DataFrame([input_features])
+        
+        # Preprocess
+        X_processed = preprocessor.transform(df_input)
+        
+        predictions: Dict[str, TargetPrediction] = {}
         if reg_targets and regressor is not None and hasattr(regressor, 'predict'):
             y_reg = regressor.predict(X_processed)
             for i, target in enumerate(reg_targets):
                 pred_value = float(y_reg[0, i])
+                # Handle NaN/inf values
+                if not np.isfinite(pred_value):
+                    pred_value = 0.0
                 lower = pred_value * 0.9
                 upper = pred_value * 1.1
-                predictions[target] = TargetPrediction(prediction=round(pred_value,4), confidence=None, rmse=None, mae=None, interval=IntervalEstimate(lower=round(lower,4), upper=round(upper,4)))
-        clf_targets = metadata.get('classification_targets', [])
+                predictions[target] = TargetPrediction(
+                    prediction=round(pred_value, 4), 
+                    confidence=None, 
+                    rmse=None, 
+                    mae=None, 
+                    interval=IntervalEstimate(lower=round(lower, 4), upper=round(upper, 4))
+                )
         if clf_targets and classifier is not None and hasattr(classifier, 'predict'):
             y_clf = classifier.predict(X_processed)
             for i, target in enumerate(clf_targets):
@@ -335,8 +452,9 @@ async def predict(input_data: BeneficiationInput):
                 predictions[target] = TargetPrediction(prediction=str(val), confidence=None, rmse=None, mae=None, interval=None)
         return PredictionResponse(predictions=predictions, input_used=input_dict, timestamp=datetime.utcnow().isoformat())
     except Exception as e:
-        logger.error(f"Beneficiation prediction error: {e}")
-        raise HTTPException(status_code=500, detail="Prediction failed")
+        error_msg = str(e) if str(e) else repr(e)
+        logger.error(f"Beneficiation prediction error: {error_msg}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {error_msg}")
 
 @app.get("/wizard/{workflow_id}/beneficiation")
 async def get_wizard_beneficiation(workflow_id: str):
@@ -400,97 +518,177 @@ async def list_wizard_ids(limit: int = 10):
 
 @app.post("/wizard/{workflow_id}/beneficiation/predict-and-save")
 async def predict_beneficiation_and_save(workflow_id: str):
-    db = await get_mongo_db()
-    if db is None or ObjectId is None:
-        raise HTTPException(status_code=503, detail="Database not configured; cannot read or update workflow")
-    # Fetch workflow
+    """
+    Read beneficiation data from wizardworkflows (input), run prediction,
+    and CREATE/UPDATE document in wizardworkflowoutputs (output) mapped by _id.
+    """
     try:
+        db = await get_mongo_db()
+        if db is None or ObjectId is None:
+            raise HTTPException(status_code=503, detail="Database not configured")
+        
+        # Step 1: Fetch workflow from wizardworkflows
         try:
             oid = ObjectId(workflow_id)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid workflow_id format; expected 24 hex chars")
-        wf = None
-        coll_name = None
-        wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
-        coll_name = "wizardworkflows" if wf else None
-        if not wf:
-            wf = await db["wizardworkflows"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflows" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            wf = await db["wizardworkflowoutputs"].find_one({"workflowId": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"workflowId": oid})
-            coll_name = "wizardworkflowoutputs" if wf else None
-        if not wf:
-            logger.info(f"Workflow not found for id={workflow_id} in wizardworkflows or wizardworkflowoutputs")
-            raise HTTPException(status_code=404, detail="Workflow not found")
-        bene_raw = wf.get("beneficiation", {}) or {}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error reading workflow: {e}")
-        raise HTTPException(status_code=500, detail="Error reading workflow")
-    # Default enrichment
-    enrichment_defaults = {
-        "tailingsManagement": bene_raw.get("tailingsManagement"),
-        "noisePollution": bene_raw.get("noisePollution"),
-        "dustPollution": bene_raw.get("dustPollution"),
-        "year": bene_raw.get("year", datetime.utcnow().year),
-        "waterUsage": bene_raw.get("waterUsage", bene_raw.get("waterConsumption")),
-        "electricityConsumption": bene_raw.get("electricityConsumption", bene_raw.get("electricity")),
-    }
-    for k,v in enrichment_defaults.items():
-        if k not in bene_raw:
-            bene_raw[k] = v
-    input_model = _map_wizard_beneficiation_to_model_input(bene_raw)
-    # Predict using /predict logic
-    pred_resp = await predict(input_model)
-    predicted_fields = list(pred_resp.predictions.keys())
-    avg_conf = float(np.mean([p.confidence for p in pred_resp.predictions.values() if p.confidence is not None])) if predicted_fields else 0.0
-    bene_updates: Dict[str, Any] = {}
-    ai_predictions: Dict[str, Any] = {}
-    for target_name, meta in pred_resp.predictions.items():
-        bene_updates[target_name] = meta.prediction
-        ai_predictions[target_name] = {
-            "prediction": meta.prediction,
-            "confidence": meta.confidence,
-            "interval": meta.interval.model_dump() if meta.interval else None
+            wf = await db["wizardworkflows"].find_one({"_id": oid}) if _MONGO_DRIVER == 'motor' else db["wizardworkflows"].find_one({"_id": oid})
+            if not wf:
+                raise HTTPException(status_code=404, detail="Workflow not found")
+            bene_raw = wf.get("beneficiation", {}) or {}
+            
+            # Log what we received
+            logger.info(f"Processing beneficiation for workflow {workflow_id}")
+            logger.info(f"Input beneficiation data: {bene_raw}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error reading workflow: {e}")
+            raise HTTPException(status_code=500, detail="Error reading workflow")
+        
+        # Step 2: Backfill missing model input fields
+        enrichment_defaults = {
+            "tailingsManagement": None,
+            "noisePollution": None,
+            "dustPollution": None,
+            "year": datetime.utcnow().year,
+            "waterUsage": None,
+            "electricityConsumption": None,
         }
-    set_ops: Dict[str, Any] = {}
-    for field_name, value in bene_updates.items():
-        set_ops[f"beneficiation.{field_name}"] = value
-    set_ops["beneficiation.aiPredictions"] = ai_predictions
-    set_ops["predictionMetadata.generatedAt"] = datetime.utcnow()
-    set_ops["updatedAt"] = datetime.utcnow()
-    set_ops["status"] = wf.get("status", "submitted")
-    try:
-        workflows = db[coll_name]
-        if _MONGO_DRIVER == 'motor':
-            await workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "beneficiation"}}})
-            await workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            await workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "beneficiation", "predictedFields": [f"beneficiation.{f}" for f in predicted_fields], "confidence": avg_conf}}})
-        elif MongoClient is not None:
-            workflows.update_one({"_id": wf["_id"]}, {"$pull": {"predictionMetadata.stepsWithPredictions": {"stepName": "beneficiation"}}})
-            workflows.update_one({"_id": wf["_id"]}, {"$set": set_ops})
-            workflows.update_one({"_id": wf["_id"]}, {"$push": {"predictionMetadata.stepsWithPredictions": {"stepName": "beneficiation", "predictedFields": [f"beneficiation.{f}" for f in predicted_fields], "confidence": avg_conf}}})
-        else:
-            raise HTTPException(status_code=503, detail="No MongoDB driver available")
+        for k, v in enrichment_defaults.items():
+            if k not in bene_raw:
+                bene_raw[k] = v
+        
+        # Step 3: Map to model input schema
+        input_model = _map_wizard_beneficiation_to_model_input(bene_raw)
+        
+        # Step 4: Run prediction
+        try:
+            pred_resp = await predict(input_model)
+        except Exception as e:
+            logger.error(f"Prediction failed for workflow {workflow_id}: {e}")
+            logger.error(f"Input model: {input_model.dict() if hasattr(input_model, 'dict') else input_model}")
+            raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+        
+        # Step 5: Compute aggregate confidence
+        predicted_fields = list(pred_resp.predictions.keys())
+        confidences = [p.confidence for p in pred_resp.predictions.values() if p.confidence is not None]
+        avg_conf = float(np.mean(confidences)) if confidences else 0.0
+        # Handle NaN/inf values
+        if not np.isfinite(avg_conf):
+            avg_conf = 0.0
+        
+        # Step 6: Prepare beneficiation output with predictions
+        bene_output = {}
+        for target_name, meta in pred_resp.predictions.items():
+            # Keep the prediction as-is (can be float or string)
+            pred_val = meta.prediction
+            if isinstance(pred_val, float):
+                # Handle NaN/inf values
+                if np.isfinite(pred_val):
+                    bene_output[target_name] = float(pred_val)
+                else:
+                    bene_output[target_name] = None
+            else:
+                bene_output[target_name] = str(pred_val)
+        
+        # Add aiPredictions structure (use dict() for Pydantic v1 compatibility)
+        bene_output["aiPredictions"] = {
+            k: v.dict() if hasattr(v, 'dict') else v.model_dump() 
+            for k, v in pred_resp.predictions.items()
+        }
+        
+        # Step 7: Create/Update document in wizardworkflowoutputs collection
+        # Check if output document already exists to preserve other stage data
+        try:
+            existing_output = await db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]}) if _MONGO_DRIVER == 'motor' else db["wizardworkflowoutputs"].find_one({"_id": wf["_id"]})
+        except Exception as e:
+            logger.warning(f"Could not fetch existing output: {e}")
+            existing_output = None
+        
+        # Prepare beneficiation data: Keep only essential input fields + predictions
+        # Essential input fields that user provided
+        essential_input_fields = ['processes', 'location', 'waterConsumption', 'electricityUse']
+        bene_input_only = {k: bene_raw.get(k) for k in essential_input_fields}
+        
+        # Merge essential inputs + predictions
+        merged_bene = {**bene_input_only, **bene_output}
+        
+        # If merged_bene is still empty after predictions, something went wrong
+        if not merged_bene or len(merged_bene) == 0:
+            logger.error(f"merged_bene is empty! bene_raw: {bene_raw}, bene_output: {bene_output}")
+            # At minimum, add the predictions even if input is empty
+            merged_bene = bene_output if bene_output else {}
+        
+        logger.info(f"Final merged beneficiation data has {len(merged_bene)} fields: {list(merged_bene.keys())[:10]}...")
+        
+        # Build output document - preserve existing stage data if available
+        output_doc = {
+            "_id": wf["_id"],
+            "workflowId": str(wf["_id"]),
+            "userId": wf.get("userId"),
+            "metalType": wf.get("metalType"),
+            "name": wf.get("name"),
+            "status": wf.get("status", "submitted"),
+            "createdAt": wf.get("createdAt"),
+            "mining": existing_output.get("mining", {}) if existing_output else wf.get("mining", {}),
+            "beneficiation": merged_bene,
+            "refining": existing_output.get("refining", {}) if existing_output else wf.get("refining", {}),
+            "smelting": existing_output.get("smelting", {}) if existing_output else wf.get("smelting", {}),
+            "manufacturing": existing_output.get("manufacturing", {}) if existing_output else wf.get("manufacturing", {}),
+            "recycling": existing_output.get("recycling", {}) if existing_output else wf.get("recycling", {}),
+            "valorization": existing_output.get("valorization", {}) if existing_output else wf.get("valorization", {}),
+            "predictionMetadata": {
+                "generatedAt": datetime.utcnow(),
+                "lastStageProcessed": "beneficiation",
+                "allStages": (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) + ["beneficiation"] if "beneficiation" not in (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []) else (existing_output.get("predictionMetadata", {}).get("allStages", []) if existing_output else []),
+                "beneficiation": {
+                    "predictedFields": predicted_fields,
+                    "confidence": avg_conf,
+                    "processedAt": datetime.utcnow()
+                }
+            },
+            "updatedAt": datetime.utcnow()
+        }
+        
+        try:
+            if _MONGO_DRIVER == 'motor':
+                outputs = db["wizardworkflowoutputs"]
+                await outputs.update_one(
+                    {"_id": wf["_id"]},
+                    {"$set": output_doc},
+                    upsert=True
+                )
+            elif MongoClient is not None:
+                outputs = db["wizardworkflowoutputs"]
+                outputs.update_one(
+                    {"_id": wf["_id"]},
+                    {"$set": output_doc},
+                    upsert=True
+                )
+            else:
+                raise HTTPException(status_code=503, detail="No MongoDB driver available")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to save predictions to wizardworkflowoutputs: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save predictions")
+        
+        return {
+            "success": True,
+            "workflowId": workflow_id,
+            "updatedFields": predicted_fields,
+            "avgConfidence": round(avg_conf, 3),
+            "inputUsed": input_model.dict(),
+            "timestamp": pred_resp.timestamp,
+            "outputCollection": "wizardworkflowoutputs",
+        }
+    
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update workflow predictions: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update workflow predictions")
-    return {
-        "success": True,
-        "workflowId": workflow_id,
-        "updatedFields": [f"beneficiation.{f}" for f in predicted_fields],
-        "avgConfidence": round(avg_conf,3),
-        "inputUsed": input_model.dict(),
-        "timestamp": pred_resp.timestamp,
-        "metadataUpdated": True,
-    }
+        error_msg = str(e) if str(e) else repr(e)
+        logger.error(f"Unexpected error in predict_beneficiation_and_save for workflow {workflow_id}: {error_msg}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {error_msg}")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

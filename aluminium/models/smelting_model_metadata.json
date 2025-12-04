@@ -1,5 +1,5 @@
 {
-    "training_date": "2025-11-11T22:18:36.836985",
+    "training_date": "2025-12-03T19:10:41.617715",
     "model_type": "GradientBoostingRegressor",
     "feature_names": [
         "year",
