@@ -22,9 +22,13 @@ export const generateStepPrediction = async (workflowId, stepName, userData) => 
       userData
     );
     
-    console.log(`✅ [AI Prediction] Received predictions for ${stepName}`);
-    console.log(`📊 [AI Prediction] Predicted ${response.data.data.predictionMetadata.predictedCount} fields`);
-    console.log(`🎯 [AI Prediction] Confidence: ${response.data.data.predictionMetadata.confidence}`);
+    console.log(`✅ [AI Prediction] Received response for ${stepName}:`, response.data);
+    
+    // Check response format and log appropriately
+    if (response.data.data?.predictionMetadata) {
+      console.log(`📊 [AI Prediction] Predicted ${response.data.data.predictionMetadata.predictedCount} fields`);
+      console.log(`🎯 [AI Prediction] Confidence: ${response.data.data.predictionMetadata.confidence}`);
+    }
     
     return response.data;
   } catch (error) {
@@ -180,9 +184,57 @@ export const fetchWorkflowPredictions = async (workflowId) => {
   }
 };
 
+/**
+ * Poll for predictions with retry logic
+ * @param {string} workflowId - The workflow ID
+ * @param {number} maxAttempts - Maximum number of polling attempts (default: 15)
+ * @param {number} interval - Interval between polls in milliseconds (default: 2000ms)
+ * @param {function} onProgress - Callback for progress updates (attempt, maxAttempts)
+ * @returns {Promise} Response with predictions or null if timeout
+ */
+export const pollForPredictions = async (workflowId, maxAttempts = 15, interval = 2000, onProgress = null) => {
+  console.log(`🔄 [AI Prediction] Starting to poll for predictions (max ${maxAttempts} attempts, ${interval}ms interval)`);
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`🔍 [AI Prediction] Poll attempt ${attempt}/${maxAttempts}`);
+      
+      // Notify progress
+      if (onProgress) {
+        onProgress(attempt, maxAttempts);
+      }
+      
+      const response = await fetchWorkflowPredictions(workflowId);
+      
+      if (response.success && response.data?.hasPredictions) {
+        console.log(`✅ [AI Prediction] Predictions found on attempt ${attempt}!`);
+        return response;
+      }
+      
+      console.log(`⏳ [AI Prediction] No predictions yet, waiting ${interval}ms before retry...`);
+      
+      // Wait before next poll (unless it's the last attempt)
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    } catch (error) {
+      console.error(`❌ [AI Prediction] Error during poll attempt ${attempt}:`, error);
+      
+      // Continue polling even if there's an error (might be temporary)
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    }
+  }
+  
+  console.log(`⏱️ [AI Prediction] Polling timeout after ${maxAttempts} attempts`);
+  return null; // Timeout - no predictions found
+};
+
 export default {
   generateStepPrediction,
   getPredictionInfo,
   validateRequiredFields,
-  fetchWorkflowPredictions
+  fetchWorkflowPredictions,
+  pollForPredictions
 };

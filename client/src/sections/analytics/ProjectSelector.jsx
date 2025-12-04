@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { getUserLCAReports } from '../../services/lcaService';
 
 export default function ProjectSelector({ onSelect, projects = [] }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -6,6 +7,7 @@ export default function ProjectSelector({ onSelect, projects = [] }) {
     const [hoveredProject, setHoveredProject] = useState(null);
     const [selectedProjects, setSelectedProjects] = useState([]);
     const [isCompareMode, setIsCompareMode] = useState(false);
+    const [loadingLatest, setLoadingLatest] = useState(false);
 
     // Filter projects based on search term
     const filteredProjects = useMemo(() => {
@@ -64,6 +66,25 @@ export default function ProjectSelector({ onSelect, projects = [] }) {
     const toggleCompareMode = () => {
         setIsCompareMode(!isCompareMode);
         setSelectedProjects([]);
+    };
+
+    const handleViewLatestReport = async () => {
+        setLoadingLatest(true);
+        try {
+            const response = await getUserLCAReports({ limit: 1, page: 1 });
+            if (response.success && response.data.reports.length > 0) {
+                const latestReport = response.data.reports[0];
+                // Navigate to analytics with reportId
+                window.location.href = `/analytics?reportId=${latestReport._id}`;
+            } else {
+                alert('No LCA reports found. Complete a wizard workflow to generate a report.');
+            }
+        } catch (error) {
+            console.error('Failed to fetch latest report:', error);
+            alert('Failed to load latest report: ' + error.message);
+        } finally {
+            setLoadingLatest(false);
+        }
     };
 
     return (
@@ -209,6 +230,30 @@ export default function ProjectSelector({ onSelect, projects = [] }) {
                         </>
                     )}
                 </div>
+
+                {/* View Latest Report Button */}
+                <button
+                    onClick={handleViewLatestReport}
+                    disabled={loadingLatest}
+                    className="px-4 py-3 rounded-lg font-medium transition-colors bg-linear-to-r from-[#BA7967] to-[#a86b5c] text-white hover:from-[#a86b5c] hover:to-[#967359] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                >
+                    {loadingLatest ? (
+                        <>
+                            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Loading...
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            View Latest Report
+                        </>
+                    )}
+                </button>
 
                 {/* Compare Button */}
                 <button

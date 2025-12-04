@@ -21,8 +21,10 @@ import {
   generateStepPrediction,
   validateRequiredFields,
   getPredictionInfo,
-  fetchWorkflowPredictions
+  fetchWorkflowPredictions,
+  pollForPredictions
 } from "@/services/aiPredictionService";
+import { calculateLCA } from "@/services/lcaService";
 // Removed other data imports to avoid pre-filling from dataset
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import LCASuccessModal from "@/components/LCASuccessModal";
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -293,6 +296,7 @@ function StepSection({
   children,
   onPredict,
   predicting,
+  pollingProgress = { current: 0, max: 15 },
   footer,
 }) {
   return (
@@ -329,7 +333,9 @@ function StepSection({
                   <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
                     🤖
                   </span>
-                  {predicting ? "Predicting..." : "Generate AI Predictions"}
+                  {predicting 
+                    ? `Polling... (${pollingProgress.current}/${pollingProgress.max})` 
+                    : "Generate AI Predictions"}
                 </Button>
               </motion.div>
             )}
@@ -346,10 +352,16 @@ function StepSection({
   )
 }
 
-function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true }) {
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false }) {
   const handleForwardClick = () => {
     if (typeof onForward === 'function') {
       onForward()
+    }
+  }
+
+  const handleLcaClick = () => {
+    if (typeof onLcaCalculate === 'function') {
+      onLcaCalculate()
     }
   }
 
@@ -375,10 +387,20 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
           >
             <Button
               type="button"
-              className="relative overflow-hidden bg-linear-to-r from-[#ef5350] to-[#ff8a65] text-white shadow-md transition-all duration-200 hover:from-[#e53935] hover:to-[#ff7043]"
+              onClick={handleLcaClick}
+              disabled={isCalculatingLca || !onLcaCalculate}
+              className="relative overflow-hidden bg-linear-to-r from-[#ef5350] to-[#ff8a65] text-white shadow-md transition-all duration-200 hover:from-[#e53935] hover:to-[#ff7043] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200 hover:opacity-100" />
-              <span className="relative">Calculate LCA Score</span>
+              <span className="relative flex items-center gap-2">
+                {isCalculatingLca && (
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {isCalculatingLca ? 'Calculating...' : 'Calculate LCA Score'}
+              </span>
             </Button>
           </motion.div>
         )}
@@ -412,6 +434,57 @@ const miningProcesses = [
   { id: "others", label: "Others" },
 ];
 
+/**
+ * Utility function to process AI prediction data from backend
+ * Handles both formats:
+ * 1. New prediction generation: data.combinedData with data.predictionMetadata
+ * 2. Fetched predictions: stepData.aiPredictions with nested prediction objects
+ */
+const processAIPredictions = (predictionsData, stepName) => {
+  const newPredictions = {};
+  
+  if (!predictionsData?.data) {
+    return newPredictions;
+  }
+  
+  // Case 1: New prediction generation response
+  if (predictionsData.data.combinedData && predictionsData.data.predictionMetadata) {
+    const stepData = predictionsData.data.combinedData;
+    const metadata = predictionsData.data.predictionMetadata;
+    
+    if (metadata.predictedFields && Array.isArray(metadata.predictedFields)) {
+      metadata.predictedFields.forEach(field => {
+        if (stepData[field] !== undefined) {
+          newPredictions[field] = {
+            value: stepData[field],
+            confidence: metadata.confidence || null
+          };
+        }
+      });
+    }
+  }
+  // Case 2: Fetched predictions with aiPredictions nested structure
+  else if (predictionsData.data[stepName]?.aiPredictions) {
+    const aiPreds = predictionsData.data[stepName].aiPredictions;
+    
+    Object.keys(aiPreds).forEach(fieldName => {
+      const predData = aiPreds[fieldName];
+      if (predData && predData.prediction !== undefined) {
+        newPredictions[fieldName] = {
+          value: predData.prediction,
+          confidence: predData.confidence,
+          interval: predData.interval,
+          rmse: predData.rmse,
+          mae: predData.mae
+        };
+      }
+    });
+  }
+  
+  console.log(`🤖 [${stepName}] Processed predictions:`, newPredictions);
+  return newPredictions;
+};
+
 const locations = [...new Set(miningData.map((d) => d.location))];
 const equipmentTypes = ["Diesel", "Electric", "Hybrid"];
 const biodiversityImpacts = [
@@ -420,29 +493,64 @@ const biodiversityImpacts = [
   { id: "high", label: "High – Large-scale forest clearing, high ecological loss" },
 ];
 
+// Helper to handle empty string inputs for required number fields
+const requiredNumber = (min = 0, max, message = 'Required') => {
+  // Handle case where max is actually a message string
+  let actualMax = max;
+  let actualMessage = message;
+  
+  if (typeof max === 'string') {
+    actualMessage = max;
+    actualMax = undefined;
+  }
+  
+  // Build the number schema with min/max constraints before wrapping in preprocess
+  let numberSchema = z.coerce.number().min(min, { message: actualMessage });
+  
+  if (actualMax !== undefined && typeof actualMax === 'number') {
+    numberSchema = numberSchema.max(actualMax, { message: `Must be between ${min}-${actualMax}` });
+  }
+  
+  // Wrap the complete schema in preprocess
+  return z.preprocess(
+    (val) => (val === '' || val === null || val === undefined) ? undefined : val,
+    numberSchema
+  );
+};
+
 const formSchema = z.object({
   applicableProcesses: z.array(z.string()).min(1, {
     message: "You have to select at least one process.",
-  }),
-  others: z.string().optional(),
-  location: z.string({ required_error: "Location is required." }),
+  }).optional().or(z.array(z.string()).default([])),
+  others: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
   // Year is optional for Step 1 as per requirements
-  year: z.coerce.number().min(1900).max(new Date().getFullYear()).optional(),
-  oreGrade: z.coerce.number().min(0).max(100),
-  overburdenRatio: z.coerce.number().optional(),
-  typeOfEquipment: z.enum(equipmentTypes.map(t => t.toLowerCase())).optional(),
-  waterUsage: z.coerce.number().optional(),
-  biodiversityImpact: z.string().optional(),
-  redMudGeneration: z.coerce.number().optional(),
+  year: z.coerce.number().min(1900).max(new Date().getFullYear()).nullable().optional(),
+  oreGrade: requiredNumber(0, 100).nullable().optional(),
+  overburdenRatio: z.coerce.number().nullable().optional(),
+  typeOfEquipment: z.enum(equipmentTypes.map(t => t.toLowerCase())).nullable().optional(),
+  waterUsage: z.coerce.number().nullable().optional(),
+  biodiversityImpact: z.string().nullable().optional(),
+  redMudGeneration: z.coerce.number().nullable().optional(),
   // AI Predicted fields
-  mining_energy_MJ_per_t_ore: z.coerce.number().optional(),
-  mining_co2_kg_per_t_ore: z.coerce.number().optional(),
-  mining_sox_kg_per_t_ore: z.coerce.number().optional(),
-  mining_nox_kg_per_t_ore: z.coerce.number().optional(),
-  mining_pm_kg_per_t_ore: z.coerce.number().optional(),
+  mining_energy_MJ_per_t_ore: z.coerce.number().nullable().optional(),
+  mining_co2_kg_per_t_ore: z.coerce.number().nullable().optional(),
+  mining_sox_kg_per_t_ore: z.coerce.number().nullable().optional(),
+  mining_nox_kg_per_t_ore: z.coerce.number().nullable().optional(),
+  mining_pm_kg_per_t_ore: z.coerce.number().nullable().optional(),
+  // Sustainability Parameters
+  followingSustainableRules: z.boolean().nullable().optional(),
+  sustainabilityParameters: z.object({
+    renewable_energy_percent: z.coerce.number().nullable().optional(),
+    water_recycling_rate: z.coerce.number().nullable().optional(),
+    biodiversity_offset_area_ha: z.coerce.number().nullable().optional(),
+    rehabilitation_progress_percent: z.coerce.number().nullable().optional(),
+    community_development_investment: z.coerce.number().nullable().optional(),
+    carbon_offset_tonnes: z.coerce.number().nullable().optional(),
+  }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -452,7 +560,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
     defaultValues: initialValues || {
       applicableProcesses: [],
     },
-    mode: "onChange",
+    mode: "onTouched",
   });
 
   const {
@@ -461,6 +569,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
     watch,
     setValue,
     reset,
+    trigger,
     formState: { isValid, errors },
   } = form;
 
@@ -475,10 +584,13 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         keepDirtyValues: false, // Allow AI predictions to override user inputs for predicted fields
       });
       
+      // Trigger validation to enable Next/Calculate buttons
+      trigger();
+      
       console.log('🔄 [Mining Form] Form values after reset:', form.getValues());
       console.log('✅ [Mining Form] Form synced with AI predictions');
     }
-  }, [initialValues, reset, form]);
+  }, [initialValues, reset, trigger, form]);
 
 
 
@@ -550,48 +662,30 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
   const applicableProcesses = watch("applicableProcesses");
 
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
-    }
-  };
-
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
     const newAccepted = new Set(acceptedPredictions);
     if (accepted) {
       newAccepted.add(fieldName);
       // Apply the prediction to the form
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       // Reset field to empty or original value
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -631,6 +725,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         description="Enter the details of the mining process. Fields marked with * are required."
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -992,6 +1087,136 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
             </div>
             
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.water_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.biodiversity_offset_area_ha"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Biodiversity Offset Area (ha)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Hectares" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.rehabilitation_progress_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rehabilitation Progress (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.community_development_investment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Community Development Investment</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Amount" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.carbon_offset_tonnes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carbon Offset (tonnes)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Tonnes CO₂" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* AI Predictions Review Section */}
             <AIPredictionReview
               predictions={predictions}
@@ -1007,7 +1232,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1044,29 +1269,63 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     { id: "High", label: "High" },
   ]
 
+  // Helper to handle empty string inputs for required number fields
+  const requiredNumber = (min = 0, max, message = 'Required') => {
+    // Handle case where max is actually a message string
+    let actualMax = max;
+    let actualMessage = message;
+    
+    if (typeof max === 'string') {
+      actualMessage = max;
+      actualMax = undefined;
+    }
+    
+    // Build the number schema with min/max constraints before wrapping in preprocess
+    let numberSchema = z.coerce.number().min(min, { message: actualMessage });
+    
+    if (actualMax !== undefined && typeof actualMax === 'number') {
+      numberSchema = numberSchema.max(actualMax, { message: `Must be between ${min}-${actualMax}` });
+    }
+    
+    // Wrap the complete schema in preprocess
+    return z.preprocess(
+      (val) => (val === '' || val === null || val === undefined) ? undefined : val,
+      numberSchema
+    );
+  };
+
   const schema = z.object({
     processes: z.array(z.string()).min(1, {
       message: "You have to select at least one process.",
-    }),
-    processOthers: z.string().optional(),
-    location: z.string({ required_error: "Location is required" }),
-    oreFeedRate: z.coerce.number().min(0, { message: "Must be >= 0" }),
-    waterConsumption: z.coerce.number().min(0).optional(),
-    electricityUse: z.coerce.number().min(0).optional(),
-    beneficiationEfficiency: z.coerce.number().min(0).max(100).optional(),
-    crushingStage: z.string().optional(),
+    }).optional().or(z.array(z.string()).default([])),
+    processOthers: z.string().nullable().optional(),
+    location: z.string().nullable().optional(),
+    oreFeedRate: requiredNumber(0, undefined, "Must be >= 0").nullable().optional(),
+    waterConsumption: z.coerce.number().min(0).nullable().optional(),
+    electricityUse: z.coerce.number().min(0).nullable().optional(),
+    beneficiationEfficiency: requiredNumber(0, 100).nullable().optional(),
+    crushingStage: z.string().nullable().optional(),
     chemicalAgents: z.array(z.string()).default([]),
-    chemicalOthers: z.string().optional(),
-    tailings: z.string().optional(),
-    tailingsOthers: z.string().optional(),
-    noiseLevel: z.string().optional(),
-    dustLevel: z.string().optional(),
+    chemicalOthers: z.string().nullable().optional(),
+    tailings: z.string().nullable().optional(),
+    tailingsOthers: z.string().nullable().optional(),
+    noiseLevel: z.string().nullable().optional(),
+    dustLevel: z.string().nullable().optional(),
     // AI Predicted fields
-    beneficiation_water_m3_per_t_ore: z.coerce.number().optional(),
-    beneficiation_electricity_kWh_per_t_ore: z.coerce.number().optional(),
-    beneficiation_tailings_management: z.string().optional(),
-    beneficiation_noise_pollution: z.string().optional(),
-    beneficiation_dust_pollution: z.string().optional(),
+    beneficiation_water_m3_per_t_ore: z.coerce.number().nullable().optional(),
+    beneficiation_electricity_kWh_per_t_ore: z.coerce.number().nullable().optional(),
+    beneficiation_tailings_management: z.string().nullable().optional(),
+    beneficiation_noise_pollution: z.string().nullable().optional(),
+    beneficiation_dust_pollution: z.string().nullable().optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      water_recycling_rate: z.coerce.number().nullable().optional(),
+      energy_from_renewables_percent: z.coerce.number().nullable().optional(),
+      tailings_dry_stacking: z.boolean().nullable().optional(),
+      chemical_recovery_rate: z.coerce.number().nullable().optional(),
+      dust_emission_control_efficiency: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
   })
 
   const form = useForm({
@@ -1075,10 +1334,10 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
       processes: [],
       crushingStage: '',
     },
-    mode: "onChange",
+    mode: "onTouched",
   })
 
-  const { control, handleSubmit, watch, reset, setValue, formState: { isValid, errors } } = form
+  const { control, handleSubmit, watch, reset, setValue, trigger, formState: { isValid, errors } } = form
   
   // Sync form with updated initialValues (e.g., when AI predictions are received)
   useEffect(() => {
@@ -1091,30 +1350,17 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         keepDirtyValues: false, // Allow AI predictions to override user inputs for predicted fields
       });
       
+      // Trigger validation to enable Next/Calculate buttons
+      trigger();
+      
       console.log('🔄 [Beneficiation Form] Form values after reset:', form.getValues());
       console.log('✅ [Beneficiation Form] Form synced with AI predictions');
     }
-  }, [initialValues, reset, form]);
+  }, [initialValues, reset, trigger, form]);
 
   const selectedProcesses = watch("processes")
   const selectedTailings = watch("tailings")
   const selectedChemicals = watch("chemicalAgents")
-
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
-    }
-  };
 
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
@@ -1122,26 +1368,24 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
     if (accepted) {
       newAccepted.add(fieldName);
       // Apply the prediction to the form
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       // Reset field to empty or original value
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
-  // Modified AI prediction handler
+  // Modified AI prediction handler - just call parent's handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -1207,6 +1451,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         description="Provide beneficiation process details. Fields marked with * are required."
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -1605,6 +1850,124 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
 
             </div>
             
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.water_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.energy_from_renewables_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Energy from Renewables (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.tailings_dry_stacking"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Tailings Dry Stacking</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.chemical_recovery_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chemical Recovery Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.dust_emission_control_efficiency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dust Emission Control Efficiency (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* AI Predictions Review Section */}
             <AIPredictionReview
               predictions={predictions}
@@ -1625,8 +1988,14 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [completed, setCompleted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [predicting, setPredicting] = useState(false)
+  const [pollingProgress, setPollingProgress] = useState({ current: 0, max: 15 }) // Track polling attempts
   const [predictionError, setPredictionError] = useState(null)
   const [predictionSuccess, setPredictionSuccess] = useState(null)
+  
+  // LCA Success Modal state
+  const [showLCAModal, setShowLCAModal] = useState(false)
+  const [lcaReportData, setLcaReportData] = useState(null)
+  const [isCalculatingLca, setIsCalculatingLca] = useState(false)
   
   // AI Prediction state management
   const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
@@ -1653,10 +2022,44 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       // Fetch AI predictions from WizardWorkflowOutput
       fetchWorkflowPredictions(workflowId).then(response => {
         if (response.success && response.data?.hasPredictions) {
-          console.log('🤖 [Wizard] Loaded AI predictions:', response.data.predictions);
+          console.log('🤖 [Wizard] Loaded workflow data:', response.data.predictions);
           console.log('📊 [Wizard] Prediction metadata:', response.data.predictionMetadata);
-          setAiPredictions(response.data.predictions);
-          setPredictionMetadata(response.data.predictionMetadata || {});
+          
+          // Extract aiPredictions from each step
+          const extractedPredictions = {};
+          const extractedMetadata = {};
+          
+          Object.keys(response.data.predictions).forEach(stepName => {
+            const stepData = response.data.predictions[stepName];
+            if (stepData && stepData.aiPredictions) {
+              extractedPredictions[stepName] = {};
+              
+              // Extract each prediction with its metadata
+              Object.keys(stepData.aiPredictions).forEach(fieldName => {
+                const predData = stepData.aiPredictions[fieldName];
+                if (predData && predData.prediction !== undefined) {
+                  extractedPredictions[stepName][fieldName] = predData.prediction;
+                  
+                  // Store confidence and interval for display
+                  if (!extractedMetadata[stepName]) {
+                    extractedMetadata[stepName] = {};
+                  }
+                  extractedMetadata[stepName][fieldName] = {
+                    confidence: predData.confidence,
+                    interval: predData.interval,
+                    rmse: predData.rmse,
+                    mae: predData.mae
+                  };
+                }
+              });
+            }
+          });
+          
+          console.log('✅ [Wizard] Extracted predictions:', extractedPredictions);
+          console.log('📈 [Wizard] Extracted metadata:', extractedMetadata);
+          
+          setAiPredictions(extractedPredictions);
+          setPredictionMetadata(extractedMetadata);
         }
       }).catch(error => {
         console.error('❌ [Wizard] Error loading predictions:', error);
@@ -1878,6 +2281,60 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     }
   }
 
+  // Handle LCA Calculation
+  const handleCalculateLCA = async () => {
+    if (!workflowId) {
+      alert('No workflow found. Please save your progress first.');
+      return;
+    }
+
+    setIsCalculatingLca(true);
+    
+    try {
+      console.log('📊 [LCA] Starting LCA calculation...');
+      console.log('📊 [LCA] Workflow ID:', workflowId);
+      console.log('📊 [LCA] Current form values:', formValues);
+      
+      // Prepare LCA data with current wizard state
+      const lcaData = {
+        workflowId: workflowId,
+        projectName: workflowData?.projectName || 'Aluminum LCA Project',
+        location: workflowData?.location || 'Unknown',
+        wizardData: formValues // Send current form values
+      };
+      
+      console.log('📊 [LCA] Sending data:', lcaData);
+      const lcaResponse = await calculateLCA(lcaData);
+      console.log('📊 [LCA] Response received:', lcaResponse);
+      
+      if (lcaResponse.success) {
+        console.log('✅ [LCA] Calculation successful!', lcaResponse.data);
+        
+        // Extract report data for modal
+        const reportData = {
+          reportId: lcaResponse.data.reportId,
+          projectName: lcaData.projectName,
+          pdfUrl: lcaResponse.data.pdfUrl,
+          summary: lcaResponse.data.summary || {}
+        };
+        
+        setLcaReportData(reportData);
+        setShowLCAModal(true);
+      } else {
+        console.error('❌ [LCA] Response was not successful:', lcaResponse);
+        alert(lcaResponse.message || 'LCA calculation failed');
+      }
+    } catch (error) {
+      console.error('❌ [LCA] Calculation failed:', error);
+      console.error('❌ [LCA] Error details:', error.response?.data || error.message);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to calculate LCA';
+      alert(`LCA Calculation Error: ${errorMessage}`);
+    } finally {
+      setIsCalculatingLca(false);
+    }
+  };
+
   // Map frontend field names to backend field names
   const mapFormDataToBackendFields = (stepName, formData) => {
     const mappings = {
@@ -1955,7 +2412,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     return mappedData;
   };
 
-  // Handle AI Prediction with enhanced mapping
+  // Handle AI Prediction with polling for WizardWorkflowOutput
   const handleGenerateAIPrediction = async (stepName, currentFormData) => {
     console.log('🤖 [AI Prediction] Button clicked for step:', stepName);
     console.log('🤖 [AI Prediction] Current form data (frontend):', currentFormData);
@@ -1972,8 +2429,6 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     // Map frontend field names to backend field names
     const mappedData = mapFormDataToBackendFields(stepName, currentFormData);
     console.log('🔄 [AI Prediction] Mapped data (backend format):', mappedData);
-    console.log('🔄 [AI Prediction] Mapped keys:', Object.keys(mappedData).join(', '));
-    console.log('🔄 [AI Prediction] Mapped values:', Object.entries(mappedData).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', '));
 
     // Validate required fields with mapped data
     const validation = validateRequiredFields(stepName, mappedData);
@@ -1987,111 +2442,119 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     setPredicting(true);
 
     try {
-      // Call AI prediction API with mapped data
-      const response = await generateStepPrediction(workflowId, stepName, mappedData);
-
-      if (response.success && response.data) {
-        console.log('✅ [AI Prediction] Predictions received:', response.data);
-        console.log('📊 [AI Prediction] Metadata:', response.data.predictionMetadata);
-        console.log('🔍 [AI Prediction] Full response structure:', JSON.stringify(response, null, 2));
-
-        // Enhanced mapping approach - merge predictions with current data
-        const { combinedData, predictionMetadata } = response.data;
-        console.log('🔍 [AI Prediction] Extracted combinedData:', combinedData);
-        console.log('🔍 [AI Prediction] Extracted predictionMetadata:', predictionMetadata);
-        const info = getPredictionInfo(stepName);
-        const predictableFields = info?.predictableFields || [];
-
-        // Create merged data starting with current form data
-        const mergedData = { ...currentFormData };
+      // Step 1: Trigger backend to save user data
+      console.log('🚀 [AI Prediction] Saving user data and triggering ML model...');
+      const triggerResponse = await generateStepPrediction(workflowId, stepName, mappedData);
+      
+      if (triggerResponse.status === 'processing') {
+        console.log('⏳ [AI Prediction] User data saved. ML model processing in background. Starting to poll...');
         
-        // Track successful predictions
-        const updatedFields = [];
-
-        // Map backend predictions to frontend fields and merge
-        predictableFields.forEach(backendField => {
-          if (combinedData && combinedData.hasOwnProperty(backendField)) {
-            const value = combinedData[backendField];
-            
-            if (value !== undefined && value !== null) {
-              // For most fields, backend and frontend names are the same
-              mergedData[backendField] = value;
-              updatedFields.push({ field: backendField, value });
-              console.log(`✅ [AI Prediction] Mapped ${backendField} = ${value}`);
-            } else {
-              console.log(`⚠️ [AI Prediction] Skipping ${backendField} - value is ${value}`);
-            }
-          } else {
-            console.log(`⚠️ [AI Prediction] Field ${backendField} not found in response data`);
+        // Reset and set polling progress
+        setPollingProgress({ current: 0, max: 15 });
+        
+        // Step 2: Poll WizardWorkflowOutput every 2 seconds (max 15 attempts = 30 seconds)
+        const pollResponse = await pollForPredictions(
+          workflowId,
+          15,  // maxAttempts
+          2000,  // interval (2 seconds)
+          (attempt, maxAttempts) => {
+            console.log(`🔄 [Polling] Attempt ${attempt}/${maxAttempts} - Checking WizardWorkflowOutput...`);
+            setPollingProgress({ current: attempt, max: maxAttempts });
           }
-        });
+        );
         
-        console.log('🔄 [AI Prediction] Final merged data:', mergedData);
-        console.log('🔄 [AI Prediction] Updated fields:', updatedFields);
-
-        // Update form values with merged data (including predictions)
-        console.log('🔄 [AI Prediction] Current formValues before update:', formValues[stepName]);
-        console.log('🔄 [AI Prediction] About to set merged data:', mergedData);
+        // Reset polling progress after completion
+        setPollingProgress({ current: 0, max: 15 });
         
-        setFormValues((prev) => {
-          const newFormValues = {
-            ...prev,
-            [stepName]: mergedData
+        // Step 3: Handle polling results
+        if (!pollResponse || !pollResponse.success || !pollResponse.data?.hasPredictions) {
+          // Timeout or no predictions found
+          console.warn('⚠️ [AI Prediction] Polling timed out - predictions not ready yet');
+          setPredictionError('Predictions are still being generated by ML model. Please wait a moment and try again.');
+          setTimeout(() => setPredictionError(null), 8000);
+          return {
+            success: false,
+            error: 'Polling timeout'
           };
-          console.log('🔄 [AI Prediction] New formValues after update:', newFormValues[stepName]);
-          return newFormValues;
-        });
+        }
         
-        // Also store predictions separately for the accept/reject UI
-        // Only store the fields that were predicted (not user-entered)
-        const stepPredictions = {};
-        updatedFields.forEach(({ field, value }) => {
-          if (!currentFormData.hasOwnProperty(field) || currentFormData[field] === undefined) {
-            stepPredictions[field] = value;
+        // Step 4: Extract predictions from nested structure
+        console.log('✅ [AI Prediction] Predictions found in WizardWorkflowOutput:', pollResponse.data);
+        
+        const stepPredictions = pollResponse.data.predictions?.[stepName];
+        if (!stepPredictions?.aiPredictions) {
+          throw new Error(`No aiPredictions found for step: ${stepName}`);
+        }
+        
+        // Extract prediction values from nested aiPredictions structure
+        const processedPredictions = {};
+        Object.entries(stepPredictions.aiPredictions).forEach(([fieldName, predData]) => {
+          if (predData && typeof predData === 'object' && 'prediction' in predData) {
+            processedPredictions[fieldName] = predData.prediction;
+            console.log(`✅ [AI Prediction] Extracted ${fieldName} = ${predData.prediction}`);
           }
         });
         
-        if (Object.keys(stepPredictions).length > 0) {
-          console.log('🤖 [AI Prediction] Storing predictions for accept/reject UI:', stepPredictions);
+        if (Object.keys(processedPredictions).length === 0) {
+          throw new Error('No valid predictions found in aiPredictions');
+        }
+        
+        // Step 5: Merge predictions with current form data
+        const mergedData = { ...currentFormData, ...processedPredictions };
+        console.log('🔄 [AI Prediction] Merged data with predictions:', mergedData);
+        
+        // Update form values
+        setFormValues((prev) => ({
+          ...prev,
+          [stepName]: mergedData
+        }));
+        
+        // Store predictions for accept/reject UI (only newly predicted fields)
+        const newPredictions = {};
+        Object.entries(processedPredictions).forEach(([fieldName, value]) => {
+          if (!currentFormData.hasOwnProperty(fieldName) || currentFormData[fieldName] === undefined || currentFormData[fieldName] === null) {
+            newPredictions[fieldName] = value;
+          }
+        });
+        
+        if (Object.keys(newPredictions).length > 0) {
+          console.log('🤖 [AI Prediction] Storing predictions for accept/reject UI:', newPredictions);
           setAiPredictions(prev => ({
             ...prev,
-            [stepName]: stepPredictions
+            [stepName]: newPredictions
           }));
           
-          // Store metadata as well
-          if (predictionMetadata) {
+          // Store metadata if available
+          const stepMetadata = pollResponse.data.predictionMetadata?.[stepName];
+          if (stepMetadata) {
             setPredictionMetadata(prev => ({
               ...prev,
-              [stepName]: predictionMetadata
+              [stepName]: stepMetadata
             }));
           }
         }
-
-        // Show enhanced success message
-        const predictedCount = predictionMetadata?.predictedCount || updatedFields.length;
-        const confidence = predictionMetadata?.confidence 
-          ? (predictionMetadata.confidence * 100).toFixed(1)
+        
+        // Show success message
+        const predictedCount = Object.keys(processedPredictions).length;
+        const confidence = pollResponse.data.predictionMetadata?.[stepName]?.confidence 
+          ? (pollResponse.data.predictionMetadata[stepName].confidence * 100).toFixed(1)
           : 'N/A';
         
         setPredictionSuccess(
-          `🎉 Successfully updated ${predictedCount} fields with AI predictions (Confidence: ${confidence}%)`
+          `🎉 Successfully loaded ${predictedCount} AI predictions from ML model (Confidence: ${confidence}%)`
         );
-
-        console.log(`📊 [AI Prediction] Successfully updated ${updatedFields.length} fields`);
-        console.log('✅ [AI Prediction] Form values updated with predictions');
-
-        // Clear success message after 5 seconds
+        
+        console.log(`📊 [AI Prediction] Successfully processed ${predictedCount} predictions`);
         setTimeout(() => setPredictionSuccess(null), 5000);
-
-        // Return success info for caller
+        
         return {
           success: true,
-          updatedCount: updatedFields.length,
-          updatedFields,
-          confidence: predictionMetadata?.confidence
+          updatedCount: predictedCount,
+          confidence: pollResponse.data.predictionMetadata?.[stepName]?.confidence
         };
+        
       } else {
-        throw new Error('Invalid response format from AI prediction service');
+        throw new Error('Unexpected response from backend. Expected status: "processing"');
       }
     } catch (error) {
       console.error('❌ [AI Prediction] Error:', error);
@@ -2118,6 +2581,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.mining}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('mining', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             onOpenWorkflow={onOpenWorkflow}
             predictions={getStepPredictions('mining')}
             acceptedPredictions={acceptedPredictions['mining'] || new Set()}
@@ -2134,6 +2598,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.beneficiation}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('beneficiation', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             onOpenWorkflow={onOpenWorkflow}
             predictions={getStepPredictions('beneficiation')}
             acceptedPredictions={acceptedPredictions['beneficiation'] || new Set()}
@@ -2150,10 +2615,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.refining}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('refining', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             predictions={getStepPredictions('refining')}
             acceptedPredictions={acceptedPredictions['refining'] || new Set()}
             onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('refining', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['refining'] || new Set()}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       case 'smelting':
@@ -2165,10 +2633,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.smelting}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('smelting', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             predictions={getStepPredictions('smelting')}
             acceptedPredictions={acceptedPredictions['smelting'] || new Set()}
             onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('smelting', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['smelting'] || new Set()}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       case 'manufacturing':
@@ -2180,10 +2651,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.manufacturing}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('manufacturing', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             predictions={getStepPredictions('manufacturing')}
             acceptedPredictions={acceptedPredictions['manufacturing'] || new Set()}
             onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('manufacturing', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['manufacturing'] || new Set()}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       case 'recycling':
@@ -2195,10 +2669,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.recycling}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('recycling', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             predictions={getStepPredictions('recycling')}
             acceptedPredictions={acceptedPredictions['recycling'] || new Set()}
             onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('recycling', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['recycling'] || new Set()}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       case 'valorization':
@@ -2210,27 +2687,17 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             initialValues={formValues.valorization}
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('valorization', data)}
             predicting={predicting}
+            pollingProgress={pollingProgress}
             predictions={getStepPredictions('valorization')}
             acceptedPredictions={acceptedPredictions['valorization'] || new Set()}
             onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('valorization', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['valorization'] || new Set()}
-            onSubmitSuccess={async () => {
+            onSubmitSuccess={() => {
               setCompleted(true)
-              // Auto-submit workflow after Step 7 completion
-              if (workflowId && onWorkflowSubmitted) {
-                try {
-                  console.log('🚀 Auto-submitting workflow...')
-                  const response = await submitWizardWorkflow(workflowId)
-                  if (response.success) {
-                    console.log('✅ Workflow submitted successfully')
-                    onWorkflowSubmitted(response.data)
-                  }
-                } catch (error) {
-                  console.error('❌ Failed to auto-submit workflow:', error)
-                }
-              }
             }}
             workflowId={workflowId}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       default:
@@ -2324,12 +2791,19 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           </div>
         </div>
       )}
+      
+      {/* LCA Success Modal */}
+      <LCASuccessModal
+        isOpen={showLCAModal}
+        onClose={() => setShowLCAModal(false)}
+        reportData={lcaReportData || {}}
+      />
     </WizardContainer>
   )
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2358,21 +2832,37 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     { id: 'Others', label: 'Others' },
   ]
 
+  // Helper to handle empty string inputs for required number fields
+  const requiredNumber = (min = 0, message = 'Required') => 
+    z.preprocess(
+      (val) => (val === '' || val === null || val === undefined) ? undefined : val,
+      z.coerce.number().min(min, { message })
+    );
+
   const schema = z.object({
     processes: z.array(z.string()).default([]),
-    processOthers: z.string().optional(),
+    processOthers: z.string().nullable().optional(),
     variants: z.array(z.string()).default([]),
-    variantOthers: z.string().optional(),
-    energyUse: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    waterUse: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    redMudGen: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    causticSoda: z.coerce.number().min(0).optional(),
-    limeAdditives: z.coerce.number().min(0).optional(),
-    so2: z.coerce.number().min(0).optional(),
-    nox: z.coerce.number().min(0).optional(),
-    dust: z.coerce.number().min(0).optional(),
-    toxicity: z.string().optional(),
-    toxicityOthers: z.string().optional(),
+    variantOthers: z.string().nullable().optional(),
+    energyUse: requiredNumber(0, 'Required and must be >= 0').nullable().optional(),
+    waterUse: requiredNumber(0, 'Required and must be >= 0').nullable().optional(),
+    redMudGen: requiredNumber(0, 'Required and must be >= 0').nullable().optional(),
+    causticSoda: z.coerce.number().min(0).nullable().optional(),
+    limeAdditives: z.coerce.number().min(0).nullable().optional(),
+    so2: z.coerce.number().min(0).nullable().optional(),
+    nox: z.coerce.number().min(0).nullable().optional(),
+    dust: z.coerce.number().min(0).nullable().optional(),
+    toxicity: z.string().nullable().optional(),
+    toxicityOthers: z.string().nullable().optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      renewable_energy_percent: z.coerce.number().nullable().optional(),
+      water_recycling_rate: z.coerce.number().nullable().optional(),
+      caustic_recovery_rate: z.coerce.number().nullable().optional(),
+      red_mud_utilization_percent: z.coerce.number().nullable().optional(),
+      emission_control_efficiency: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
   })
 
   const form = useForm({
@@ -2381,54 +2871,43 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       processes: [],
       variants: [],
     },
-    mode: 'onChange',
+    mode: 'onTouched',
   })
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form
+  const { control, handleSubmit, watch, formState: { isValid }, trigger } = form
   const selectedProcesses = watch('processes')
   const selectedVariants = watch('variants')
   const toxicity = watch('toxicity')
 
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
+  // Trigger validation when component mounts with existing data
+  React.useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      trigger();
     }
-  };
+  }, []);
 
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
     const newAccepted = new Set(acceptedPredictions);
     if (accepted) {
       newAccepted.add(fieldName);
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -2442,6 +2921,8 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
+      onLcaCalculate={onCalculateLCA}
+      isCalculatingLca={isCalculatingLca}
     />
   )
 
@@ -2454,6 +2935,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
         description="Fill in refining processes, variants, resource consumption, and emissions. Fields marked with * are required."
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
         <Form {...form}>
@@ -2757,6 +3239,122 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
               )} />
             )}
             
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.water_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.caustic_recovery_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Caustic Recovery Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.red_mud_utilization_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Red Mud Utilization (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.emission_control_efficiency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emission Control Efficiency (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* AI Predictions Review Section */}
             <AIPredictionReview
               predictions={predictions}
@@ -2772,7 +3370,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2800,19 +3398,36 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     { id: 'Inert Anode', label: 'Inert Anode' },
   ]
 
+  // Helper to handle empty string inputs for required number fields
+  const requiredNumber = (min = 0, message = 'Required') => 
+    z.preprocess(
+      (val) => (val === '' || val === null || val === undefined) ? undefined : val,
+      z.coerce.number().min(min, { message })
+    );
+
   const schema = z.object({
     processes: z.array(z.string()).default([]),
-    processOthers: z.string().optional(),
+    processOthers: z.string().nullable().optional(),
     variants: z.array(z.string()).default([]),
-    variantOthers: z.string().optional(),
-    electricityDemand: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    co2Emissions: z.coerce.number().min(0, { message: 'Required and must be >= 0' }),
-    cellTechnology: z.enum(["Pre-baked", "Soderberg", "Inert Anode"], { required_error: 'Select a cell technology' }),
-    pfcEmissions: z.coerce.number().min(0).optional(),
-    so2: z.coerce.number().min(0).optional(),
-    nox: z.coerce.number().min(0).optional(),
-    fluorideRecovery: z.coerce.number().min(0).max(100).optional(),
-    thermalRecovery: z.coerce.number().min(0).max(100).optional(),
+    variantOthers: z.string().nullable().optional(),
+    electricityDemand: requiredNumber(0, 'Required and must be >= 0').nullable().optional(),
+    co2Emissions: requiredNumber(0, 'Required and must be >= 0').nullable().optional(),
+    cellTechnology: z.enum(["Pre-baked", "Soderberg", "Inert Anode"]).nullable().optional(),
+    pfcEmissions: z.coerce.number().min(0).nullable().optional(),
+    so2: z.coerce.number().min(0).nullable().optional(),
+    nox: z.coerce.number().min(0).nullable().optional(),
+    fluorideRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    thermalRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      renewable_energy_percent: z.coerce.number().nullable().optional(),
+      inert_anode_technology: z.boolean().nullable().optional(),
+      pfc_capture_rate: z.coerce.number().nullable().optional(),
+      thermal_energy_recovery_percent: z.coerce.number().nullable().optional(),
+      fluoride_recycling_rate: z.coerce.number().nullable().optional(),
+      carbon_capture_rate: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
   })
 
   const form = useForm({
@@ -2821,53 +3436,42 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       processes: [],
       variants: [],
     },
-    mode: 'onChange',
+    mode: 'onTouched',
   })
 
-  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid }, trigger } = form
   const selectedProcesses = watch('processes')
   const selectedVariants = watch('variants')
 
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
+  // Trigger validation when component mounts with existing data
+  React.useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      trigger();
     }
-  };
+  }, []);
 
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
     const newAccepted = new Set(acceptedPredictions);
     if (accepted) {
       newAccepted.add(fieldName);
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -2881,6 +3485,8 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
+      onLcaCalculate={onCalculateLCA}
+      isCalculatingLca={isCalculatingLca}
     />
   )
 
@@ -2893,6 +3499,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
         description="Select processes, variants, and enter required energy and emissions data. Fields marked with * are required."
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
         <Form {...form}>
@@ -3169,6 +3776,138 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
               </div>
             </div>
             
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.inert_anode_technology"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Inert Anode Technology</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.pfc_capture_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>PFC Capture Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.thermal_energy_recovery_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Thermal Energy Recovery (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.fluoride_recycling_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fluoride Recycling Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.carbon_capture_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carbon Capture Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* AI Predictions Review Section */}
             <AIPredictionReview
               predictions={predictions}
@@ -3184,7 +3923,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3222,22 +3961,57 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     { id: 'others', label: 'Others' },
   ]
 
+  // Helper to handle empty string inputs for required number fields
+  const requiredNumber = (min = 0, max, message = 'Required') => {
+    // Handle case where max is actually a message string
+    let actualMax = max;
+    let actualMessage = message;
+    
+    if (typeof max === 'string') {
+      actualMessage = max;
+      actualMax = undefined;
+    }
+    
+    // Build the number schema with min/max constraints before wrapping in preprocess
+    let numberSchema = z.coerce.number().min(min, { message: actualMessage });
+    
+    if (actualMax !== undefined && typeof actualMax === 'number') {
+      numberSchema = numberSchema.max(actualMax, { message: `Must be between ${min}-${actualMax}` });
+    }
+    
+    // Wrap the complete schema in preprocess
+    return z.preprocess(
+      (val) => (val === '' || val === null || val === undefined) ? undefined : val,
+      numberSchema
+    );
+  };
+
   const schema = z.object({
-    processes: z.array(z.string()).min(1, { message: 'Select at least one manufacturing process' }),
-    processOthers: z.string().optional(),
+    processes: z.array(z.string()).min(1, { message: 'Select at least one manufacturing process' }).optional().or(z.array(z.string()).default([])),
+    processOthers: z.string().nullable().optional(),
     castingProcesses: z.array(z.string()).default([]),
-    scrapRate: z.coerce.number().min(0).max(100, { message: 'Scrap rate must be between 0-100%' }),
-    recycledContent: z.coerce.number().min(0).max(100).optional(),
-    energyUsePerStep: z.coerce.number().min(0).optional(),
-    fabricationEmissions: z.coerce.number().min(0).optional(),
-    transportDistance: z.coerce.number().min(0, { message: 'Transport distance is required and must be >= 0' }),
-    transportMode: z.enum(['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']).optional(),
-    transportModeOthers: z.string().optional(),
-    transportEmissionsPerTkm: z.coerce.number().min(0).optional(),
+    scrapRate: requiredNumber(0, 100, 'Scrap rate must be between 0-100%').nullable().optional(),
+    recycledContent: z.coerce.number().min(0).max(100).nullable().optional(),
+    energyUsePerStep: z.coerce.number().min(0).nullable().optional(),
+    fabricationEmissions: z.coerce.number().min(0).nullable().optional(),
+    transportDistance: requiredNumber(0, undefined, 'Transport distance is required and must be >= 0').nullable().optional(),
+    transportMode: z.enum(['Road', 'Rail', 'Sea', 'Air', 'Mixed', 'Others']).nullable().optional(),
+    transportModeOthers: z.string().nullable().optional(),
+    transportEmissionsPerTkm: z.coerce.number().min(0).nullable().optional(),
     lightweightingSectors: z.array(z.string()).default([]),
-    lightweightingOthers: z.string().optional(),
-    corrosionImpact: z.enum(['minimal', 'moderate', 'severe', 'others']).optional(),
-    corrosionOthers: z.string().optional(),
+    lightweightingOthers: z.string().nullable().optional(),
+    corrosionImpact: z.enum(['minimal', 'moderate', 'severe', 'others']).nullable().optional(),
+    corrosionOthers: z.string().nullable().optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      renewable_energy_percent: z.coerce.number().nullable().optional(),
+      recycled_content_percent: z.coerce.number().nullable().optional(),
+      scrap_recovery_rate: z.coerce.number().nullable().optional(),
+      low_carbon_transport_percent: z.coerce.number().nullable().optional(),
+      design_for_recyclability: z.boolean().nullable().optional(),
+      product_lifetime_years: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
   }).superRefine((val, ctx) => {
     // Casting sub-selection is required only if Casting is selected
     if (val.processes?.includes('casting') && (!val.castingProcesses || val.castingProcesses.length === 0)) {
@@ -3270,54 +4044,43 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       scrapRate: 0,
       transportDistance: 0
     },
-    mode: 'onChange',
+    mode: 'onTouched',
   })
 
-  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid }, trigger } = form
   const selectedProcesses = watch('processes')
   const selectedSectors = watch('lightweightingSectors')
   const transportMode = watch('transportMode')
 
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
+  // Trigger validation when component mounts with existing data
+  React.useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      trigger();
     }
-  };
+  }, []);
 
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
     const newAccepted = new Set(acceptedPredictions);
     if (accepted) {
       newAccepted.add(fieldName);
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -3328,6 +4091,8 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
+      onLcaCalculate={onCalculateLCA}
+      isCalculatingLca={isCalculatingLca}
     />
   )
 
@@ -3340,6 +4105,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
         description="Select processes, then fill in required logistics and casting details as applicable."
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
         <Form {...form}>
@@ -3644,6 +4410,138 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
               )} />
             )}
             
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.renewable_energy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Renewable Energy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.recycled_content_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Recycled Content (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.scrap_recovery_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Scrap Recovery Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.low_carbon_transport_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Low Carbon Transport (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.design_for_recyclability"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Design for Recyclability</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.product_lifetime_years"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Product Lifetime (years)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="Years" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* AI Predictions Review Section */}
             <AIPredictionReview
               predictions={predictions}
@@ -3659,7 +4557,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3694,20 +4592,29 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 
   const schema = z.object({
     processes: z.array(z.string()).default([]),
-    processOthers: z.string().optional(),
+    processOthers: z.string().nullable().optional(),
     variants: z.array(z.string()).default([]),
-    variantOthers: z.string().optional(),
-    scrapInputPercent: z.coerce.number().min(0).max(100, { message: '0 - 100 required' }),
-    collectionRatePercent: z.coerce.number().min(0).max(100, { message: '0 - 100 required' }),
-    recyclingMethod: z.enum(['closed-loop', 'open-loop', 'mixed'], { required_error: 'Select a primary recycling method' }),
-    recoveryYieldPercent: z.coerce.number().min(0).max(100).optional(),
-    recyclingEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
-    closedLoopPercent: z.coerce.number().min(0).max(100).optional(),
-    openLoopPercent: z.coerce.number().min(0).max(100).optional(),
-    furnaceEnergyDemand: z.coerce.number().min(0).optional(),
-    emissionSavings: z.coerce.number().min(0).optional(),
+    variantOthers: z.string().nullable().optional(),
+    scrapInputPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    collectionRatePercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    recyclingMethod: z.enum(['closed-loop', 'open-loop', 'mixed']).nullable().optional(),
+    recoveryYieldPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    recyclingEfficiencyPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    closedLoopPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    openLoopPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    furnaceEnergyDemand: z.coerce.number().min(0).nullable().optional(),
+    emissionSavings: z.coerce.number().min(0).nullable().optional(),
     sortingMethods: z.array(z.string()).default([]),
-    sortingOthers: z.string().optional(),
+    sortingOthers: z.string().nullable().optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      collection_efficiency_percent: z.coerce.number().nullable().optional(),
+      sorting_accuracy_percent: z.coerce.number().nullable().optional(),
+      energy_from_renewables_percent: z.coerce.number().nullable().optional(),
+      closed_loop_target_percent: z.coerce.number().nullable().optional(),
+      contamination_rate_percent: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
   }).superRefine((val, ctx) => {
     if (val.processes?.includes('others') && !val.processOthers?.trim()) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please specify other process', path: ['processOthers'] })
@@ -3723,54 +4630,43 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || { processes: [], variants: [], sortingMethods: [] },
-    mode: 'onChange',
+    mode: 'onTouched',
   })
 
-  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid }, trigger } = form
   const selectedProcesses = watch('processes')
   const selectedVariants = watch('variants')
   const selectedSorting = watch('sortingMethods')
 
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
+  // Trigger validation when component mounts with existing data
+  React.useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      trigger();
     }
-  };
+  }, []);
 
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
     const newAccepted = new Set(acceptedPredictions);
     if (accepted) {
       newAccepted.add(fieldName);
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -3781,6 +4677,8 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
+      onLcaCalculate={onCalculateLCA}
+      isCalculatingLca={isCalculatingLca}
     />
   )
 
@@ -3793,6 +4691,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
         description="Define processes, variants, and core metrics for recycling."
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
         <Form {...form}>
@@ -4161,6 +5060,122 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
               )} />
             )}
             
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.collection_efficiency_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Collection Efficiency (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.sorting_accuracy_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sorting Accuracy (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.energy_from_renewables_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Energy from Renewables (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.closed_loop_target_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Closed Loop Target (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.contamination_rate_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contamination Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* AI Predictions Review Section */}
             <AIPredictionReview
               predictions={predictions}
@@ -4176,7 +5191,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set() }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4205,44 +5220,53 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
 
   const schema = z.object({
     wasteTypes: z.array(z.string()).min(1, { message: 'Select at least one waste type' }),
-    wasteTypeOthers: z.string().optional(),
+    wasteTypeOthers: z.string().nullable().optional(),
     valorizationMethods: z.array(z.string()).min(1, { message: 'Select at least one valorization method' }),
-    methodsOthers: z.string().optional(),
+    methodsOthers: z.string().nullable().optional(),
 
-    wasteUtilizationOverallPercent: z.coerce.number().min(0).max(100, { message: '0 - 100 required' }),
-    emissionReductionsPerTonne: z.coerce.number().min(0).optional(),
+    wasteUtilizationOverallPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    emissionReductionsPerTonne: z.coerce.number().min(0).nullable().optional(),
 
-    redMudUtilized: z.coerce.number().min(0).max(100).optional(),
-    splUtilized: z.coerce.number().min(0).max(100).optional(),
-    drossUtilized: z.coerce.number().min(0).max(100).optional(),
-    fluorideUtilized: z.coerce.number().min(0).max(100).optional(),
-    slagUtilized: z.coerce.number().min(0).max(100).optional(),
+    redMudUtilized: z.coerce.number().min(0).max(100).nullable().optional(),
+    splUtilized: z.coerce.number().min(0).max(100).nullable().optional(),
+    drossUtilized: z.coerce.number().min(0).max(100).nullable().optional(),
+    fluorideUtilized: z.coerce.number().min(0).max(100).nullable().optional(),
+    slagUtilized: z.coerce.number().min(0).max(100).nullable().optional(),
 
-    redMudRecovery: z.coerce.number().min(0).max(100).optional(),
-    splRecovery: z.coerce.number().min(0).max(100).optional(),
-    drossRecovery: z.coerce.number().min(0).max(100).optional(),
-    fluorideRecovery: z.coerce.number().min(0).max(100).optional(),
-    slagRecovery: z.coerce.number().min(0).max(100).optional(),
+    redMudRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    splRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    drossRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    fluorideRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    slagRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
 
-    toxicityRedMud: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    toxicitySPL: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    toxicityDross: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    toxicityFluoride: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    toxicitySlag: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    toxicityRedMud: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    toxicitySPL: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    toxicityDross: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    toxicityFluoride: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    toxicitySlag: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
 
-    groundwaterRedMud: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    groundwaterSPL: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    groundwaterDross: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    groundwaterFluoride: z.enum(['low', 'moderate', 'high', 'others']).optional(),
-    groundwaterSlag: z.enum(['low', 'moderate', 'high', 'others']).optional(),
+    groundwaterRedMud: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    groundwaterSPL: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    groundwaterDross: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    groundwaterFluoride: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
+    groundwaterSlag: z.enum(['low', 'moderate', 'high', 'others']).nullable().optional(),
 
-    econCementAdditive: z.enum(['low', 'moderate', 'high']).optional(),
-    econSoilStabilization: z.enum(['low', 'moderate', 'high']).optional(),
-    ironExtractionEconomicViability: z.enum(['low', 'moderate', 'high']).optional(),
-    econRareEarthExtraction: z.enum(['low', 'moderate', 'high']).optional(),
-    econSPLEncapsulation: z.enum(['low', 'moderate', 'high']).optional(),
-    econDrossRecovery: z.enum(['low', 'moderate', 'high']).optional(),
-    econFluorideCapture: z.enum(['low', 'moderate', 'high']).optional(),
+    econCementAdditive: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    econSoilStabilization: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    ironExtractionEconomicViability: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    econRareEarthExtraction: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    econSPLEncapsulation: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    econDrossRecovery: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    econFluorideCapture: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      waste_valorization_rate_percent: z.coerce.number().nullable().optional(),
+      emission_reduction_per_tonne: z.coerce.number().nullable().optional(),
+      circular_economy_integration: z.boolean().nullable().optional(),
+      zero_waste_target_progress_percent: z.coerce.number().nullable().optional(),
+      environmental_impact_reduction_percent: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
   }).superRefine((val, ctx) => {
     if (val.wasteTypes?.includes('others') && !val.wasteTypeOthers?.trim()) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please specify other waste type', path: ['wasteTypeOthers'] })
@@ -4255,53 +5279,42 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || { wasteTypes: [], valorizationMethods: [] },
-    mode: 'onChange',
+    mode: 'onTouched',
   })
 
-  const { control, handleSubmit, watch, setValue, formState: { isValid } } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid }, trigger } = form
   const selectedWaste = watch('wasteTypes')
   const selectedMethods = watch('valorizationMethods')
 
-  // Handle AI predictions
-  const handleAIPredictions = (predictionsData) => {
-    if (predictionsData?.predictionMetadata?.predictedFields) {
-      const newPredictions = {};
-      predictionsData.predictionMetadata.predictedFields.forEach(field => {
-        if (predictionsData.combinedData && predictionsData.combinedData[field] !== undefined) {
-          newPredictions[field] = {
-            value: predictionsData.combinedData[field],
-            confidence: predictionsData.predictionMetadata.confidence
-          };
-        }
-      });
-      setAiPredictions(newPredictions);
+  // Trigger validation when component mounts with existing data
+  React.useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      trigger();
     }
-  };
+  }, []);
 
   // Handle accepting/rejecting individual predictions
   const handlePredictionAcceptance = (fieldName, accepted) => {
     const newAccepted = new Set(acceptedPredictions);
     if (accepted) {
       newAccepted.add(fieldName);
-      if (aiPredictions[fieldName]) {
-        setValue(fieldName, aiPredictions[fieldName].value);
+      if (predictions[fieldName]) {
+        const value = typeof predictions[fieldName] === 'object' && predictions[fieldName].value !== undefined
+          ? predictions[fieldName].value
+          : predictions[fieldName];
+        setValue(fieldName, value);
       }
     } else {
       newAccepted.delete(fieldName);
       setValue(fieldName, initialValues?.[fieldName] || '');
     }
-    setAcceptedPredictions(newAccepted);
+    onPredictionAcceptance?.(fieldName, accepted);
   };
 
   // Modified AI prediction handler
   const handleGenerateAIPrediction = async (formData) => {
-    try {
-      const result = await onGenerateAIPrediction?.(formData);
-      if (result) {
-        handleAIPredictions(result);
-      }
-    } catch (error) {
-      console.error('AI Prediction Error:', error);
+    if (onGenerateAIPrediction) {
+      await onGenerateAIPrediction(formData);
     }
   };
 
@@ -4321,6 +5334,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
+      onLcaCalculate={onCalculateLCA}
+      isCalculatingLca={isCalculatingLca}
     />
   )
 
@@ -4333,6 +5348,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
         description="Waste types, valorization methods, utilization metrics, risks, and viability."
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
+        pollingProgress={pollingProgress}
         footer={footerContent}
       >
         <Form {...form}>
@@ -4717,6 +5733,124 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                   )} />
                 ))}
               </div>
+            </div>
+            
+            {/* Sustainability Section */}
+            <div className="mt-8 rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
+              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                Sustainability Compliance
+              </h3>
+              
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Are you following sustainable rules?</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-3 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className={field.value === true 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-gray-300 hover:border-green-600"}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className={field.value === false 
+                            ? "bg-red-600 hover:bg-red-700 text-white" 
+                            : "border-gray-300 hover:border-red-600"}
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {watch("followingSustainableRules") === true && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.waste_valorization_rate_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Waste Valorization Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.emission_reduction_per_tonne"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emission Reduction per Tonne (kg CO₂)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="kg CO₂" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.circular_economy_integration"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">Circular Economy Integration</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.zero_waste_target_progress_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Zero Waste Target Progress (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.environmental_impact_reduction_percent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Environmental Impact Reduction (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
             
             {/* AI Predictions Review Section */}

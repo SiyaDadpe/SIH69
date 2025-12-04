@@ -103,6 +103,17 @@ const wizardWorkflowSchema = new mongoose.Schema(
           type: String,
           enum: ['Diesel trucks', 'Electric vehicles', 'Rail cars']
         }
+      },
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        renewable_energy_percent: { type: Number, default: null },
+        water_recycling_rate: { type: Number, default: null },
+        biodiversity_offset_area_ha: { type: Number, default: null },
+        rehabilitation_progress_percent: { type: Number, default: null },
+        community_development_investment: { type: Number, default: null },
+        carbon_offset_tonnes: { type: Number, default: null }
       }
     },
 
@@ -154,6 +165,16 @@ const wizardWorkflowSchema = new mongoose.Schema(
           enum: ['Low', 'Moderate', 'High', 'Others']
         },
         toxicityOthers: String
+      },
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        water_recycling_rate: { type: Number, default: null },
+        energy_from_renewables_percent: { type: Number, default: null },
+        tailings_dry_stacking: { type: Boolean, default: null },
+        chemical_recovery_rate: { type: Number, default: null },
+        dust_emission_control_efficiency: { type: Number, default: null }
       }
     },
 
@@ -197,6 +218,16 @@ const wizardWorkflowSchema = new mongoose.Schema(
       wasteTailingsManagement: {
         type: String,
         enum: ['Stored in tailing ponds', 'Pipeline transport to disposal site']
+      },
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        renewable_energy_percent: { type: Number, default: null },
+        water_recycling_rate: { type: Number, default: null },
+        caustic_recovery_rate: { type: Number, default: null },
+        red_mud_utilization_percent: { type: Number, default: null },
+        emission_control_efficiency: { type: Number, default: null }
       }
     },
 
@@ -237,7 +268,18 @@ const wizardWorkflowSchema = new mongoose.Schema(
       fluorideRecoveryEfficiency: Number, // % (original)
       fluorideRecovery: Number, // % (frontend field name)
       thermalEnergyRecoveryPotential: Number, // % of total energy (original)
-      thermalRecovery: Number // % of total energy (frontend field name)
+      thermalRecovery: Number, // % of total energy (frontend field name)
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        renewable_energy_percent: { type: Number, default: null },
+        inert_anode_technology: { type: Boolean, default: null },
+        pfc_capture_rate: { type: Number, default: null },
+        thermal_energy_recovery_percent: { type: Number, default: null },
+        fluoride_recycling_rate: { type: Number, default: null },
+        carbon_capture_rate: { type: Number, default: null }
+      }
     },
 
     // ============================================================================
@@ -294,7 +336,18 @@ const wizardWorkflowSchema = new mongoose.Schema(
         enum: ['minimal', 'moderate', 'severe', 'others']
       },
       corrosionBehaviorOthers: String,
-      corrosionOthers: String
+      corrosionOthers: String,
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        renewable_energy_percent: { type: Number, default: null },
+        recycled_content_percent: { type: Number, default: null },
+        scrap_recovery_rate: { type: Number, default: null },
+        low_carbon_transport_percent: { type: Number, default: null },
+        design_for_recyclability: { type: Boolean, default: null },
+        product_lifetime_years: { type: Number, default: null }
+      }
     },
 
     // ============================================================================
@@ -340,7 +393,17 @@ const wizardWorkflowSchema = new mongoose.Schema(
       }],
       sortingOthers: String,
       closedLoopRecyclingPercentage: Number, // %
-      openLoopRecyclingPercentage: Number // %
+      openLoopRecyclingPercentage: Number, // %
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        collection_efficiency_percent: { type: Number, default: null },
+        sorting_accuracy_percent: { type: Number, default: null },
+        energy_from_renewables_percent: { type: Number, default: null },
+        closed_loop_target_percent: { type: Number, default: null },
+        contamination_rate_percent: { type: Number, default: null }
+      }
     },
 
     // ============================================================================
@@ -484,6 +547,16 @@ const wizardWorkflowSchema = new mongoose.Schema(
       fluorideCaptureEconomicViability: {
         type: String,
         enum: ['Low', 'Moderate', 'High']
+      },
+      
+      // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
+      followingSustainableRules: { type: Boolean, default: null },
+      sustainabilityParameters: {
+        waste_valorization_rate_percent: { type: Number, default: null },
+        emission_reduction_per_tonne: { type: Number, default: null },
+        circular_economy_integration: { type: Boolean, default: null },
+        zero_waste_target_progress_percent: { type: Number, default: null },
+        environmental_impact_reduction_percent: { type: Number, default: null }
       }
     },
 

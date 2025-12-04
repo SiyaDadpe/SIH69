@@ -21,35 +21,74 @@ const getStepFieldDefinitions = () => {
       'applicableProcesses', 'others', 'location', 'year', 'oreGrade', 'overburdenRatio',
       'typeOfEquipment', 'waterUsage', 'redMudGeneration', 'biodiversityImpact',
       'mining_energy_MJ_per_t_ore', 'mining_co2_kg_per_t_ore', 'mining_sox_kg_per_t_ore',
-      'mining_nox_kg_per_t_ore', 'mining_pm_kg_per_t_ore'
+      'mining_nox_kg_per_t_ore', 'mining_pm_kg_per_t_ore',
+      'followingSustainableRules',
+      'sustainabilityParameters.renewable_energy_percent',
+      'sustainabilityParameters.water_recycling_rate',
+      'sustainabilityParameters.biodiversity_offset_area_ha',
+      'sustainabilityParameters.rehabilitation_progress_percent',
+      'sustainabilityParameters.community_development_investment',
+      'sustainabilityParameters.carbon_offset_tonnes'
     ],
     beneficiation: [
       'processes', 'processOthers', 'location', 'oreFeedRate', 'waterConsumption',
       'electricityUse', 'beneficiationEfficiency', 'crushingSelections', 'chemicalAgents',
       'chemicalOthers', 'tailings', 'tailingsOthers', 'noiseLevel', 'dustLevel',
       'beneficiation_water_m3_per_t_ore', 'beneficiation_electricity_kWh_per_t_ore',
-      'beneficiation_tailings_management', 'beneficiation_noise_pollution', 'beneficiation_dust_pollution'
+      'beneficiation_tailings_management', 'beneficiation_noise_pollution', 'beneficiation_dust_pollution',
+      'followingSustainableRules',
+      'sustainabilityParameters.water_recycling_rate',
+      'sustainabilityParameters.energy_from_renewables_percent',
+      'sustainabilityParameters.tailings_dry_stacking',
+      'sustainabilityParameters.chemical_recovery_rate',
+      'sustainabilityParameters.dust_emission_control_efficiency'
     ],
     refining: [
       'processes', 'processOthers', 'variants', 'variantOthers', 'energyUse', 'waterUse',
-      'redMudGen', 'causticSoda', 'limeAdditives', 'so2', 'nox', 'dust', 'toxicity', 'toxicityOthers'
+      'redMudGen', 'causticSoda', 'limeAdditives', 'so2', 'nox', 'dust', 'toxicity', 'toxicityOthers',
+      'followingSustainableRules',
+      'sustainabilityParameters.renewable_energy_percent',
+      'sustainabilityParameters.water_recycling_rate',
+      'sustainabilityParameters.caustic_recovery_rate',
+      'sustainabilityParameters.red_mud_utilization_percent',
+      'sustainabilityParameters.emission_control_efficiency'
     ],
     smelting: [
       'processes', 'processOthers', 'variants', 'variantOthers', 'electricityDemand',
       'co2Emissions', 'cellTechnology', 'pfcEmissions', 'so2', 'nox', 'fluorideRecovery',
-      'thermalRecovery'
+      'thermalRecovery',
+      'followingSustainableRules',
+      'sustainabilityParameters.renewable_energy_percent',
+      'sustainabilityParameters.inert_anode_technology',
+      'sustainabilityParameters.pfc_capture_rate',
+      'sustainabilityParameters.thermal_energy_recovery_percent',
+      'sustainabilityParameters.fluoride_recycling_rate',
+      'sustainabilityParameters.carbon_capture_rate'
     ],
     manufacturing: [
       'processes', 'processOthers', 'castingProcesses', 'scrapRate', 'recycledContent',
       'energyUsePerStep', 'fabricationEmissions', 'transportDistance', 'transportMode',
       'transportModeOthers', 'transportEmissionsPerTkm', 'lightweightingSectors',
-      'lightweightingOthers', 'corrosionImpact', 'corrosionOthers'
+      'lightweightingOthers', 'corrosionImpact', 'corrosionOthers',
+      'followingSustainableRules',
+      'sustainabilityParameters.renewable_energy_percent',
+      'sustainabilityParameters.recycled_content_percent',
+      'sustainabilityParameters.scrap_recovery_rate',
+      'sustainabilityParameters.low_carbon_transport_percent',
+      'sustainabilityParameters.design_for_recyclability',
+      'sustainabilityParameters.product_lifetime_years'
     ],
     recycling: [
       'processes', 'processOthers', 'variants', 'variantOthers', 'scrapInputPercent',
       'collectionRatePercent', 'recyclingMethod', 'recoveryYieldPercent',
       'recyclingEfficiencyPercent', 'closedLoopPercent', 'openLoopPercent',
-      'furnaceEnergyDemand', 'emissionSavings', 'sortingMethods', 'sortingOthers'
+      'furnaceEnergyDemand', 'emissionSavings', 'sortingMethods', 'sortingOthers',
+      'followingSustainableRules',
+      'sustainabilityParameters.collection_efficiency_percent',
+      'sustainabilityParameters.sorting_accuracy_percent',
+      'sustainabilityParameters.energy_from_renewables_percent',
+      'sustainabilityParameters.closed_loop_target_percent',
+      'sustainabilityParameters.contamination_rate_percent'
     ],
     valorization: [
       'wasteTypes', 'wasteTypeOthers', 'wasteTypesOthers', 'valorizationMethods', 
@@ -63,7 +102,13 @@ const getStepFieldDefinitions = () => {
       'econRareEarthExtraction', 'econSPLEncapsulation', 'econDrossRecovery', 'econFluorideCapture',
       'rareEarthExtractionEconomicViability', 'splEncapsulationEconomicViability',
       'drossRecoveryEconomicViability', 'fluorideCaptureEconomicViability',
-      'drossRecoveryEfficiency', 'fluorideGasesRecoveryEfficiency'
+      'drossRecoveryEfficiency', 'fluorideGasesRecoveryEfficiency',
+      'followingSustainableRules',
+      'sustainabilityParameters.waste_valorization_rate_percent',
+      'sustainabilityParameters.emission_reduction_per_tonne',
+      'sustainabilityParameters.circular_economy_integration',
+      'sustainabilityParameters.zero_waste_target_progress_percent',
+      'sustainabilityParameters.environmental_impact_reduction_percent'
     ]
   };
 };
@@ -1522,49 +1567,38 @@ const generateStepPrediction = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Generate predictions
-    const predictionResult = generatePredictions(stepName, userData);
-
-    if (!predictionResult.success) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to generate predictions'
-      });
-    }
-
-    // Save user-only data to WizardWorkflow (update the step)
-    workflow[stepName] = userData;
+    // Save user data to WizardWorkflow (same logic as Next button)
+    console.log(`[AI Prediction] Saving user data to WizardWorkflow for step: ${stepName}`);
+    
+    // Get existing data (convert from Mongoose object if needed)
+    const existingData = workflow[stepName] ? 
+      (workflow[stepName].toObject ? workflow[stepName].toObject() : workflow[stepName]) : 
+      null;
+    
+    // Use smart merging to preserve existing values while setting unfilled fields to null
+    const mergedData = smartMergeStepData(stepName, existingData, userData);
+    
+    // Update the workflow with merged data
+    workflow[stepName] = mergedData;
+    
+    // Mark the path as modified to ensure Mongoose saves the changes
+    workflow.markModified(stepName);
     workflow.updatedAt = new Date();
+    
     await workflow.save();
 
-    console.log(`[AI Prediction] Saved user data to WizardWorkflow for step: ${stepName}`);
+    console.log(`[AI Prediction] User data saved to WizardWorkflow successfully`);
+    console.log(`[AI Prediction] ML model will process and create WizardWorkflowOutput in background`);
 
-    // Save combined data (user + AI predictions) to WizardWorkflowOutput
-    const outputData = await WizardWorkflowOutput.createOrUpdate(
-      workflow._id,
-      workflow.userId,
-      stepName,
-      predictionResult.combinedData,
-      {
-        predictedFields: predictionResult.predictionMetadata.predictedFields,
-        confidence: predictionResult.predictionMetadata.confidence,
-        workflowName: workflow.name,
-        metalType: workflow.metalType
-      }
-    );
-
-    console.log(`[AI Prediction] Saved combined data to WizardWorkflowOutput for step: ${stepName}`);
-    console.log(`[AI Prediction] Predicted ${predictionResult.predictionMetadata.predictedCount} fields`);
-
-    // Return the combined data to frontend for form filling
+    // Return immediately with "processing" status
+    // Frontend will poll WizardWorkflowOutput to check for predictions
     res.status(200).json({
       success: true,
-      message: `AI predictions generated successfully for ${stepName} step`,
+      status: 'processing',
+      message: 'User data saved. AI predictions are being generated by ML model. Please wait...',
       data: {
-        combinedData: predictionResult.combinedData,
-        predictionMetadata: predictionResult.predictionMetadata,
         workflowId: workflow._id,
-        outputId: outputData._id
+        stepName: stepName
       }
     });
 
@@ -1572,7 +1606,7 @@ const generateStepPrediction = asyncHandler(async (req, res) => {
     console.error(`[AI Prediction] Error:`, error);
     res.status(500).json({
       success: false,
-      message: 'Error generating predictions: ' + error.message
+      message: 'Error processing prediction request: ' + error.message
     });
   }
 });
@@ -1598,7 +1632,35 @@ const getPredictions = asyncHandler(async (req, res) => {
 
   try {
     // Find the workflow output (predictions)
-    const workflowOutput = await WizardWorkflowOutput.findOne({ workflowId: id });
+    // Try multiple query strategies to handle different ML model implementations:
+    // 1. workflowId field matches (correct way)
+    // 2. _id matches (fallback if ML model created output with same _id as workflow)
+    
+    // Convert string ID to ObjectId for comparison
+    const objectId = new mongoose.Types.ObjectId(id);
+    
+    const workflowOutput = await WizardWorkflowOutput.findOne({
+      $or: [
+        { workflowId: id },           // String format
+        { workflowId: objectId },     // ObjectId format
+        { _id: id },                  // String format (fallback)
+        { _id: objectId }             // ObjectId format (fallback)
+      ]
+    });
+
+    console.log(`[Get Predictions] Query: workflowId/id = ${id}`);
+    console.log(`[Get Predictions] Found: ${workflowOutput ? 'YES' : 'NO'}`);
+    
+    if (workflowOutput) {
+      console.log(`[Get Predictions] Output document _id: ${workflowOutput._id}`);
+      console.log(`[Get Predictions] Output workflowId field: ${workflowOutput.workflowId}`);
+      console.log(`[Get Predictions] Has mining data: ${workflowOutput.mining ? 'YES' : 'NO'}`);
+      console.log(`[Get Predictions] Has beneficiation data: ${workflowOutput.beneficiation ? 'YES' : 'NO'}`);
+      
+      if (workflowOutput.mining?.aiPredictions) {
+        console.log(`[Get Predictions] Mining aiPredictions keys:`, Object.keys(workflowOutput.mining.aiPredictions));
+      }
+    }
 
     if (!workflowOutput) {
       // No predictions yet - return empty

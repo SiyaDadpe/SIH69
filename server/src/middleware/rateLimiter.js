@@ -126,10 +126,27 @@ const publicLimiter = createRateLimiter({
   }
 });
 
+/**
+ * Rate limiter for AI prediction endpoints
+ * Allows frequent polling (every 2 seconds) for prediction results
+ * 15 polling attempts + 1 initial save = ~16 requests per workflow
+ * Allow 50 workflows per 15 minutes = 800 requests
+ */
+const predictionLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.PREDICTION_RATE_LIMIT) || 800, // 800 requests per window
+  message: {
+    success: false,
+    error: 'Too many prediction requests. Please try again later.',
+    code: 'PREDICTION_RATE_LIMIT_EXCEEDED'
+  }
+});
+
 logger.info('Rate limiters initialized', {
   apiLimit: parseInt(process.env.API_RATE_LIMIT) || 100,
   authLimit: parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 5,
-  passwordResetLimit: parseInt(process.env.PASSWORD_RESET_MAX) || 3
+  passwordResetLimit: parseInt(process.env.PASSWORD_RESET_MAX) || 3,
+  predictionLimit: parseInt(process.env.PREDICTION_RATE_LIMIT) || 800
 });
 
 module.exports = {
@@ -139,5 +156,6 @@ module.exports = {
   passwordResetLimiter,
   uploadLimiter,
   reportLimiter,
-  publicLimiter
+  publicLimiter,
+  predictionLimiter
 };

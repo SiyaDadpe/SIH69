@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/authMiddleware');
+const { predictionLimiter } = require('../middleware/rateLimiter');
 
 const {
   createWorkflow,
@@ -22,7 +23,8 @@ const {
   getPublicWorkflows,
   getStatistics,
   generateAndSaveReport,
-  generateStepPrediction
+  generateStepPrediction,
+  getPredictions
 } = require('../controllers/wizardController');
 
 // ============================================================================
@@ -124,15 +126,14 @@ router.post('/workflows/:id/steps/:stepName/complete', authenticate, completeSte
  * @access  Private
  * @params  stepName: mining|beneficiation|refining|smelting|manufacturing|recycling|valorization
  */
-router.post('/workflows/:id/steps/:stepName/predict', authenticate, generateStepPrediction);
+router.post('/workflows/:id/steps/:stepName/predict', authenticate, predictionLimiter, generateStepPrediction);
 
 /**
  * @route   GET /api/wizard/workflows/:id/predictions
  * @desc    Get AI predictions from WizardWorkflowOutput for a workflow
  * @access  Private
  */
-const { getPredictions } = require('../controllers/wizardController');
-router.get('/workflows/:id/predictions', authenticate, getPredictions);
+router.get('/workflows/:id/predictions', authenticate, predictionLimiter, getPredictions);
 
 // ============================================================================
 // USER ROUTES (Removed - no longer needed as all routes are user-specific)
