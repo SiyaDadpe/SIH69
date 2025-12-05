@@ -35,6 +35,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LCASuccessModal from "@/components/LCASuccessModal";
+import FallbackConflictModal from "@/components/FallbackConflictModal";
+import FallbackReasoningModal from "@/components/FallbackReasoningModal";
+import { generateFallbacks } from "@/services/aiFallbackGenerator";
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -2286,127 +2289,99 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [generatingFallbacks, setGeneratingFallbacks] = useState(false);
   const [fallbackSuccess, setFallbackSuccess] = useState(null);
   const [fallbackError, setFallbackError] = useState(null);
+  
+  // Modal states for conflict detection and reasoning display
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
+  const [reasoningModalOpen, setReasoningModalOpen] = useState(false);
+  const [pendingFallback, setPendingFallback] = useState(null);
+  const [fallbackResults, setFallbackResults] = useState(null);
 
-  const getFallbackValues = (stepName, currentValues) => {
-    // Use mid-range scenario (S2 or S5) as baseline fallbacks
-    const fallbacks = {};
-    
-    switch (stepName) {
-      case 'mining':
-        // Mining fallbacks based on scenario S2 (mid-grade, improved)
-        fallbacks.ore_grade_percent = 50;
-        fallbacks.overburden_ratio = 3.5;
-        fallbacks.mining_water_m3_per_t_ore = 0.8;
-        fallbacks.mining_diesel_L_per_t_ore = 15;
-        fallbacks.mining_electricity_kWh_per_t_ore = 12;
-        fallbacks.mining_explosives_kg_per_t_ore = 0.3;
-        fallbacks.land_disturbed_m2_per_t_ore = 2.5;
-        fallbacks.mining_ghg_kg_CO2e_per_t_ore = 8;
-        fallbacks.dust_emissions_kg_per_t_ore = 0.5;
-        fallbacks.equipment_type = 'diesel_electric_hybrid';
-        break;
-        
-      case 'beneficiation':
-        // Beneficiation fallbacks based on scenario S2
-        fallbacks.beneficiation_water_m3_per_t_ore = 1.0;
-        fallbacks.beneficiation_electricity_kWh_per_t_ore = 15;
-        fallbacks.beneficiation_chemical_kg_per_t_ore = 0.2;
-        fallbacks.beneficiation_tailings_t_per_t_ore = 0.3;
-        fallbacks.tailings_solids_content_percent = 45;
-        fallbacks.beneficiation_recovery_percent = 92;
-        break;
-        
-      case 'refining':
-        // Refining fallbacks based on scenario S5 (Indian average)
-        fallbacks.bauxite_input_t_per_t_alumina = 2.9;
-        fallbacks.red_mud_t_per_t_alumina = 1.1;
-        fallbacks.refining_energy_GJ_per_t_alumina = 13.5;
-        fallbacks.refining_electricity_kWh_per_t_alumina = 140;
-        fallbacks.refining_water_m3_per_t_alumina = 2.5;
-        fallbacks.caustic_soda_kg_per_t_alumina = 80;
-        fallbacks.lime_kg_per_t_alumina = 20;
-        fallbacks.refining_process_efficiency_percent = 88;
-        fallbacks.alumina_grade_percent = 99.5;
-        break;
-        
-      case 'smelting':
-        // Smelting fallbacks based on scenario S5
-        fallbacks.alumina_input_t_per_t_aluminium = 2.0;
-        fallbacks.smelting_electricity_kWh_per_t_aluminium = 15000;
-        fallbacks.carbon_anode_kg_per_t_aluminium = 450;
-        fallbacks.direct_co2_emissions_t_CO2_per_t_aluminium = 1.7;
-        fallbacks.pfc_emissions_t_CO2e_per_t_aluminium = 0.3;
-        fallbacks.dross_kg_per_t_aluminium = 30;
-        fallbacks.spent_pot_lining_kg_per_t_aluminium = 25;
-        fallbacks.smelting_energy_efficiency_percent = 92;
-        fallbacks.cell_voltage_V = 4.2;
-        fallbacks.current_efficiency_percent = 94;
-        fallbacks.grid_emission_factor_kg_CO2_per_kWh = 0.82;
-        break;
-        
-      case 'manufacturing':
-        // Manufacturing fallbacks based on scenario S2
-        fallbacks.manufacturing_energy_kWh_per_t = 600;
-        fallbacks.manufacturing_scrap_percent = 12;
-        fallbacks.on_site_scrap_recycling_percent = 70;
-        fallbacks.surface_treatment_chemicals_kg_per_t = 5;
-        fallbacks.manufacturing_water_m3_per_t = 1.5;
-        fallbacks.manufacturing_yield_percent = 88;
-        fallbacks.product_type = 'rolled_sheet';
-        fallbacks.coating_kg_per_m2 = 0.05;
-        fallbacks.welding_energy_kWh_per_t = 50;
-        break;
-        
-      case 'recycling':
-        // Recycling fallbacks based on scenario S8 (high recycling)
-        fallbacks.recycled_content_percent = 50;
-        fallbacks.recycling_energy_kWh_per_t = 3000;
-        fallbacks.recycling_yield_percent = 92;
-        fallbacks.collection_rate_percent = 75;
-        fallbacks.sorting_efficiency_percent = 85;
-        fallbacks.contaminant_removal_percent = 90;
-        fallbacks.recycling_water_m3_per_t = 0.5;
-        fallbacks.salt_flux_kg_per_t = 15;
-        break;
-        
-      case 'valorization':
-        // Valorization fallbacks based on scenario S13 (high valorization)
-        fallbacks.red_mud_valorization_percent = 40;
-        fallbacks.dross_recovery_percent = 75;
-        fallbacks.spl_valorization_percent = 25;
-        fallbacks.slag_utilization_percent = 60;
-        fallbacks.co_product_recovery_percent = 50;
-        fallbacks.waste_to_landfill_percent = 30;
-        fallbacks.valorization_energy_kWh_per_t = 50;
-        break;
-    }
-    
-    return fallbacks;
-  };
-
+  /**
+   * Intelligent Fallback Generation Handler
+   * Uses AI Fallback Generator with scenario matching, dependency rules, and conflict detection
+   */
   const handleGenerateFallbacks = async (stepName, currentData) => {
     try {
       setGeneratingFallbacks(true);
       setFallbackError(null);
       setFallbackSuccess(null);
       
-      console.log(`🔄 [Fallback] Generating fallback values for ${stepName}`);
-      console.log(`🔄 [Fallback] Current data received:`, currentData);
+      console.log(`🎯 [Intelligent Fallback] Starting for step: ${stepName}`);
+      console.log(`📝 [Intelligent Fallback] Current data:`, currentData);
       
       // Get current form values for this step
       const currentStepValues = currentData || formValues[stepName] || {};
       
+      // Check if sustainability mode is enabled
+      const isSustainable = currentStepValues.followingSustainableRules === true;
+      console.log(`🌱 [Intelligent Fallback] Sustainable mode: ${isSustainable}`);
+      
+      // Generate intelligent fallbacks using the AI Fallback Generator
+      const {
+        fallbacks: generatedFallbacks,
+        reasoning,
+        conflicts,
+        matchedScenarios
+      } = generateFallbacks(stepName, currentStepValues, isSustainable);
+      
+      console.log(`✨ [Intelligent Fallback] Generated fallbacks:`, generatedFallbacks);
+      console.log(`⚠️ [Intelligent Fallback] Conflicts detected: ${conflicts.length}`);
+      
+      // If conflicts detected, show modal and wait for user decision
+      if (conflicts.length > 0) {
+        console.log(`🛑 [Intelligent Fallback] Showing conflict modal`);
+        setPendingFallback({
+          stepName,
+          currentStepValues,
+          generatedFallbacks,
+          reasoning,
+          matchedScenarios,
+          conflicts
+        });
+        setConflictModalOpen(true);
+        setGeneratingFallbacks(false);
+        return;
+      }
+      
+      // No conflicts, proceed with applying fallbacks
+      await applyFallbackValues(
+        stepName,
+        currentStepValues,
+        generatedFallbacks,
+        reasoning,
+        matchedScenarios
+      );
+      
+    } catch (error) {
+      console.error('❌ [Intelligent Fallback] Error:', error);
+      const errorMessage = error.message || 'Failed to generate intelligent fallback values';
+      setFallbackError(`Fallback Error: ${errorMessage}`);
+      setTimeout(() => setFallbackError(null), 5000);
+    } finally {
+      setGeneratingFallbacks(false);
+    }
+  };
+
+  /**
+   * Apply fallback values after conflict resolution
+   */
+  const applyFallbackValues = async (
+    stepName,
+    currentStepValues,
+    generatedFallbacks,
+    reasoning,
+    matchedScenarios
+  ) => {
+    try {
       // Get AI populated field names to exclude them
       const aiFields = aiPopulatedFields[stepName] || new Set();
-      
-      // Get fallback values for this step
-      const fallbackValues = getFallbackValues(stepName, currentStepValues);
       
       // Filter: only populate fields that are empty AND not AI-predicted AND not sustainability params
       let populatedCount = 0;
       const updatedFields = {};
+      const appliedReasoning = {};
       
-      Object.entries(fallbackValues).forEach(([fieldName, fallbackValue]) => {
+      Object.entries(generatedFallbacks).forEach(([fieldName, fallbackValue]) => {
         const currentValue = currentStepValues[fieldName];
         const isAIField = aiFields.has(fieldName);
         const isSustainabilityField = fieldName.startsWith('sustainability');
@@ -2419,11 +2394,12 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         
         if (isEmpty && !isAIField && !isSustainabilityField) {
           updatedFields[fieldName] = fallbackValue;
+          appliedReasoning[fieldName] = reasoning[fieldName];
           populatedCount++;
         }
       });
       
-      console.log(`✅ [Fallback] Populated ${populatedCount} fields:`, Object.keys(updatedFields));
+      console.log(`✅ [Intelligent Fallback] Will populate ${populatedCount} fields:`, Object.keys(updatedFields));
       
       // Save to backend and update formValues
       if (populatedCount > 0) {
@@ -2432,17 +2408,37 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           ...updatedFields
         };
         
-        // Update formValues state
-        setFormValues(prev => ({
-          ...prev,
-          [stepName]: updatedStepData
-        }));
+        console.log(`📝 [Intelligent Fallback] Updated step data:`, updatedStepData);
+        
+        // Update formValues state - this will trigger form re-render with new initialValues
+        setFormValues(prev => {
+          const newFormValues = {
+            ...prev,
+            [stepName]: updatedStepData
+          };
+          console.log(`🔄 [Intelligent Fallback] New formValues state:`, newFormValues);
+          return newFormValues;
+        });
+        
+        // Small delay to ensure state update propagates before saving
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // Save to backend
         await handleSaveStep(stepName, updatedStepData);
         
+        // Store results for reasoning modal
+        setFallbackResults({
+          stepName,
+          populatedCount,
+          reasoning: appliedReasoning,
+          matchedScenarios
+        });
+        
+        // Show reasoning modal
+        setReasoningModalOpen(true);
+        
         setFallbackSuccess(
-          `✨ Successfully populated ${populatedCount} fallback values`
+          `✨ Successfully populated ${populatedCount} intelligent fallback values`
         );
       } else {
         setFallbackSuccess(
@@ -2458,8 +2454,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       };
       
     } catch (error) {
-      console.error('❌ [Fallback] Error:', error);
-      const errorMessage = error.message || 'Failed to generate fallback values';
+      console.error('❌ [Intelligent Fallback] Error applying values:', error);
+      const errorMessage = error.message || 'Failed to apply fallback values';
       setFallbackError(`Fallback Error: ${errorMessage}`);
       setTimeout(() => setFallbackError(null), 5000);
       
@@ -2467,9 +2463,46 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         success: false,
         error: errorMessage
       };
-    } finally {
-      setGeneratingFallbacks(false);
     }
+  };
+
+  /**
+   * Handle user proceeding despite conflicts
+   */
+  const handleConflictProceed = async () => {
+    if (!pendingFallback) return;
+    
+    const {
+      stepName,
+      currentStepValues,
+      generatedFallbacks,
+      reasoning,
+      matchedScenarios
+    } = pendingFallback;
+    
+    setConflictModalOpen(false);
+    setPendingFallback(null);
+    setGeneratingFallbacks(true);
+    
+    await applyFallbackValues(
+      stepName,
+      currentStepValues,
+      generatedFallbacks,
+      reasoning,
+      matchedScenarios
+    );
+    
+    setGeneratingFallbacks(false);
+  };
+
+  /**
+   * Handle user canceling after seeing conflicts
+   */
+  const handleConflictCancel = () => {
+    setConflictModalOpen(false);
+    setPendingFallback(null);
+    setFallbackError('Fallback generation cancelled due to conflicts');
+    setTimeout(() => setFallbackError(null), 3000);
   };
 
   const renderStep = () => {
@@ -2722,6 +2755,25 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         isOpen={showLCAModal}
         onClose={() => setShowLCAModal(false)}
         reportData={lcaReportData || {}}
+      />
+      
+      {/* Fallback Conflict Detection Modal */}
+      <FallbackConflictModal
+        isOpen={conflictModalOpen}
+        onClose={handleConflictCancel}
+        onProceed={handleConflictProceed}
+        conflicts={pendingFallback?.conflicts || []}
+        stepName={pendingFallback?.stepName || ''}
+      />
+      
+      {/* Fallback Reasoning Display Modal */}
+      <FallbackReasoningModal
+        isOpen={reasoningModalOpen}
+        onClose={() => setReasoningModalOpen(false)}
+        reasoning={fallbackResults?.reasoning || {}}
+        matchedScenarios={fallbackResults?.matchedScenarios || []}
+        populatedCount={fallbackResults?.populatedCount || 0}
+        stepName={fallbackResults?.stepName || ''}
       />
     </WizardContainer>
   )
