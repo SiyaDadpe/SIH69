@@ -230,7 +230,7 @@ function StepSection({
   )
 }
 
-function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false }) {
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false, showSustainableButton = false, onShowSustainable }) {
   const handleForwardClick = () => {
     if (typeof onForward === 'function') {
       onForward()
@@ -257,6 +257,23 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
         </Button>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {showSustainableButton && (
+          <motion.div whileHover={{ scale: 1.03 }}>
+            <Button
+              type="button"
+              onClick={() => {
+                console.log('Sustainable button clicked in StepFooterActions');
+                if (typeof onShowSustainable === 'function') {
+                  onShowSustainable();
+                }
+              }}
+              className="relative overflow-hidden rounded-full border border-[#6B5B59] px-6 py-2 text-[#6B5B59] shadow-md transition-all duration-200 hover:bg-[#6B5B59] hover:text-white"
+              variant="outline"
+            >
+              🌱 Sustainable solutions
+            </Button>
+          </motion.div>
+        )}
         {showLca && (
           <motion.div
             animate={{ scale: [1, 1.02, 1] }}
@@ -428,7 +445,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -566,6 +583,12 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         onForward={handleSubmit(onSubmit)}
         forwardDisabled={!isValid || isSaving}
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+        showSustainableButton
+        onShowSustainable={() => { 
+          console.log('Mining sustainable button clicked'); 
+          setCurrentSustainableStage('mining'); 
+          setShowSustainableSolutions(true); 
+        }}
       />
     </>
   );
@@ -1082,7 +1105,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1264,6 +1287,8 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         onForward={handleSubmit(onSubmit)}
         forwardDisabled={!isValid || isSaving}
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+        showSustainableButton
+        onShowSustainable={() => { setCurrentSustainableStage('beneficiation'); setShowSustainableSolutions(true); }}
       />
     </>
   );
@@ -2289,6 +2314,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [generatingFallbacks, setGeneratingFallbacks] = useState(false);
   const [fallbackSuccess, setFallbackSuccess] = useState(null);
   const [fallbackError, setFallbackError] = useState(null);
+  const [showSustainableSolutions, setShowSustainableSolutions] = useState(false);
+  const [currentSustainableStage, setCurrentSustainableStage] = useState('mining');
+  
+  // Debug logging for sustainable solutions modal
+  useEffect(() => {
+    console.log('Sustainable Solutions State Changed:', { showSustainableSolutions, currentSustainableStage });
+  }, [showSustainableSolutions, currentSustainableStage]);
   
   // Modal states for conflict detection and reasoning display
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -2521,6 +2553,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predictionMetadata={predictionMetadata['mining'] || {}}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('mining', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'beneficiation':
@@ -2538,6 +2572,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predictionMetadata={predictionMetadata['beneficiation'] || {}}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('beneficiation', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'refining':
@@ -2555,6 +2591,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('refining', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'smelting':
@@ -2572,6 +2610,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('smelting', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'manufacturing':
@@ -2589,6 +2629,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('manufacturing', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'recycling':
@@ -2606,6 +2648,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('recycling', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'valorization':
@@ -2627,6 +2671,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('valorization', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       default:
@@ -2775,12 +2821,174 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         populatedCount={fallbackResults?.populatedCount || 0}
         stepName={fallbackResults?.stepName || ''}
       />
+
+      {/* Sustainable Solutions Modal */}
+      <AnimatePresence>
+        {showSustainableSolutions && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSustainableSolutions(false)}
+          >
+            <motion.div
+              className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4 border-b pb-3 mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Sustainable Solutions – {currentSustainableStage.charAt(0).toUpperCase() + currentSustainableStage.slice(1)}
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Byproducts and sustainable alternatives suggested by the LCA engine for this stage.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setShowSustainableSolutions(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-sm text-gray-800">
+                {currentSustainableStage === 'mining' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Overburden & waste rock</span> – stripped soil, rock, clays — backfilling & land rehabilitation, bund construction, noise berms.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Topsoil</span> – if stripped and stored — road base, embankments, aggregate in local construction, mine road surfacing.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dust (PM₁₀ / PM₂.₅)</span> – drilling, blasting, haul roads — improve dust suppression plans, use covered conveyors, vegetative barriers.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Mine drainage</span> – possibly with high suspended solids; occasionally alkaline/metal-bearing — settling ponds, constructed wetlands, reuse for dust suppression.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Diesel fumes & GHGs</span> – from trucks, excavators — switch to hybrid/electric haul trucks, optimize routes, idle reduction.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Noise & vibration</span> – blasting — blast optimization, scheduling.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'beneficiation' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Tailings (slurry)</span> – fine clays, silica, iron oxides in water — thickened tailings, dry stacking, or backfilling pits; use in bricks, tiles, road base where feasible.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Process water</span> – solids and reagents (flocculants, dispersants) — closed-loop reuse in washing circuits.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dust</span> – from crushing, dry screening — bag filters, water sprays, enclosures. Fine residue → cement raw mix, soil conditioning after treatment.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Noise</span> – crushers, mills — acoustic enclosures.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'refining' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Red mud / bauxite residue</span> – highly alkaline sludge containing Fe₂O₃, TiO₂, residual Al₂O₃, silica, minor REEs — cement & clinker substitute (part replacement), brick/ceramic products, iron recovery (magnetite), TiO₂ extraction, rare earth recovery, soil stabilization for roads/foundations (after neutralization).
+                    </li>
+                    <li>
+                      <span className="font-semibold">Spent caustic liquor</span> – NaOH-rich streams — caustic recovery, neutralization & reuse.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Gypsum / scale</span> – from lime use and precipitation — sell to gypsum into cement/board industry.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Evaporator condensates</span> — reuse as process water.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Air emissions</span> – dust, some NOₓ/SO₂ from heating — electrostatic precipitators, scrubbers.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'smelting' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">CO₂ from carbon anodes</span> – huge energy-related GHG footprint — focus on energy efficiency and low-carbon power.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dross & skim</span> – oxide-rich layer from casting — dross recovery plants to reclaim metal.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Spent Pot Lining (SPL)</span> – hazardous waste with cyanide and fluorides — encapsulation in cement, high-temp vitrification, or controlled co-processing in cement kilns.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Fluoride gases & particulates</span> – HF, particulate alumina/cryolite — dry/wet scrubbers, recovery of fluoride salts back to bath.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Waste heat</span> – off-gases at high temperature — heat recovery for pre-heating combustion air, buildings, or low-temp processes.
+                    </li>
+                    <li>
+                      <span className="font-semibold">PFCs (perfluorocarbons)</span> during anode effects — green variants: inert anodes, renewable electricity contracts.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'manufacturing' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Scrap</span> – offcuts, trimmings, machining chips — closed-loop recycling into same product line, on-site remelting.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dross from remelting</span> — sent to dross recovery.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Spent process chemicals</span> – from anodizing, coating, cleaning — recovery of aluminium salts, proper neutralization, sludge reused in cement.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Used lubricants & coolants</span> — regeneration, energy recovery via co-processing.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Packaging waste at customer end</span> — design for disassembly, mono-material packaging, easy separable fasteners.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'recycling' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Salt slag / black dross</span> from rotary furnaces — specialized processing to recover aluminium, salts, and inert residue.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dust & filter cake</span> – with salts and metal oxides — stabilized and used in cement/bricks where allowed.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Non-metallic fraction</span> – plastics, paints, organics from coated scrap — RDF fuel (Refuse Derived Fuel) or pyrolysis.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Off-gases</span> – combustion products — high-efficiency baghouse filtration, heat recovery from furnaces.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'valorization' && (
+                  <div className="text-center text-gray-500 py-4">
+                    Valorization sustainable solutions are similar to recycling stage. Please refer to recycling recommendations.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </WizardContainer>
   )
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2892,6 +3100,8 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('refining'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -3323,7 +3533,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3432,6 +3642,8 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('smelting'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -3852,7 +4064,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4010,6 +4222,8 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('manufacturing'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -4477,7 +4691,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4589,6 +4803,8 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('recycling'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -5123,7 +5339,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -5287,6 +5503,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
         forwardLabel={isSaving ? '💾 Saving...' : (onSubmitSuccess ? 'Submit' : 'Next')}
         onLcaCalculate={onCalculateLCA}
         isCalculatingLca={isCalculatingLca}
+        showSustainableButton
+        onShowSustainable={() => { setCurrentSustainableStage('valorization'); setShowSustainableSolutions(true); }}
       />
     </>
   )

@@ -299,7 +299,9 @@ def _map_wizard_mining_to_model_input(mining: Dict[str, Any]) -> MiningInput:
     Handles MongoDB BSON wrapped values and treats null as missing.
     """
     if not mining:
-        return MiningInput()
+        # Upstream should have already validated presence of mining input;
+        # treat an empty dict as an error so we don't generate defaults.
+        raise ValueError("No mining stage data present; cannot build model input")
 
     # Map applicableProcesses to canonical labels used in training
     method_map = {
@@ -360,6 +362,34 @@ def _map_wizard_mining_to_model_input(mining: Dict[str, Any]) -> MiningInput:
         location=location,
         year=year,
     )
+
+
+def _has_mining_input(mining: Dict[str, Any] | None) -> bool:
+    """Return True only if there is meaningful mining input data.
+
+    This prevents generating default predictions when the wizard stage is
+    effectively empty. We consider the stage to have input if at least
+    one primary driver field is present / non-null.
+    """
+    if not isinstance(mining, dict) or not mining:
+        return False
+
+    # Any applicable processes listed
+    if isinstance(mining.get("applicableProcesses"), list) and mining.get("applicableProcesses"):
+        return True
+
+    # Key numeric drivers
+    for key in [
+        "oreGrade",
+        "overburdenRatio",
+        "waterUsage",
+        "waterConsumption",
+    ]:
+        if mining.get(key) is not None:
+            return True
+
+    # Location/year alone are not enough to justify a prediction
+    return False
 
 @app.get("/")
 async def root():
@@ -557,6 +587,11 @@ async def predict_from_wizard_and_save(workflow_id: str):
             raise HTTPException(status_code=404, detail="Workflow not found")
         mining_raw = wf.get("mining", {}) or {}
         logger.info(f"Processing mining for workflow {workflow_id}, input fields: {list(mining_raw.keys())}")
+
+        # Guard: if there is no meaningful mining input, do NOT generate predictions
+        if not _has_mining_input(mining_raw):
+            logger.info(f"Skipping mining prediction for workflow {workflow_id}: no mining input present")
+            raise HTTPException(status_code=400, detail="No mining stage data present; prediction not generated")
     except HTTPException:
         raise
     except Exception as e:

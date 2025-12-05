@@ -310,7 +310,10 @@ async def shutdown_continuous_monitor():
 
 def _map_wizard_beneficiation_to_model_input(beneficiation: Dict[str, Any]) -> BeneficiationInput:
     if not beneficiation:
-        return BeneficiationInput()
+        # Upstream should have validated; do not silently build defaults
+        raise ValueError("No beneficiation stage data present; cannot build model input")
+
+
     processes = beneficiation.get('processes', [])
     if not isinstance(processes, list):
         processes = []
@@ -519,6 +522,8 @@ async def list_wizard_ids(limit: int = 10):
 @app.post("/wizard/{workflow_id}/beneficiation/predict-and-save")
 async def predict_beneficiation_and_save(workflow_id: str):
     """
+
+
     Read beneficiation data from wizardworkflows (input), run prediction,
     and CREATE/UPDATE document in wizardworkflowoutputs (output) mapped by _id.
     """
@@ -538,6 +543,11 @@ async def predict_beneficiation_and_save(workflow_id: str):
             # Log what we received
             logger.info(f"Processing beneficiation for workflow {workflow_id}")
             logger.info(f"Input beneficiation data: {bene_raw}")
+
+            # Guard: if there is no meaningful beneficiation input, skip prediction
+            if not _has_beneficiation_input(bene_raw):
+                logger.info(f"Skipping beneficiation prediction for workflow {workflow_id}: no beneficiation input present")
+                raise HTTPException(status_code=400, detail="No beneficiation stage data present; prediction not generated")
         except HTTPException:
             raise
         except Exception as e:

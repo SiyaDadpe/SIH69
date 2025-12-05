@@ -540,6 +540,24 @@ def _build_feature_row_from_recycling(recycling: Dict[str, Any]) -> Dict[str, An
     """Map recycling wizard object to a feature row matching _feature_names."""
     return _build_feature_row_from_dict(recycling or {})
 
+
+def _has_recycling_input(recycling: Dict[str, Any] | None) -> bool:
+    """Return True only if there is meaningful recycling input data."""
+    if not isinstance(recycling, dict) or not recycling:
+        return False
+
+    # Sorting method, processes, or loop configuration
+    if recycling.get('sortingMethod'):
+        return True
+    if isinstance(recycling.get('processes'), list) and recycling.get('processes'):
+        return True
+
+    for key in ['scrapInput', 'scrapInputPercent', 'collectionRate', 'collectionRatePercent', 'closedLoop', 'openLoop']:
+        if recycling.get(key) is not None:
+            return True
+
+    return False
+
 @app.get("/wizard")
 async def list_wizard_ids(limit: int = 10):
     """Helper endpoint to list recent wizard workflow ids for testing."""
@@ -642,6 +660,12 @@ async def predict_recycling_and_save(workflow_id: str):
         
         # Add recycling input data
         recycling_raw = wf.get("recycling", {}) or {}
+
+        # Guard: if there is no meaningful recycling input, skip prediction
+        if not _has_recycling_input(recycling_raw):
+            logger.info(f"Skipping recycling prediction for workflow {workflow_id}: no recycling input present")
+            raise HTTPException(status_code=400, detail="No recycling stage data present; prediction not generated")
+
         all_stage_data.update(recycling_raw)
         
         logger.info(f"Building feature row with {len(all_stage_data)} fields from all stages")

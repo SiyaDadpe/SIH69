@@ -546,6 +546,22 @@ def _build_feature_row_from_smelting(smelting: Dict[str, Any]) -> Dict[str, Any]
     """Map smelting wizard object to a feature row matching _feature_names."""
     return _build_feature_row_from_dict(smelting or {})
 
+
+def _has_smelting_input(smelting: Dict[str, Any] | None) -> bool:
+    """Return True only if there is meaningful smelting input data."""
+    if not isinstance(smelting, dict) or not smelting:
+        return False
+
+    # Variants or processes listed
+    if isinstance(smelting.get('variants'), list) and smelting.get('variants'):
+        return True
+    if isinstance(smelting.get('processes'), list) and smelting.get('processes'):
+        return True
+
+    # Key numeric drivers (if any custom fields exist later, add here)
+    # For now, rely mainly on variants/processes to indicate real input
+    return False
+
 @app.get("/wizard")
 async def list_wizard_ids(limit: int = 10):
     """Helper endpoint to list recent wizard workflow ids for testing."""
@@ -640,6 +656,11 @@ async def predict_smelting_and_save(workflow_id: str):
     except Exception as e:
         logger.error(f"Error reading workflow: {e}")
         raise HTTPException(status_code=500, detail="Error reading workflow")
+
+    # Guard: if there is no meaningful smelting input, skip prediction
+    if not _has_smelting_input(smelting_raw):
+        logger.info(f"Skipping smelting prediction for workflow {workflow_id}: no smelting input present")
+        raise HTTPException(status_code=400, detail="No smelting stage data present; prediction not generated")
 
     # Build feature row and predict
     feature_row = _build_feature_row_from_smelting(smelting_raw)
