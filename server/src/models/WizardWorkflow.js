@@ -788,9 +788,8 @@ wizardWorkflowSchema.methods.markStepCompleted = function(stepNumber) {
     }
   }
   
-  // All steps completed
   this.currentStep = 6;
-  this.status = 'completed';
+  // this.status = 'completed'; // Removed: Keep as draft even when all steps filled
   return this.save();
 };
 
