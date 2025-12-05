@@ -318,7 +318,7 @@ async def startup_continuous_monitor():
     
     try:
         # Get configuration from environment
-        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "30"))  # seconds
+        poll_interval = int(os.getenv("MONITOR_POLL_INTERVAL", "10"))  # seconds
         freshness_window = int(os.getenv("MONITOR_FRESHNESS_WINDOW", "600"))  # 10 minutes
         
         # Create monitor instance

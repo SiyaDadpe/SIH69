@@ -36,6 +36,11 @@ from bson import ObjectId
 
 from src.utils.mongo_client import get_mongo_client
 from src.engine.main_engine import AluminumLCAEngine
+from src.engine.circularity import (
+    extract_sustainability_parameters,
+    compute_circularity_indices,
+    build_sankey_data,
+)
 from scripts.calculate_lca_by_id import _trim_recommendations  # reuse
 
 
@@ -121,7 +126,25 @@ def build_lca_output_doc(
     impact_breakdown = compact.get("impactBreakdown", [])
     if impact_breakdown:
         doc["impactBreakdown"] = impact_breakdown
-    
+
+    # ========== SUSTAINABILITY PARAMETERS (UNIONED) ==========
+    sust = extract_sustainability_parameters(source)
+    if sust:
+        doc["sustainabilityParameters"] = sust
+
+    # ========== CIRCULARITY & LINEARITY INDICES ==========
+    circ = compute_circularity_indices(source)
+    doc["circularityIndex"] = circ.get("circularityIndex", 0.0)
+    doc["linearityIndex"] = circ.get("linearityIndex", 1.0 - doc["circularityIndex"])
+    components = circ.get("components")
+    if isinstance(components, dict):
+        doc["circularityComponents"] = components
+
+    # ========== SANKEY DATA FOR CIRCULARITY FLOWS ==========
+    sankey = build_sankey_data(source)
+    if isinstance(sankey, dict):
+        doc["sankeyData"] = sankey
+
     # ========== RECOMMENDATIONS ==========
     if use_llm and llm_block and llm_block.get("success") and isinstance(llm_block.get("recommendations"), list):
         doc["recommendations"] = _trim_recommendations(llm_block["recommendations"])
