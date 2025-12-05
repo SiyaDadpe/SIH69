@@ -91,6 +91,29 @@ export const getLCAReportById = async (reportId) => {
 };
 
 /**
+ * Get enriched LCA report from calculatelca collection
+ * @param {string} reportId - The calculatelca document ID / workflowId
+ * @returns {Promise} Response with calculatelca-style document
+ */
+export const getCalculatelcaById = async (reportId) => {
+  try {
+    const response = await api.get(`/lca/calculatelca/${reportId}`);
+
+    console.log('✅ [LCA Service] Retrieved calculatelca report:', reportId);
+
+    return response.data;
+  } catch (error) {
+    console.error('❌ [LCA Service] Error fetching calculatelca report:', error);
+
+    if (error.response?.status === 404) {
+      throw new Error('Calculatelca report not found');
+    }
+
+    throw error;
+  }
+};
+
+/**
  * Get LCA statistics for current user
  * @returns {Promise} Response with statistics
  */
@@ -168,6 +191,7 @@ export default {
   calculateLCA,
   getUserLCAReports,
   getLCAReportById,
+  getCalculatelcaById,
   getUserLCAStats,
   deleteLCAReport,
   downloadLCAReport

@@ -121,6 +121,31 @@ def build_lca_output_doc(
                 # Include stage-specific parameters from source
                 "parameters": source.get(stage_name, {})
             }
+
+    # Ensure all known stages exist so frontend analytics never see missing keys
+    default_stage_template = {
+        "energyConsumption": 0,
+        "co2Emissions": 0,
+        "waterUsage": 0,
+        "wasteGeneration": 0,
+        "airQualityImpact": 0,
+        "completed": False,
+        "parameters": {},
+    }
+    for stage_name in [
+        "mining",
+        "beneficiation",
+        "refining",
+        "smelting",
+        "manufacturing",
+        "recycling",
+        "valorization",
+    ]:
+        if stage_name not in doc["lcaStages"]:
+            # Merge defaults with any raw parameters present in the source doc
+            stage_block = default_stage_template.copy()
+            stage_block["parameters"] = source.get(stage_name, {}) or {}
+            doc["lcaStages"][stage_name] = stage_block
     
     # ========== IMPACT BREAKDOWN ==========
     impact_breakdown = compact.get("impactBreakdown", [])
@@ -143,7 +168,16 @@ def build_lca_output_doc(
     # ========== SANKEY DATA FOR CIRCULARITY FLOWS ==========
     sankey = build_sankey_data(source)
     if isinstance(sankey, dict):
-        doc["sankeyData"] = sankey
+        # Ensure minimum shape expected by frontend (nodes/links arrays)
+        nodes = sankey.get("nodes") if isinstance(sankey.get("nodes"), list) else []
+        links = sankey.get("links") if isinstance(sankey.get("links"), list) else []
+        normalized = dict(sankey)
+        normalized["nodes"] = nodes
+        normalized["links"] = links
+        doc["sankeyData"] = normalized
+    else:
+        # Provide empty structure so consumers can safely render/fallback
+        doc["sankeyData"] = {"nodes": [], "links": []}
 
     # ========== RECOMMENDATIONS ==========
     if use_llm and llm_block and llm_block.get("success") and isinstance(llm_block.get("recommendations"), list):
