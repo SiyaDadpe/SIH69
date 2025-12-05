@@ -151,6 +151,8 @@ function StepSection({
   onPredict,
   predicting,
   pollingProgress = { current: 0, max: 15 },
+  onGenerateFallbacks,
+  generatingFallbacks,
   footer,
 }) {
   return (
@@ -176,23 +178,42 @@ function StepSection({
               <CardTitle className={`${HEADING_TEXT} mt-3 text-gray-900`}>{title}</CardTitle>
               <CardDescription className="mt-1 text-sm text-gray-600">{description}</CardDescription>
             </div>
-            {onPredict && (
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                <Button
-                  type="button"
-                  className="bg-[#BA7967] text-white shadow-sm transition-all duration-200 hover:bg-[#a86b5c] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={onPredict}
-                  disabled={predicting}
-                >
-                  <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
-                    🤖
-                  </span>
-                  {predicting 
-                    ? `Polling... (${pollingProgress.current}/${pollingProgress.max})` 
-                    : "Generate AI Predictions"}
-                </Button>
-              </motion.div>
-            )}
+            <div className="flex flex-col gap-2">
+              {onPredict && (
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    type="button"
+                    className="bg-[#BA7967] text-white shadow-sm transition-all duration-200 hover:bg-[#a86b5c] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={onPredict}
+                    disabled={predicting}
+                  >
+                    <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
+                      🤖
+                    </span>
+                    {predicting 
+                      ? `Polling... (${pollingProgress.current}/${pollingProgress.max})` 
+                      : "Generate AI Predictions"}
+                  </Button>
+                </motion.div>
+              )}
+              {onGenerateFallbacks && (
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                  <Button
+                    type="button"
+                    className="bg-[#BA7967] text-white shadow-sm transition-all duration-200 hover:bg-[#a86b5c] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={onGenerateFallbacks}
+                    disabled={generatingFallbacks}
+                  >
+                    <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
+                      ✨
+                    </span>
+                    {generatingFallbacks 
+                      ? "Generating..." 
+                      : "Generate Fallbacks"}
+                  </Button>
+                </motion.div>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="relative z-10">{children}</CardContent>
@@ -404,7 +425,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {} }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -556,6 +577,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -960,7 +983,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                     <FormLabel className={GROUP_HEADING_TEXT}>Energy (MJ per tonne)</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
+                        {...field}
+                        type="number"
                         placeholder="AI predicted" 
                         className={aiPopulatedFields.has('mining_energy_MJ_per_t_ore') ? 'ai-populated-field' : ''}
                       />
@@ -978,7 +1002,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                     <FormLabel className={GROUP_HEADING_TEXT}>CO₂ (kg per tonne)</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
+                        {...field}
+                        type="number"
                         placeholder="AI predicted" 
                         className={aiPopulatedFields.has('mining_co2_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
@@ -996,7 +1021,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                     <FormLabel className={GROUP_HEADING_TEXT}>SOx (kg per tonne)</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
+                        {...field}
+                        type="number"
                         placeholder="AI predicted" 
                         className={aiPopulatedFields.has('mining_sox_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
@@ -1014,7 +1040,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                     <FormLabel className={GROUP_HEADING_TEXT}>NOx (kg per tonne)</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
+                        {...field}
+                        type="number"
                         placeholder="AI predicted" 
                         className={aiPopulatedFields.has('mining_nox_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
@@ -1032,7 +1059,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                     <FormLabel className={GROUP_HEADING_TEXT}>Particulate Matter (PM)</FormLabel>
                     <FormControl>
                       <Input 
-                        {...field} 
+                        {...field}
+                        type="number"
                         placeholder="AI predicted" 
                         className={aiPopulatedFields.has('mining_pm_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
@@ -1051,7 +1079,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {} }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1247,6 +1275,8 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -1695,7 +1725,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Water Usage (m³ per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input {...field} type="number" placeholder="AI predicted" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1709,7 +1739,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Electricity Usage (kWh per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input {...field} type="number" placeholder="AI predicted" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1723,7 +1753,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Tailings Management</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input {...field} placeholder="AI predicted" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1737,7 +1767,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Noise Pollution Level</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input {...field} placeholder="AI predicted" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1751,7 +1781,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Dust Pollution Level</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly placeholder="AI predicted" />
+                      <Input {...field} placeholder="AI predicted" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -2170,8 +2200,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         const processedPredictions = {};
         Object.entries(stepPredictions.aiPredictions).forEach(([fieldName, predData]) => {
           if (predData && typeof predData === 'object' && 'prediction' in predData) {
-            processedPredictions[fieldName] = predData.prediction;
-            console.log(`✅ [AI Prediction] Extracted ${fieldName} = ${predData.prediction}`);
+            // Normalize field name: replace % with _percent to match frontend schema
+            const normalizedFieldName = fieldName.replace(/_(%|percent)$/i, '_percent');
+            processedPredictions[normalizedFieldName] = predData.prediction;
+            console.log(`✅ [AI Prediction] Extracted ${fieldName} → ${normalizedFieldName} = ${predData.prediction}`);
           }
         });
         
@@ -2250,6 +2282,196 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     }
   };
 
+  // Fallback generation handler
+  const [generatingFallbacks, setGeneratingFallbacks] = useState(false);
+  const [fallbackSuccess, setFallbackSuccess] = useState(null);
+  const [fallbackError, setFallbackError] = useState(null);
+
+  const getFallbackValues = (stepName, currentValues) => {
+    // Use mid-range scenario (S2 or S5) as baseline fallbacks
+    const fallbacks = {};
+    
+    switch (stepName) {
+      case 'mining':
+        // Mining fallbacks based on scenario S2 (mid-grade, improved)
+        fallbacks.ore_grade_percent = 50;
+        fallbacks.overburden_ratio = 3.5;
+        fallbacks.mining_water_m3_per_t_ore = 0.8;
+        fallbacks.mining_diesel_L_per_t_ore = 15;
+        fallbacks.mining_electricity_kWh_per_t_ore = 12;
+        fallbacks.mining_explosives_kg_per_t_ore = 0.3;
+        fallbacks.land_disturbed_m2_per_t_ore = 2.5;
+        fallbacks.mining_ghg_kg_CO2e_per_t_ore = 8;
+        fallbacks.dust_emissions_kg_per_t_ore = 0.5;
+        fallbacks.equipment_type = 'diesel_electric_hybrid';
+        break;
+        
+      case 'beneficiation':
+        // Beneficiation fallbacks based on scenario S2
+        fallbacks.beneficiation_water_m3_per_t_ore = 1.0;
+        fallbacks.beneficiation_electricity_kWh_per_t_ore = 15;
+        fallbacks.beneficiation_chemical_kg_per_t_ore = 0.2;
+        fallbacks.beneficiation_tailings_t_per_t_ore = 0.3;
+        fallbacks.tailings_solids_content_percent = 45;
+        fallbacks.beneficiation_recovery_percent = 92;
+        break;
+        
+      case 'refining':
+        // Refining fallbacks based on scenario S5 (Indian average)
+        fallbacks.bauxite_input_t_per_t_alumina = 2.9;
+        fallbacks.red_mud_t_per_t_alumina = 1.1;
+        fallbacks.refining_energy_GJ_per_t_alumina = 13.5;
+        fallbacks.refining_electricity_kWh_per_t_alumina = 140;
+        fallbacks.refining_water_m3_per_t_alumina = 2.5;
+        fallbacks.caustic_soda_kg_per_t_alumina = 80;
+        fallbacks.lime_kg_per_t_alumina = 20;
+        fallbacks.refining_process_efficiency_percent = 88;
+        fallbacks.alumina_grade_percent = 99.5;
+        break;
+        
+      case 'smelting':
+        // Smelting fallbacks based on scenario S5
+        fallbacks.alumina_input_t_per_t_aluminium = 2.0;
+        fallbacks.smelting_electricity_kWh_per_t_aluminium = 15000;
+        fallbacks.carbon_anode_kg_per_t_aluminium = 450;
+        fallbacks.direct_co2_emissions_t_CO2_per_t_aluminium = 1.7;
+        fallbacks.pfc_emissions_t_CO2e_per_t_aluminium = 0.3;
+        fallbacks.dross_kg_per_t_aluminium = 30;
+        fallbacks.spent_pot_lining_kg_per_t_aluminium = 25;
+        fallbacks.smelting_energy_efficiency_percent = 92;
+        fallbacks.cell_voltage_V = 4.2;
+        fallbacks.current_efficiency_percent = 94;
+        fallbacks.grid_emission_factor_kg_CO2_per_kWh = 0.82;
+        break;
+        
+      case 'manufacturing':
+        // Manufacturing fallbacks based on scenario S2
+        fallbacks.manufacturing_energy_kWh_per_t = 600;
+        fallbacks.manufacturing_scrap_percent = 12;
+        fallbacks.on_site_scrap_recycling_percent = 70;
+        fallbacks.surface_treatment_chemicals_kg_per_t = 5;
+        fallbacks.manufacturing_water_m3_per_t = 1.5;
+        fallbacks.manufacturing_yield_percent = 88;
+        fallbacks.product_type = 'rolled_sheet';
+        fallbacks.coating_kg_per_m2 = 0.05;
+        fallbacks.welding_energy_kWh_per_t = 50;
+        break;
+        
+      case 'recycling':
+        // Recycling fallbacks based on scenario S8 (high recycling)
+        fallbacks.recycled_content_percent = 50;
+        fallbacks.recycling_energy_kWh_per_t = 3000;
+        fallbacks.recycling_yield_percent = 92;
+        fallbacks.collection_rate_percent = 75;
+        fallbacks.sorting_efficiency_percent = 85;
+        fallbacks.contaminant_removal_percent = 90;
+        fallbacks.recycling_water_m3_per_t = 0.5;
+        fallbacks.salt_flux_kg_per_t = 15;
+        break;
+        
+      case 'valorization':
+        // Valorization fallbacks based on scenario S13 (high valorization)
+        fallbacks.red_mud_valorization_percent = 40;
+        fallbacks.dross_recovery_percent = 75;
+        fallbacks.spl_valorization_percent = 25;
+        fallbacks.slag_utilization_percent = 60;
+        fallbacks.co_product_recovery_percent = 50;
+        fallbacks.waste_to_landfill_percent = 30;
+        fallbacks.valorization_energy_kWh_per_t = 50;
+        break;
+    }
+    
+    return fallbacks;
+  };
+
+  const handleGenerateFallbacks = async (stepName, currentData) => {
+    try {
+      setGeneratingFallbacks(true);
+      setFallbackError(null);
+      setFallbackSuccess(null);
+      
+      console.log(`🔄 [Fallback] Generating fallback values for ${stepName}`);
+      console.log(`🔄 [Fallback] Current data received:`, currentData);
+      
+      // Get current form values for this step
+      const currentStepValues = currentData || formValues[stepName] || {};
+      
+      // Get AI populated field names to exclude them
+      const aiFields = aiPopulatedFields[stepName] || new Set();
+      
+      // Get fallback values for this step
+      const fallbackValues = getFallbackValues(stepName, currentStepValues);
+      
+      // Filter: only populate fields that are empty AND not AI-predicted AND not sustainability params
+      let populatedCount = 0;
+      const updatedFields = {};
+      
+      Object.entries(fallbackValues).forEach(([fieldName, fallbackValue]) => {
+        const currentValue = currentStepValues[fieldName];
+        const isAIField = aiFields.has(fieldName);
+        const isSustainabilityField = fieldName.startsWith('sustainability');
+        
+        // Only populate if field is empty and not AI-predicted and not sustainability
+        const isEmpty = currentValue === null || 
+                       currentValue === undefined || 
+                       currentValue === '' ||
+                       (typeof currentValue === 'number' && isNaN(currentValue));
+        
+        if (isEmpty && !isAIField && !isSustainabilityField) {
+          updatedFields[fieldName] = fallbackValue;
+          populatedCount++;
+        }
+      });
+      
+      console.log(`✅ [Fallback] Populated ${populatedCount} fields:`, Object.keys(updatedFields));
+      
+      // Save to backend and update formValues
+      if (populatedCount > 0) {
+        const updatedStepData = {
+          ...currentStepValues,
+          ...updatedFields
+        };
+        
+        // Update formValues state
+        setFormValues(prev => ({
+          ...prev,
+          [stepName]: updatedStepData
+        }));
+        
+        // Save to backend
+        await handleSaveStep(stepName, updatedStepData);
+        
+        setFallbackSuccess(
+          `✨ Successfully populated ${populatedCount} fallback values`
+        );
+      } else {
+        setFallbackSuccess(
+          `ℹ️ All fields are already filled or predicted by AI`
+        );
+      }
+      
+      setTimeout(() => setFallbackSuccess(null), 5000);
+      
+      return {
+        success: true,
+        populatedCount
+      };
+      
+    } catch (error) {
+      console.error('❌ [Fallback] Error:', error);
+      const errorMessage = error.message || 'Failed to generate fallback values';
+      setFallbackError(`Fallback Error: ${errorMessage}`);
+      setTimeout(() => setFallbackError(null), 5000);
+      
+      return {
+        success: false,
+        error: errorMessage
+      };
+    } finally {
+      setGeneratingFallbacks(false);
+    }
+  };
+
   const renderStep = () => {
     switch (stepKey) {
       case 'mining':
@@ -2264,6 +2486,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onOpenWorkflow={onOpenWorkflow}
             aiPopulatedFields={aiPopulatedFields['mining'] || new Set()}
             predictionMetadata={predictionMetadata['mining'] || {}}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('mining', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       case 'beneficiation':
@@ -2279,6 +2503,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onOpenWorkflow={onOpenWorkflow}
             aiPopulatedFields={aiPopulatedFields['beneficiation'] || new Set()}
             predictionMetadata={predictionMetadata['beneficiation'] || {}}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('beneficiation', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       case 'refining':
@@ -2294,6 +2520,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['refining'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('refining', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       case 'smelting':
@@ -2309,6 +2537,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['smelting'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('smelting', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       case 'manufacturing':
@@ -2324,6 +2554,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['manufacturing'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('manufacturing', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       case 'recycling':
@@ -2339,6 +2571,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['recycling'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('recycling', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       case 'valorization':
@@ -2358,6 +2592,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             workflowId={workflowId}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            onGenerateFallbacks={(data) => handleGenerateFallbacks('valorization', data)}
+            generatingFallbacks={generatingFallbacks}
           />
         );
       default:
@@ -2420,6 +2656,35 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         </div>
       )}
 
+      {/* Fallback Generation Notifications */}
+      {fallbackError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 animate-in slide-in-from-top">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="font-semibold">Fallback Generation Failed</p>
+              <p className="text-sm mt-1">{fallbackError}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {fallbackSuccess && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 animate-in slide-in-from-top">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="font-semibold">Fallback Values Generated!</p>
+              <p className="text-sm mt-1">{fallbackSuccess}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {renderStep()}
       {!(stepKey === 'mining' || stepKey === 'beneficiation' || stepKey === 'refining' || stepKey === 'smelting' || stepKey === 'manufacturing' || stepKey === 'recycling' || stepKey === 'valorization') && (
         <div className="mt-6 flex justify-between">
@@ -2463,7 +2728,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2514,6 +2779,15 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     dust: z.coerce.number().min(0).nullable().optional(),
     toxicity: z.string().nullable().optional(),
     toxicityOthers: z.string().nullable().optional(),
+    // AI Predicted fields
+    refining_energy_MJ_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_water_m3_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_red_mud_kg_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_caustic_soda_kg_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_lime_kg_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_so2_kg_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_nox_kg_per_t_alumina: z.coerce.number().nullable().optional(),
+    refining_dust_kg_per_t_alumina: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -2579,6 +2853,8 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
         <Form {...form}>
@@ -2995,7 +3271,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3043,6 +3319,15 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
     nox: z.coerce.number().min(0).nullable().optional(),
     fluorideRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
     thermalRecovery: z.coerce.number().min(0).max(100).nullable().optional(),
+    // AI Predicted fields
+    smelting_energy_kWh_per_t_al: z.coerce.number().nullable().optional(),
+    smelting_energy_MJ_per_t_al: z.coerce.number().nullable().optional(),
+    smelting_co2_kg_per_t_al: z.coerce.number().nullable().optional(),
+    smelting_pfc_kg_per_t_al: z.coerce.number().nullable().optional(),
+    smelting_so2_kg_per_t_al: z.coerce.number().nullable().optional(),
+    smelting_nox_kg_per_t_al: z.coerce.number().nullable().optional(),
+    smelting_fluoride_recovery_percent: z.coerce.number().nullable().optional(),
+    smelting_thermal_recovery_percent: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -3108,6 +3393,8 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
         onPredict={() => handleGenerateAIPrediction(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
         <Form {...form}>
@@ -3513,7 +3800,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3592,6 +3879,11 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     lightweightingOthers: z.string().nullable().optional(),
     corrosionImpact: z.enum(['minimal', 'moderate', 'severe', 'others']).nullable().optional(),
     corrosionOthers: z.string().nullable().optional(),
+    // AI Predicted fields
+    manufacturing_energy_MJ_per_t_product: z.coerce.number().nullable().optional(),
+    manufacturing_scrap_rate_percent: z.coerce.number().nullable().optional(),
+    manufacturing_recycled_content_percent: z.coerce.number().nullable().optional(),
+    manufacturing_transport_emissions_kgCO2e_per_t: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -3679,6 +3971,8 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
         <Form {...form}>
@@ -4000,6 +4294,25 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   </FormItem>
                 )} />
 
+                <FormField control={control} name="manufacturing_scrap_rate_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Scrap Rate (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('manufacturing_scrap_rate_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
                 <FormField control={control} name="manufacturing_recycled_content_percent" render={({ field }) => (
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Recycled Content (%)</FormLabel>
@@ -4112,7 +4425,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4161,6 +4474,14 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
     emissionSavings: z.coerce.number().min(0).nullable().optional(),
     sortingMethods: z.array(z.string()).default([]),
     sortingOthers: z.string().nullable().optional(),
+    // AI Predicted fields
+    recycling_scrap_input_percent: z.coerce.number().nullable().optional(),
+    recycling_recovery_yield_percent: z.coerce.number().nullable().optional(),
+    recycling_energy_kWh_per_t_Al: z.coerce.number().nullable().optional(),
+    recycling_emission_savings_kgCO2e_per_t_Al: z.coerce.number().nullable().optional(),
+    recycling_collection_rate_percent: z.coerce.number().nullable().optional(),
+    recycling_closed_loop_percent: z.coerce.number().nullable().optional(),
+    recycling_open_loop_percent: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -4229,6 +4550,8 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
         <Form {...form}>
@@ -4554,6 +4877,25 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="recycling_scrap_input_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Scrap Input (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_scrap_input_percent') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
                 <FormField control={control} name="recycling_recovery_yield_percent" render={({ field }) => (
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Recovery Yield (%)</FormLabel>
@@ -4603,6 +4945,25 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_emission_savings_kgCO2e_per_t_Al') ? 'ai-populated-field' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={control} name="recycling_collection_rate_percent" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={GROUP_HEADING_TEXT}>Collection Rate (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.1" 
+                        placeholder="AI predicted" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        className={aiPopulatedFields.has('recycling_collection_rate_percent') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -4710,7 +5071,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4738,9 +5099,9 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
   const econLevels = ['low', 'moderate', 'high']
 
   const schema = z.object({
-    wasteTypes: z.array(z.string()).min(1, { message: 'Select at least one waste type' }),
+    wasteTypes: z.array(z.string()).min(1, { message: 'Select at least one waste type' }).optional().or(z.array(z.string()).default([])),
     wasteTypeOthers: z.string().nullable().optional(),
-    valorizationMethods: z.array(z.string()).min(1, { message: 'Select at least one valorization method' }),
+    valorizationMethods: z.array(z.string()).min(1, { message: 'Select at least one valorization method' }).optional().or(z.array(z.string()).default([])),
     methodsOthers: z.string().nullable().optional(),
 
     wasteUtilizationOverallPercent: z.coerce.number().min(0).max(100).nullable().optional(),
@@ -4777,6 +5138,9 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
     econSPLEncapsulation: z.enum(['low', 'moderate', 'high']).nullable().optional(),
     econDrossRecovery: z.enum(['low', 'moderate', 'high']).nullable().optional(),
     econFluorideCapture: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+    // AI Predicted fields
+    valorization_recovery_efficiency_percent: z.coerce.number().nullable().optional(),
+    valorization_emission_reduction_kgCO2e_per_t_waste: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -4820,24 +5184,59 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
   };
 
   const onSubmit = async (data) => {
-    try {
-      // Save the valorization step data
-      await onSave?.(data)
-      console.log('✅ Valorization step saved successfully')
+    console.log('💾 [Valorization] Form submission started');
+    console.log('📋 [Valorization] Form data:', data);
+    
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
 
+    try {
+      console.log('💾 [Valorization] Calling onSave...');
+      await onSave?.(data);
+      console.log('✅ [Valorization] Step saved successfully');
+      
+      setSaveSuccess(true);
+      
+      // Small delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Use onNext logic just like other steps (don't trigger final submission)
+      console.log('➡️  [Valorization] Calling onNext');
+      if (onNext) {
+        onNext();
+      }
     } catch (e) {
-      console.error('❌ Valorization submission failed:', e)
+      console.error('❌ [Valorization] Submission failed:', e);
+      setSaveError(e.message || 'Failed to save valorization data');
+    } finally {
+      setIsSaving(false);
     }
   }
 
   const footerContent = (
-    <StepFooterActions
-      onBack={onBack}
-      onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
-      onLcaCalculate={onCalculateLCA}
-      isCalculatingLca={isCalculatingLca}
-    />
+    <>
+      {saveSuccess && (
+        <div className="w-full rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 shadow-sm flex items-center gap-2">
+          <span className="text-lg">✅</span>
+          <span>Data saved successfully!</span>
+        </div>
+      )}
+      {saveError && (
+        <div className="w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm flex items-center gap-2">
+          <span className="text-lg">⚠️</span>
+          <span>{saveError}</span>
+        </div>
+      )}
+      <StepFooterActions
+        onBack={onBack}
+        onForward={handleSubmit(onSubmit)}
+        forwardDisabled={!isValid || isSaving}
+        forwardLabel={isSaving ? '💾 Saving...' : (onSubmitSuccess ? 'Submit' : 'Next')}
+        onLcaCalculate={onCalculateLCA}
+        isCalculatingLca={isCalculatingLca}
+      />
+    </>
   )
 
   return (
@@ -4850,6 +5249,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
         pollingProgress={pollingProgress}
+        onGenerateFallbacks={() => onGenerateFallbacks && onGenerateFallbacks(form.getValues())}
+        generatingFallbacks={generatingFallbacks}
         footer={footerContent}
       >
         <Form {...form}>
