@@ -199,7 +199,7 @@ function StepSection({
                   </Button>
                 </motion.div>
               )}
-              {onGenerateFallbacks && (
+              {/* {onGenerateFallbacks && (
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                   <Button
                     type="button"
@@ -215,7 +215,7 @@ function StepSection({
                       : "Generate Fallbacks"}
                   </Button>
                 </motion.div>
-              )}
+              )} */}
             </div>
           </div>
         </CardHeader>
@@ -991,7 +991,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
             <hr className="my-4 border-gray-200" />
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">AI Predicted Values</h3>
               {predictionMetadata?.confidence && (
                 <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                   {(predictionMetadata.confidence * 100).toFixed(1)}% confidence
@@ -1011,7 +1010,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 250" 
                         className={aiPopulatedFields.has('mining_energy_MJ_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1030,7 +1029,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 45" 
                         className={aiPopulatedFields.has('mining_co2_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1049,7 +1048,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.5" 
                         className={aiPopulatedFields.has('mining_sox_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1068,7 +1067,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.3" 
                         className={aiPopulatedFields.has('mining_nox_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1087,7 +1086,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1.2" 
                         className={aiPopulatedFields.has('mining_pm_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1736,7 +1735,6 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
             <hr className="my-4 border-gray-200" />
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">AI Predicted Values</h3>
               {predictionMetadata?.confidence && (
                 <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                   {(predictionMetadata.confidence * 100).toFixed(1)}% confidence
@@ -1753,7 +1751,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Water Usage (m³ per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" placeholder="AI predicted" />
+                      <Input {...field} type="number" placeholder="e.g., 2.5" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1767,7 +1765,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Electricity Usage (kWh per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" placeholder="AI predicted" />
+                      <Input {...field} type="number" placeholder="e.g., 150" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1781,7 +1779,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Tailings Management</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="AI predicted" />
+                      <Input {...field} placeholder="e.g., Dry stacking" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1795,7 +1793,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Noise Pollution Level</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="AI predicted" />
+                      <Input {...field} placeholder="e.g., 85 dB" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1809,7 +1807,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Dust Pollution Level</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="AI predicted" />
+                      <Input {...field} placeholder="e.g., Moderate" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -3494,10 +3492,6 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 
             {/* 4. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="refining_energy_MJ_per_t_alumina" render={({ field }) => (
@@ -3508,7 +3502,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 12000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_energy_MJ_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3526,7 +3520,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 8.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_water_m3_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3544,7 +3538,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1500" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_red_mud_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3562,7 +3556,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 120" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_caustic_soda_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3580,7 +3574,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 50" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_lime_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3598,7 +3592,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1.2" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_so2_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3616,7 +3610,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.8" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_nox_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3634,7 +3628,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 2.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_dust_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -4056,10 +4050,6 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 
             {/* 4. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="smelting_energy_kWh_per_t_al" render={({ field }) => (
@@ -4070,7 +4060,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 15000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_energy_kWh_per_t_al') ? 'ai-populated-field' : ''}
@@ -4088,7 +4078,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 54000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_energy_MJ_per_t_al') ? 'ai-populated-field' : ''}
@@ -4106,7 +4096,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 11000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_co2_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -4124,7 +4114,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_pfc_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -4142,7 +4132,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 35" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_so2_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -4160,7 +4150,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_nox_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -4179,7 +4169,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 95" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_fluoride_recovery_percent') ? 'ai-populated-field' : ''}
@@ -4198,7 +4188,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 60" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_thermal_recovery_percent') ? 'ai-populated-field' : ''}
@@ -4688,11 +4678,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
             <hr className="my-4 border-gray-200" />
 
             {/* 3.5. AI-Predictable Fields Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
+            <div className="space-y-4"> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="manufacturing_energy_MJ_per_t_product" render={({ field }) => (
@@ -4703,7 +4689,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 3500" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_energy_MJ_per_t_product') ? 'ai-populated-field' : ''}
@@ -4722,7 +4708,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 15" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_scrap_rate_percent') ? 'ai-populated-field' : ''}
@@ -4741,7 +4727,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 30" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_recycled_content_percent') ? 'ai-populated-field' : ''}
@@ -4759,7 +4745,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 85" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_transport_emissions_kgCO2e_per_t') ? 'ai-populated-field' : ''}
@@ -5292,11 +5278,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 
             {/* 3.5. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
-              
+            
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="recycling_scrap_input_percent" render={({ field }) => (
                   <FormItem>
@@ -5307,7 +5289,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 75" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_scrap_input_percent') ? 'ai-populated-field' : ''}
@@ -5326,7 +5308,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 92" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_recovery_yield_percent') ? 'ai-populated-field' : ''}
@@ -5344,7 +5326,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 500" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_energy_kWh_per_t_Al') ? 'ai-populated-field' : ''}
@@ -5362,7 +5344,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 9000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_emission_savings_kgCO2e_per_t_Al') ? 'ai-populated-field' : ''}
@@ -5381,7 +5363,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 85" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_collection_rate_percent') ? 'ai-populated-field' : ''}
@@ -5400,7 +5382,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 60" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_closed_loop_percent') ? 'ai-populated-field' : ''}
@@ -5419,7 +5401,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 40" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_open_loop_percent') ? 'ai-populated-field' : ''}
@@ -5952,10 +5934,6 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
 
             {/* 2.5. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="valorization_recovery_efficiency_percent" render={({ field }) => (
@@ -5967,7 +5945,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 80" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('valorization_recovery_efficiency_percent') ? 'ai-populated-field' : ''}
@@ -5985,7 +5963,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1200" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('valorization_emission_reduction_kgCO2e_per_t_waste') ? 'ai-populated-field' : ''}
