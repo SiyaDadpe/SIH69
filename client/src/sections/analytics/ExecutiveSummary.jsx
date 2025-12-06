@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import SankeyDiagram from '../../components/SankeyDiagram';
 
 export default function ExecutiveSummary({ mode, selectedProject }) {
@@ -21,6 +21,7 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
     const aiRecommendations = selectedProject.aiRecommendations || [];
     const comparativeMetrics = selectedProject.comparativeMetrics || {};
     const productionStages = selectedProject.productionStages || [];
+    const engineSankey = selectedProject.sankeyData || null;
 
     // Use actual data from comparativeMetrics for timeline projections
     const timelineData = [
@@ -65,10 +66,24 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
     const waterSavings = comparativeMetrics.waterUsage?.reduction || 
         ((linearData.waterConsumption - circularData.waterConsumption) / linearData.waterConsumption * 100);
     const recyclingRate = circularData.recyclingRate || 0;
-    const circularityIndex = circularData.materialCircularity || 0;
+    const circularityIndex =
+        selectedProject.circularityIndex ??
+        circularData.materialCircularity ??
+        0;
 
-    // Generate Sankey diagram data from production stages
-    const generateSankeyData = (stages, flowMode) => {
+    const linearityIndex = selectedProject.linearityIndex ?? (circularityIndex ? 1 - circularityIndex : 0);
+
+    const circularVsLinearData = [
+        { name: 'Circular', value: Math.round(circularityIndex * 100) },
+        { name: 'Linear', value: Math.round(linearityIndex * 100) }
+    ];
+
+    // Prefer engine-generated Sankey data when available; fall back to synthetic
+    const getSankeyData = (stages, flowMode) => {
+        if (engineSankey && engineSankey.nodes && engineSankey.links) {
+            return engineSankey;
+        }
+
         if (!stages || stages.length === 0) {
             return { nodes: [], links: [] };
         }
@@ -77,7 +92,6 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
         const links = [];
 
         if (flowMode === 'linear') {
-            // Linear flow: Input → Process → Output → Waste
             const totalInput = stages.reduce((sum, s) => sum + s.materialInput, 0);
             const totalOutput = stages.reduce((sum, s) => sum + s.productOutput, 0);
             const totalWaste = stages.reduce((sum, s) => sum + s.wasteOutput, 0);
@@ -98,7 +112,6 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                 { source: 'processing', target: 'emissions', value: totalEmissions / 100 }
             );
         } else {
-            // Circular flow: Input → Process → Output → Recycling → Back to Input
             const totalInput = stages.reduce((sum, s) => sum + s.materialInput, 0);
             const totalOutput = stages.reduce((sum, s) => sum + s.productOutput, 0);
             const totalWaste = stages.reduce((sum, s) => sum + s.wasteOutput, 0);
@@ -155,9 +168,27 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                     </div>
                     <div className="text-right">
                         <div className="text-3xl font-bold text-[#BA7967]">
-                            {circularityIndex?.toFixed(1) || 'N/A'}%
+                            {circularityIndex ? (circularityIndex * 100).toFixed(1) : 'N/A'}%
                         </div>
-                        <div className="text-sm text-gray-600">Material Circularity Index</div>
+                        <div className="text-sm text-gray-600 mb-2">Material Circularity Index</div>
+                        <div className="w-40 h-16 inline-block">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={circularVsLinearData}>
+                                    <Tooltip
+                                        formatter={(v, n) => [`${v.toFixed(1)}%`, n]}
+                                        contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                                    />
+                                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                        {circularVsLinearData.map((entry, index) => (
+                                            <Cell
+                                                key={entry.name}
+                                                fill={entry.name === 'Circular' ? '#16a34a' : '#ef4444'}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -278,13 +309,13 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                             <span className="text-xs font-medium text-gray-500 uppercase">Circularity</span>
                         </div>
                         <div className="text-2xl font-bold text-gray-900 mb-1">
-                            {circularityIndex?.toFixed(1) || 'N/A'}%
+                            {circularityIndex ? (circularityIndex * 100).toFixed(1) : 'N/A'}%
                         </div>
                         <div className="text-sm text-gray-600 mb-3">MCI Score</div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                             <div 
                                 className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${circularityIndex || 0}%` }}
+                                style={{ width: `${(circularityIndex || 0) * 100}%` }}
                             ></div>
                         </div>
                     </div>
@@ -583,7 +614,7 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                 </div>
 
                 <SankeyDiagram
-                    data={generateSankeyData(productionStages, sankeyMode)}
+                    data={getSankeyData(productionStages, sankeyMode)}
                     width={900}
                     height={500}
                     onNodeClick={(node) => setSelectedNode(node)}
@@ -595,7 +626,7 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                             <div>
                                 <h4 className="font-semibold text-blue-900 mb-1">{selectedNode.name}</h4>
                                 <p className="text-sm text-blue-700">
-                                    Value: {selectedNode.value.toLocaleString()} {selectedNode.unit}
+                                    Value: {(selectedNode.value ?? 0).toLocaleString()} {selectedNode.unit || ''}
                                 </p>
                                 <p className="text-xs text-blue-600 mt-1">
                                     Type: {selectedNode.type === 'input' ? 'Input Material' : 

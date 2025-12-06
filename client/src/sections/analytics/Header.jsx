@@ -4,16 +4,29 @@ import { BarChart, Bar, Cell, ResponsiveContainer } from 'recharts';
 export default function Header({ selectedProject, mode = 'circular', onModeChange, onProjectSelect, projects, selectedProjects = [], onProjectsCompare }) {
     const [showProjectSelector, setShowProjectSelector] = useState(false);
     
-    // Calculate metrics for quick stats
+    // Calculate metrics for quick stats (using calculatelca-style circularity fields when available)
     const getMetrics = () => {
         if (!selectedProject) return null;
-        
-        const circularityScore = selectedProject.circularModel?.materialCircularity || 0;
-        const linearEmissions = selectedProject.linearModel?.totalEmissions || 0;
-        const circularEmissions = selectedProject.circularModel?.totalEmissions || 0;
-        const gwpReduction = linearEmissions > 0 
-            ? Math.round(((linearEmissions - circularEmissions) / linearEmissions) * 100) 
+
+        const circularityScore =
+            selectedProject.circularityScore ??
+            selectedProject.circularityIndex ??
+            selectedProject.circularModel?.materialCircularity ??
+            0;
+
+        const linearIndex = selectedProject.linearityIndex;
+        const circularIndex = selectedProject.circularityIndex;
+
+        const gwpLinear = selectedProject.linearModel?.totalEmissions || selectedProject.totalGWP || 0;
+        const gwpCircular =
+            typeof circularIndex === 'number' && typeof linearIndex === 'number' && gwpLinear > 0
+                ? gwpLinear * (1 - circularIndex)
+                : selectedProject.circularModel?.totalEmissions || 0;
+
+        const gwpReduction = gwpLinear > 0
+            ? Math.round(((gwpLinear - gwpCircular) / gwpLinear) * 100)
             : 0;
+
         const costSavings = selectedProject.comparativeMetrics?.totalCost?.savings || 0;
 
         return { circularityScore, gwpReduction, costSavings };

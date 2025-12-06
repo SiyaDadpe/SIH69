@@ -508,6 +508,29 @@ def _build_feature_row_from_manufacturing(manu: Dict[str, Any]) -> Dict[str, Any
     """
     return _build_feature_row_from_dict(manu or {})
 
+
+def _has_manufacturing_input(manu: Dict[str, Any] | None) -> bool:
+    """Return True only if there is meaningful manufacturing input data."""
+    if not isinstance(manu, dict) or not manu:
+        return False
+
+    # Processes or use-phase sector present
+    if isinstance(manu.get('processes'), list) and manu.get('processes'):
+        return True
+    if manu.get('usePhaseSector'):
+        return True
+
+    # Key numeric drivers such as transport distance or quantities
+    for key in [
+        'transportDistance',
+        'energyUse',
+        'waterUse',
+    ]:
+        if manu.get(key) is not None:
+            return True
+
+    return False
+
 @app.get("/wizard")
 async def list_wizard_ids(limit: int = 10):
     """Helper endpoint to list recent wizard workflow ids for testing."""
@@ -596,6 +619,11 @@ async def predict_manufacturing_and_save(workflow_id: str):
     except Exception as e:
         logger.error(f"Error reading workflow: {e}")
         raise HTTPException(status_code=500, detail="Error reading workflow")
+
+    # Guard: skip prediction if there is no meaningful manufacturing input
+    if not _has_manufacturing_input(manu_raw):
+        logger.info(f"Skipping manufacturing prediction for workflow {workflow_id}: no manufacturing input present")
+        raise HTTPException(status_code=400, detail="No manufacturing stage data present; prediction not generated")
 
     # Build feature row and predict using existing /predict logic
     feature_row = _build_feature_row_from_manufacturing(manu_raw)

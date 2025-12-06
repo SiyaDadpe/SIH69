@@ -4,7 +4,8 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
     const [hoveredNode, setHoveredNode] = useState(null);
     const [hoveredLink, setHoveredLink] = useState(null);
 
-    const { nodes, links } = data;
+    const nodes = Array.isArray(data?.nodes) ? data.nodes : [];
+    const links = Array.isArray(data?.links) ? data.links : [];
 
     // Calculate node positions
     const margin = { top: 20, right: 20, bottom: 20, left: 20 };
@@ -22,7 +23,7 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
     const columnWidth = innerWidth / (numColumns - 1 || 1);
 
     // Calculate node heights based on value
-    const totalValue = Math.max(...nodes.map(n => n.value || 0));
+    const totalValue = nodes.length > 0 ? Math.max(...nodes.map(n => n.value || 0)) || 1 : 1;
     const nodePositions = {};
     
     Object.entries(columns).forEach(([col, colNodes]) => {
@@ -32,7 +33,7 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
         const availableHeight = innerHeight - (colNodes.length - 1) * spacing;
         
         colNodes.forEach((node, idx) => {
-            const nodeHeight = (node.value / totalValue) * availableHeight * 0.8;
+            const nodeHeight = ((node.value || 0) / totalValue) * availableHeight * 0.8 || 8;
             nodePositions[node.id] = {
                 x: margin.left + colNum * columnWidth,
                 y: margin.top + yOffset,
@@ -60,7 +61,7 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
     };
 
     const getLinkWidth = (value) => {
-        return (value / totalValue) * innerHeight * 0.15;
+        return ((value || 0) / totalValue) * innerHeight * 0.15;
     };
 
     const getNodeColor = (node) => {
@@ -139,7 +140,7 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
                                     dominantBaseline="middle"
                                     className="text-xs fill-gray-500"
                                 >
-                                    {node.value.toLocaleString()} {node.unit || ''}
+                                    {(node.value ?? 0).toLocaleString()} {node.unit || ''}
                                 </text>
                             </g>
                         );
@@ -156,8 +157,8 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
                                 {nodes.find(n => n.id === hoveredNode)?.name}
                             </div>
                             <div className="text-gray-600 text-xs mt-1">
-                                Value: {nodes.find(n => n.id === hoveredNode)?.value.toLocaleString()} 
-                                {nodes.find(n => n.id === hoveredNode)?.unit}
+                                Value: {(nodes.find(n => n.id === hoveredNode)?.value ?? 0).toLocaleString()} 
+                                {nodes.find(n => n.id === hoveredNode)?.unit || ''}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">Click for details</div>
                         </div>
@@ -168,7 +169,7 @@ export default function SankeyDiagram({ data, width = 800, height = 400, onNodeC
                                 {links[hoveredLink].source} → {links[hoveredLink].target}
                             </div>
                             <div className="text-gray-600 text-xs mt-1">
-                                Flow: {links[hoveredLink].value.toLocaleString()} units
+                                Flow: {(links[hoveredLink].value ?? 0).toLocaleString()} units
                             </div>
                         </div>
                     )}

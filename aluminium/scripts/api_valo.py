@@ -643,6 +643,29 @@ def _build_feature_row_from_valorization(valorization: Dict[str, Any]) -> Dict[s
     """Map valorization wizard object to a feature row matching _feature_names."""
     return _build_feature_row_from_dict(valorization or {})
 
+
+def _has_valorization_input(valorization: Dict[str, Any] | None) -> bool:
+    """Return True only if there is meaningful valorization input data."""
+    if not isinstance(valorization, dict) or not valorization:
+        return False
+
+    # Methods or waste utilization / toxicity fields present
+    if isinstance(valorization.get('valorizationMethods'), list) and valorization.get('valorizationMethods'):
+        return True
+    if isinstance(valorization.get('methods'), list) and valorization.get('methods'):
+        return True
+
+    for key in [
+        'wasteUtilization',
+        'wasteUtilizationOverallPercent',
+        'toxicityRedMud',
+        'toxicity_Red_Mud',
+    ]:
+        if valorization.get(key) is not None:
+            return True
+
+    return False
+
 @app.get("/wizard")
 async def list_wizard_ids(limit: int = 10):
     """Helper endpoint to list recent wizard workflow ids for testing."""
@@ -725,6 +748,11 @@ async def predict_valorization_and_save(workflow_id: str):
         if not wf:
             raise HTTPException(status_code=404, detail="Workflow not found")
         valorization_raw = wf.get("valorization", {}) or {}
+
+        # Guard: if there is no meaningful valorization input, skip prediction
+        if not _has_valorization_input(valorization_raw):
+            logger.info(f"Skipping valorization prediction for workflow {workflow_id}: no valorization input present")
+            raise HTTPException(status_code=400, detail="No valorization stage data present; prediction not generated")
     except HTTPException:
         raise
     except Exception as e:

@@ -199,7 +199,7 @@ function StepSection({
                   </Button>
                 </motion.div>
               )}
-              {onGenerateFallbacks && (
+              {/* {onGenerateFallbacks && (
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                   <Button
                     type="button"
@@ -215,7 +215,7 @@ function StepSection({
                       : "Generate Fallbacks"}
                   </Button>
                 </motion.div>
-              )}
+              )} */}
             </div>
           </div>
         </CardHeader>
@@ -230,7 +230,7 @@ function StepSection({
   )
 }
 
-function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false }) {
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false, showSustainableButton = false, onShowSustainable }) {
   const handleForwardClick = () => {
     if (typeof onForward === 'function') {
       onForward()
@@ -257,6 +257,23 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
         </Button>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {showSustainableButton && (
+          <motion.div whileHover={{ scale: 1.03 }}>
+            <Button
+              type="button"
+              onClick={() => {
+                console.log('Sustainable button clicked in StepFooterActions');
+                if (typeof onShowSustainable === 'function') {
+                  onShowSustainable();
+                }
+              }}
+              className="relative overflow-hidden rounded-full border border-[#6B5B59] px-6 py-2 text-[#6B5B59] shadow-md transition-all duration-200 hover:bg-[#6B5B59] hover:text-white"
+              variant="outline"
+            >
+              🌱 Sustainable solutions
+            </Button>
+          </motion.div>
+        )}
         {showLca && (
           <motion.div
             animate={{ scale: [1, 1.02, 1] }}
@@ -428,7 +445,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -566,6 +583,12 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         onForward={handleSubmit(onSubmit)}
         forwardDisabled={!isValid || isSaving}
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+        showSustainableButton
+        onShowSustainable={() => { 
+          console.log('Mining sustainable button clicked'); 
+          setCurrentSustainableStage('mining'); 
+          setShowSustainableSolutions(true); 
+        }}
       />
     </>
   );
@@ -968,7 +991,6 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
             <hr className="my-4 border-gray-200" />
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">AI Predicted Values</h3>
               {predictionMetadata?.confidence && (
                 <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                   {(predictionMetadata.confidence * 100).toFixed(1)}% confidence
@@ -988,7 +1010,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 250" 
                         className={aiPopulatedFields.has('mining_energy_MJ_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1007,7 +1029,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 45" 
                         className={aiPopulatedFields.has('mining_co2_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1026,7 +1048,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.5" 
                         className={aiPopulatedFields.has('mining_sox_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1045,7 +1067,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.3" 
                         className={aiPopulatedFields.has('mining_nox_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1064,7 +1086,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                       <Input 
                         {...field}
                         type="number"
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1.2" 
                         className={aiPopulatedFields.has('mining_pm_kg_per_t_ore') ? 'ai-populated-field' : ''}
                       />
                     </FormControl>
@@ -1082,7 +1104,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1264,6 +1286,8 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         onForward={handleSubmit(onSubmit)}
         forwardDisabled={!isValid || isSaving}
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+        showSustainableButton
+        onShowSustainable={() => { setCurrentSustainableStage('beneficiation'); setShowSustainableSolutions(true); }}
       />
     </>
   );
@@ -1711,7 +1735,6 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
             <hr className="my-4 border-gray-200" />
 
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">AI Predicted Values</h3>
               {predictionMetadata?.confidence && (
                 <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                   {(predictionMetadata.confidence * 100).toFixed(1)}% confidence
@@ -1728,7 +1751,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Water Usage (m³ per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" placeholder="AI predicted" />
+                      <Input {...field} type="number" placeholder="e.g., 2.5" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1742,7 +1765,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Electricity Usage (kWh per tonne)</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" placeholder="AI predicted" />
+                      <Input {...field} type="number" placeholder="e.g., 150" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1756,7 +1779,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Tailings Management</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="AI predicted" />
+                      <Input {...field} placeholder="e.g., Dry stacking" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1770,7 +1793,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Noise Pollution Level</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="AI predicted" />
+                      <Input {...field} placeholder="e.g., 85 dB" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1784,7 +1807,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Dust Pollution Level</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="AI predicted" />
+                      <Input {...field} placeholder="e.g., Moderate" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1800,7 +1823,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
 
 
 // Main Wizard Form Component
-export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted, onOpenWorkflow }) {
+export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted, onOpenWorkflow, onMaterialSourceChange }) {
   const [formValues, setFormValues] = useState({})
   const [completed, setCompleted] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -1818,6 +1841,26 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
   const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
   const [aiPopulatedFields, setAiPopulatedFields] = useState({})  // Tracks which fields were populated by AI (for styling)
+  
+  // Material Source Selection state
+  const [materialSource, setMaterialSource] = useState('primary') // 'primary', 'secondary', or 'mixed'
+  const [primaryPercentage, setPrimaryPercentage] = useState(100)
+  const [secondaryPercentage, setSecondaryPercentage] = useState(0)
+  
+  // Notify parent of material source changes (only when it actually changes)
+  useEffect(() => {
+    if (onMaterialSourceChange) {
+      onMaterialSourceChange({ materialSource, primaryPercentage, secondaryPercentage });
+    }
+  }, [materialSource, primaryPercentage, secondaryPercentage]); // Removed onMaterialSourceChange from deps
+  
+  // Auto-navigate to Manufacturing when 100% secondary is selected
+  useEffect(() => {
+    if (materialSource === 'secondary' && activeStep < 4) {
+      // Jump to Manufacturing (step 4, index 4)
+      onStepChange(4);
+    }
+  }, [materialSource, activeStep]); // Removed onStepChange from deps
   
   // Debug: Track formValues changes
   React.useEffect(() => {
@@ -2289,6 +2332,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [generatingFallbacks, setGeneratingFallbacks] = useState(false);
   const [fallbackSuccess, setFallbackSuccess] = useState(null);
   const [fallbackError, setFallbackError] = useState(null);
+  const [showSustainableSolutions, setShowSustainableSolutions] = useState(false);
+  const [currentSustainableStage, setCurrentSustainableStage] = useState('mining');
+  
+  // Debug logging for sustainable solutions modal
+  useEffect(() => {
+    console.log('Sustainable Solutions State Changed:', { showSustainableSolutions, currentSustainableStage });
+  }, [showSustainableSolutions, currentSustainableStage]);
   
   // Modal states for conflict detection and reasoning display
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -2506,6 +2556,29 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   };
 
   const renderStep = () => {
+    // If 100% secondary aluminium is selected, skip first 4 stages
+    if (materialSource === 'secondary' && ['mining', 'beneficiation', 'refining', 'smelting'].includes(stepKey)) {
+      return (
+        <div className="p-8 text-center">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+              <div className="text-6xl mb-4">♻️</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                This stage is not applicable
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Since you've selected <strong>100% Secondary/Recycled Aluminium</strong>, the upstream stages 
+                (Mining, Beneficiation, Refining, and Smelting) are skipped.
+              </p>
+              <p className="text-sm text-gray-500">
+                Your workflow begins at the <strong>Manufacturing</strong> stage.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     switch (stepKey) {
       case 'mining':
         return (
@@ -2521,6 +2594,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predictionMetadata={predictionMetadata['mining'] || {}}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('mining', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'beneficiation':
@@ -2538,6 +2613,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predictionMetadata={predictionMetadata['beneficiation'] || {}}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('beneficiation', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'refining':
@@ -2555,6 +2632,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('refining', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'smelting':
@@ -2572,6 +2651,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('smelting', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'manufacturing':
@@ -2589,6 +2670,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('manufacturing', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'recycling':
@@ -2606,6 +2689,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('recycling', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       case 'valorization':
@@ -2627,6 +2712,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             isCalculatingLca={isCalculatingLca}
             onGenerateFallbacks={(data) => handleGenerateFallbacks('valorization', data)}
             generatingFallbacks={generatingFallbacks}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
           />
         );
       default:
@@ -2658,6 +2745,116 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         >
           🏠 Wizard Home
         </Button>
+      </div>
+      
+      {/* Material Source Selection */}
+      <div className="mb-6 p-5 rounded-3xl border border-[#e7dfd2] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] shadow-xl">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Primary Material Source</h3>
+        <div className="space-y-3">
+          {/* Option 1: 100% Primary */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="radio"
+              name="materialSource"
+              value="primary"
+              checked={materialSource === 'primary'}
+              onChange={(e) => {
+                setMaterialSource('primary');
+                setPrimaryPercentage(100);
+                setSecondaryPercentage(0);
+              }}
+              className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+            />
+            <span className="text-gray-700 group-hover:text-gray-900 font-medium">
+              100% Primary Aluminium (from bauxite)
+            </span>
+          </label>
+          
+          {/* Option 2: 100% Secondary */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="radio"
+              name="materialSource"
+              value="secondary"
+              checked={materialSource === 'secondary'}
+              onChange={(e) => {
+                setMaterialSource('secondary');
+                setPrimaryPercentage(0);
+                setSecondaryPercentage(100);
+              }}
+              className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+            />
+            <span className="text-gray-700 group-hover:text-gray-900 font-medium">
+              100% Secondary/Recycled Aluminium
+            </span>
+          </label>
+          
+          {/* Option 3: Mixed */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="radio"
+                name="materialSource"
+                value="mixed"
+                checked={materialSource === 'mixed'}
+                onChange={(e) => {
+                  setMaterialSource('mixed');
+                  setPrimaryPercentage(50);
+                  setSecondaryPercentage(50);
+                }}
+                className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+              />
+              <span className="text-gray-700 group-hover:text-gray-900 font-medium whitespace-nowrap">
+                Mixed Primary/Secondary →
+              </span>
+            </label>
+            {materialSource === 'mixed' && (
+              <div className="flex items-center gap-2 flex-1">
+                <label className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Primary:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={primaryPercentage}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setPrimaryPercentage(val);
+                      setSecondaryPercentage(100 - val);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">%</span>
+                </label>
+                <span className="text-gray-400">|</span>
+                <label className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Secondary:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={secondaryPercentage}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setSecondaryPercentage(val);
+                      setPrimaryPercentage(100 - val);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">%</span>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Info message for secondary selection */}
+        {materialSource === 'secondary' && (
+          <div className="mt-4 p-3 rounded-lg border border-[#e3d4c8] bg-gradient-to-br from-amber-50 to-orange-50 text-sm text-gray-700">
+            ℹ️ With 100% Secondary Aluminium, the first 4 stages (Mining, Beneficiation, Refining, Smelting) are skipped. 
+            The workflow starts from Manufacturing stage.
+          </div>
+        )}
       </div>
       
       {/* AI Prediction Notifications */}
@@ -2775,12 +2972,174 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         populatedCount={fallbackResults?.populatedCount || 0}
         stepName={fallbackResults?.stepName || ''}
       />
+
+      {/* Sustainable Solutions Modal */}
+      <AnimatePresence>
+        {showSustainableSolutions && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSustainableSolutions(false)}
+          >
+            <motion.div
+              className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4 border-b pb-3 mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Sustainable Solutions – {currentSustainableStage.charAt(0).toUpperCase() + currentSustainableStage.slice(1)}
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Byproducts and sustainable alternatives suggested by the LCA engine for this stage.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setShowSustainableSolutions(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-sm text-gray-800">
+                {currentSustainableStage === 'mining' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Overburden & waste rock</span> – stripped soil, rock, clays — backfilling & land rehabilitation, bund construction, noise berms.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Topsoil</span> – if stripped and stored — road base, embankments, aggregate in local construction, mine road surfacing.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dust (PM₁₀ / PM₂.₅)</span> – drilling, blasting, haul roads — improve dust suppression plans, use covered conveyors, vegetative barriers.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Mine drainage</span> – possibly with high suspended solids; occasionally alkaline/metal-bearing — settling ponds, constructed wetlands, reuse for dust suppression.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Diesel fumes & GHGs</span> – from trucks, excavators — switch to hybrid/electric haul trucks, optimize routes, idle reduction.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Noise & vibration</span> – blasting — blast optimization, scheduling.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'beneficiation' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Tailings (slurry)</span> – fine clays, silica, iron oxides in water — thickened tailings, dry stacking, or backfilling pits; use in bricks, tiles, road base where feasible.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Process water</span> – solids and reagents (flocculants, dispersants) — closed-loop reuse in washing circuits.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dust</span> – from crushing, dry screening — bag filters, water sprays, enclosures. Fine residue → cement raw mix, soil conditioning after treatment.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Noise</span> – crushers, mills — acoustic enclosures.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'refining' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Red mud / bauxite residue</span> – highly alkaline sludge containing Fe₂O₃, TiO₂, residual Al₂O₃, silica, minor REEs — cement & clinker substitute (part replacement), brick/ceramic products, iron recovery (magnetite), TiO₂ extraction, rare earth recovery, soil stabilization for roads/foundations (after neutralization).
+                    </li>
+                    <li>
+                      <span className="font-semibold">Spent caustic liquor</span> – NaOH-rich streams — caustic recovery, neutralization & reuse.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Gypsum / scale</span> – from lime use and precipitation — sell to gypsum into cement/board industry.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Evaporator condensates</span> — reuse as process water.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Air emissions</span> – dust, some NOₓ/SO₂ from heating — electrostatic precipitators, scrubbers.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'smelting' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">CO₂ from carbon anodes</span> – huge energy-related GHG footprint — focus on energy efficiency and low-carbon power.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dross & skim</span> – oxide-rich layer from casting — dross recovery plants to reclaim metal.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Spent Pot Lining (SPL)</span> – hazardous waste with cyanide and fluorides — encapsulation in cement, high-temp vitrification, or controlled co-processing in cement kilns.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Fluoride gases & particulates</span> – HF, particulate alumina/cryolite — dry/wet scrubbers, recovery of fluoride salts back to bath.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Waste heat</span> – off-gases at high temperature — heat recovery for pre-heating combustion air, buildings, or low-temp processes.
+                    </li>
+                    <li>
+                      <span className="font-semibold">PFCs (perfluorocarbons)</span> during anode effects — green variants: inert anodes, renewable electricity contracts.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'manufacturing' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Scrap</span> – offcuts, trimmings, machining chips — closed-loop recycling into same product line, on-site remelting.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dross from remelting</span> — sent to dross recovery.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Spent process chemicals</span> – from anodizing, coating, cleaning — recovery of aluminium salts, proper neutralization, sludge reused in cement.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Used lubricants & coolants</span> — regeneration, energy recovery via co-processing.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Packaging waste at customer end</span> — design for disassembly, mono-material packaging, easy separable fasteners.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'recycling' && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      <span className="font-semibold">Salt slag / black dross</span> from rotary furnaces — specialized processing to recover aluminium, salts, and inert residue.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Dust & filter cake</span> – with salts and metal oxides — stabilized and used in cement/bricks where allowed.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Non-metallic fraction</span> – plastics, paints, organics from coated scrap — RDF fuel (Refuse Derived Fuel) or pyrolysis.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Off-gases</span> – combustion products — high-efficiency baghouse filtration, heat recovery from furnaces.
+                    </li>
+                  </ul>
+                )}
+                {currentSustainableStage === 'valorization' && (
+                  <div className="text-center text-gray-500 py-4">
+                    Valorization sustainable solutions are similar to recycling stage. Please refer to recycling recommendations.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </WizardContainer>
   )
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2892,6 +3251,8 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('refining'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -3131,10 +3492,6 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 
             {/* 4. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="refining_energy_MJ_per_t_alumina" render={({ field }) => (
@@ -3145,7 +3502,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 12000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_energy_MJ_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3163,7 +3520,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 8.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_water_m3_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3181,7 +3538,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1500" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_red_mud_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3199,7 +3556,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 120" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_caustic_soda_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3217,7 +3574,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 50" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_lime_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3235,7 +3592,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1.2" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_so2_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3253,7 +3610,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.8" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_nox_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3271,7 +3628,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 2.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('refining_dust_kg_per_t_alumina') ? 'ai-populated-field' : ''}
@@ -3323,7 +3680,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3432,6 +3789,8 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('smelting'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -3691,10 +4050,6 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 
             {/* 4. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="smelting_energy_kWh_per_t_al" render={({ field }) => (
@@ -3705,7 +4060,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 15000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_energy_kWh_per_t_al') ? 'ai-populated-field' : ''}
@@ -3723,7 +4078,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 54000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_energy_MJ_per_t_al') ? 'ai-populated-field' : ''}
@@ -3741,7 +4096,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 11000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_co2_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -3759,7 +4114,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 0.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_pfc_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -3777,7 +4132,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 35" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_so2_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -3795,7 +4150,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1.5" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_nox_kg_per_t_al') ? 'ai-populated-field' : ''}
@@ -3814,7 +4169,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 95" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_fluoride_recovery_percent') ? 'ai-populated-field' : ''}
@@ -3833,7 +4188,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 60" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('smelting_thermal_recovery_percent') ? 'ai-populated-field' : ''}
@@ -3852,7 +4207,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4010,6 +4365,8 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('manufacturing'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -4321,11 +4678,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
             <hr className="my-4 border-gray-200" />
 
             {/* 3.5. AI-Predictable Fields Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
+            <div className="space-y-4"> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="manufacturing_energy_MJ_per_t_product" render={({ field }) => (
@@ -4336,7 +4689,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 3500" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_energy_MJ_per_t_product') ? 'ai-populated-field' : ''}
@@ -4355,7 +4708,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 15" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_scrap_rate_percent') ? 'ai-populated-field' : ''}
@@ -4374,7 +4727,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 30" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_recycled_content_percent') ? 'ai-populated-field' : ''}
@@ -4392,7 +4745,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                         type="number" 
                         min="0" 
                         step="0.01" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 85" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('manufacturing_transport_emissions_kgCO2e_per_t') ? 'ai-populated-field' : ''}
@@ -4477,7 +4830,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4589,6 +4942,8 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       forwardDisabled={!isValid}
       onLcaCalculate={onCalculateLCA}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => { setCurrentSustainableStage('recycling'); setShowSustainableSolutions(true); }}
     />
   )
 
@@ -4923,11 +5278,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 
             {/* 3.5. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
-              
+            
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="recycling_scrap_input_percent" render={({ field }) => (
                   <FormItem>
@@ -4938,7 +5289,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 75" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_scrap_input_percent') ? 'ai-populated-field' : ''}
@@ -4957,7 +5308,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 92" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_recovery_yield_percent') ? 'ai-populated-field' : ''}
@@ -4975,7 +5326,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 500" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_energy_kWh_per_t_Al') ? 'ai-populated-field' : ''}
@@ -4993,7 +5344,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 9000" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_emission_savings_kgCO2e_per_t_Al') ? 'ai-populated-field' : ''}
@@ -5012,7 +5363,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 85" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_collection_rate_percent') ? 'ai-populated-field' : ''}
@@ -5031,7 +5382,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 60" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_closed_loop_percent') ? 'ai-populated-field' : ''}
@@ -5050,7 +5401,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 40" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('recycling_open_loop_percent') ? 'ai-populated-field' : ''}
@@ -5123,7 +5474,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, onGenerateFallbacks, generatingFallbacks, setShowSustainableSolutions, setCurrentSustainableStage }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -5287,6 +5638,8 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
         forwardLabel={isSaving ? '💾 Saving...' : (onSubmitSuccess ? 'Submit' : 'Next')}
         onLcaCalculate={onCalculateLCA}
         isCalculatingLca={isCalculatingLca}
+        showSustainableButton
+        onShowSustainable={() => { setCurrentSustainableStage('valorization'); setShowSustainableSolutions(true); }}
       />
     </>
   )
@@ -5581,10 +5934,6 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
 
             {/* 2.5. AI-Predictable Fields Section */}
             <div className="space-y-4">
-              <div>
-                <h3 className={`${GROUP_HEADING_TEXT} font-semibold`}>AI-Predictable Metrics</h3>
-                <p className="text-sm text-gray-600 mt-1">These fields can be auto-filled using AI predictions</p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="valorization_recovery_efficiency_percent" render={({ field }) => (
@@ -5596,7 +5945,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                         min="0" 
                         max="100" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 80" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('valorization_recovery_efficiency_percent') ? 'ai-populated-field' : ''}
@@ -5614,7 +5963,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
                         type="number" 
                         min="0" 
                         step="0.1" 
-                        placeholder="AI predicted" 
+                        placeholder="e.g., 1200" 
                         {...field} 
                         value={field.value ?? ''} 
                         className={aiPopulatedFields.has('valorization_emission_reduction_kgCO2e_per_t_waste') ? 'ai-populated-field' : ''}
