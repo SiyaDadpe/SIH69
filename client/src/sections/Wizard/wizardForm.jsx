@@ -1825,7 +1825,7 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
 
 
 // Main Wizard Form Component
-export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted, onOpenWorkflow }) {
+export default function WizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted, onOpenWorkflow, onMaterialSourceChange }) {
   const [formValues, setFormValues] = useState({})
   const [completed, setCompleted] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -1843,6 +1843,26 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
   const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
   const [aiPopulatedFields, setAiPopulatedFields] = useState({})  // Tracks which fields were populated by AI (for styling)
+  
+  // Material Source Selection state
+  const [materialSource, setMaterialSource] = useState('primary') // 'primary', 'secondary', or 'mixed'
+  const [primaryPercentage, setPrimaryPercentage] = useState(100)
+  const [secondaryPercentage, setSecondaryPercentage] = useState(0)
+  
+  // Notify parent of material source changes (only when it actually changes)
+  useEffect(() => {
+    if (onMaterialSourceChange) {
+      onMaterialSourceChange({ materialSource, primaryPercentage, secondaryPercentage });
+    }
+  }, [materialSource, primaryPercentage, secondaryPercentage]); // Removed onMaterialSourceChange from deps
+  
+  // Auto-navigate to Manufacturing when 100% secondary is selected
+  useEffect(() => {
+    if (materialSource === 'secondary' && activeStep < 4) {
+      // Jump to Manufacturing (step 4, index 4)
+      onStepChange(4);
+    }
+  }, [materialSource, activeStep]); // Removed onStepChange from deps
   
   // Debug: Track formValues changes
   React.useEffect(() => {
@@ -2538,6 +2558,29 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   };
 
   const renderStep = () => {
+    // If 100% secondary aluminium is selected, skip first 4 stages
+    if (materialSource === 'secondary' && ['mining', 'beneficiation', 'refining', 'smelting'].includes(stepKey)) {
+      return (
+        <div className="p-8 text-center">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+              <div className="text-6xl mb-4">♻️</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                This stage is not applicable
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Since you've selected <strong>100% Secondary/Recycled Aluminium</strong>, the upstream stages 
+                (Mining, Beneficiation, Refining, and Smelting) are skipped.
+              </p>
+              <p className="text-sm text-gray-500">
+                Your workflow begins at the <strong>Manufacturing</strong> stage.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     switch (stepKey) {
       case 'mining':
         return (
@@ -2704,6 +2747,116 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         >
           🏠 Wizard Home
         </Button>
+      </div>
+      
+      {/* Material Source Selection */}
+      <div className="mb-6 p-5 rounded-3xl border border-[#e7dfd2] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] shadow-xl">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Primary Material Source</h3>
+        <div className="space-y-3">
+          {/* Option 1: 100% Primary */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="radio"
+              name="materialSource"
+              value="primary"
+              checked={materialSource === 'primary'}
+              onChange={(e) => {
+                setMaterialSource('primary');
+                setPrimaryPercentage(100);
+                setSecondaryPercentage(0);
+              }}
+              className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+            />
+            <span className="text-gray-700 group-hover:text-gray-900 font-medium">
+              100% Primary Aluminium (from bauxite)
+            </span>
+          </label>
+          
+          {/* Option 2: 100% Secondary */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="radio"
+              name="materialSource"
+              value="secondary"
+              checked={materialSource === 'secondary'}
+              onChange={(e) => {
+                setMaterialSource('secondary');
+                setPrimaryPercentage(0);
+                setSecondaryPercentage(100);
+              }}
+              className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+            />
+            <span className="text-gray-700 group-hover:text-gray-900 font-medium">
+              100% Secondary/Recycled Aluminium
+            </span>
+          </label>
+          
+          {/* Option 3: Mixed */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="radio"
+                name="materialSource"
+                value="mixed"
+                checked={materialSource === 'mixed'}
+                onChange={(e) => {
+                  setMaterialSource('mixed');
+                  setPrimaryPercentage(50);
+                  setSecondaryPercentage(50);
+                }}
+                className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+              />
+              <span className="text-gray-700 group-hover:text-gray-900 font-medium whitespace-nowrap">
+                Mixed Primary/Secondary →
+              </span>
+            </label>
+            {materialSource === 'mixed' && (
+              <div className="flex items-center gap-2 flex-1">
+                <label className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Primary:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={primaryPercentage}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setPrimaryPercentage(val);
+                      setSecondaryPercentage(100 - val);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">%</span>
+                </label>
+                <span className="text-gray-400">|</span>
+                <label className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Secondary:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={secondaryPercentage}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setSecondaryPercentage(val);
+                      setPrimaryPercentage(100 - val);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">%</span>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Info message for secondary selection */}
+        {materialSource === 'secondary' && (
+          <div className="mt-4 p-3 rounded-lg border border-[#e3d4c8] bg-gradient-to-br from-amber-50 to-orange-50 text-sm text-gray-700">
+            ℹ️ With 100% Secondary Aluminium, the first 4 stages (Mining, Beneficiation, Refining, Smelting) are skipped. 
+            The workflow starts from Manufacturing stage.
+          </div>
+        )}
       </div>
       
       {/* AI Prediction Notifications */}
