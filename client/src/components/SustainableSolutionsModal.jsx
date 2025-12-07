@@ -31,7 +31,8 @@ const sustainableSolutionsRules = {
       {
         condition: (formData) => {
           const processes = formData?.applicableProcesses || [];
-          return processes.includes('drilling') || formData?.dustLevel === 'high';
+          // Drilling, open pit, and strip mining all generate high dust
+          return processes.includes('drilling') || processes.includes('openPit') || processes.includes('strip');
         },
         category: "Dust Emission Control",
         recommendation: "Dust emissions (PM₁₀ & PM₂.₅) can significantly impact worker health and local air quality. Improve sustainability by using optimized dust-suppression plans (frequent water spraying, chemical suppressants), switching to covered conveyors to reduce airborne dust, and planting vegetative barriers around haul roads and drilling zones to capture fine particles. These measures reduce respiratory hazards and improve local environmental quality."
@@ -103,7 +104,7 @@ const sustainableSolutionsRules = {
     title: "Sustainable Refining Solutions",
     rules: [
       {
-        condition: (formData) => formData?.redMudGeneration > 0,
+        condition: (formData) => formData?.redMudGen > 0,
         category: "Red Mud Valorization",
         recommendation: "Red mud is highly alkaline and rich in Fe₂O₃, TiO₂, and rare earths. Sustainable options include using neutralized red mud as a partial cement/clinker substitute, converting it into brick/ceramic products, extracting iron, TiO₂, or rare earth elements, and applying it in soil stabilization for roads and foundations after proper treatment."
       },
@@ -124,13 +125,14 @@ const sustainableSolutionsRules = {
         recommendation: "Gypsum generated from lime reactions can be sold to the cement or gypsum board industry, reducing waste and adding value. This creates a circular economy opportunity."
       },
       {
-        condition: (formData) => formData?.waterConsumption > 50,
+        condition: (formData) => formData?.waterUse > 50,
         category: "Water Recycling",
         recommendation: "Reuse evaporator condensates as process water to reduce fresh water consumption. Implement closed-loop systems wherever possible."
       },
       {
         condition: (formData) => {
-          return (formData?.refining_sox_kg_per_t_ore > 0) || (formData?.refining_nox_kg_per_t_ore > 0);
+          // Check if SO2 or NOx emissions exist in the form
+          return (formData?.so2 > 0) || (formData?.nox > 0);
         },
         category: "Air Emission Control",
         recommendation: "Install electrostatic precipitators or scrubbers to reduce particulate and gaseous emissions (NOx/SO₂). This improves air quality and ensures regulatory compliance."
@@ -141,7 +143,7 @@ const sustainableSolutionsRules = {
     title: "Sustainable Smelting Solutions",
     rules: [
       {
-        condition: (formData) => formData?.smelting_co2_kg_per_t_al > 1000 || formData?.energyConsumption > 15000,
+        condition: (formData) => formData?.co2Emissions > 1000 || formData?.electricityDemand > 15000,
         category: "Energy & Emissions Reduction",
         recommendation: "Smelting is energy-intensive with significant GHG emissions. Sustainable practices include transitioning to inert anodes where applicable, procuring renewable electricity contracts, and optimizing energy recovery from waste heat. These measures can reduce carbon footprint by up to 50%."
       },
@@ -162,12 +164,19 @@ const sustainableSolutionsRules = {
         recommendation: "SPL (Spent Pot Lining) contains hazardous fluoride and cyanide compounds. Manage sustainably via encapsulation in cement, high-temperature vitrification, or co-processing in cement kilns. These methods neutralize harmful components and reduce hazardous waste."
       },
       {
-        condition: (formData) => formData?.smelting_fluoride_emissions_kg_per_t_al > 0,
+        condition: (formData) => {
+          // Check if fluoride recovery rate is low or if processes that emit fluoride exist
+          const processes = formData?.processes || [];
+          return (formData?.fluorideRecovery < 50 && formData?.fluorideRecovery > 0) || processes.includes('electrolysis');
+        },
         category: "Fluoride Recovery",
         recommendation: "Use dry/wet scrubbers and recycle recovered fluoride salts back into the smelter bath. This reduces emissions and recovers valuable materials."
       },
       {
-        condition: (formData) => formData?.wasteHeatGenerated > 0 || formData?.energyConsumption > 10000,
+        condition: (formData) => {
+          // If thermal recovery is low or electricity demand is high, suggest waste heat recovery
+          return (formData?.thermalRecovery < 50 && formData?.thermalRecovery >= 0) || formData?.electricityDemand > 10000;
+        },
         category: "Waste Heat Recovery",
         recommendation: "Capture and reuse waste heat for preheating combustion air, space heating, and low-temperature process needs. This reduces total energy demand by 10-15%."
       },
@@ -240,37 +249,56 @@ const sustainableSolutionsRules = {
     rules: [
       {
         condition: (formData) => {
+          // Check if remelting process is used (furnaces generate salt slag/black dross)
           const processes = formData?.processes || [];
-          return processes.includes('rotary_furnace') || processes.includes('reverberatory_furnace');
+          return processes.includes('remelting');
         },
         category: "Salt Slag Recovery",
         recommendation: "Salt slag from rotary furnaces can be processed to recover aluminium and salts. Residual inert material can be reused in cement or bricks. This maximizes resource recovery and minimizes landfill."
       },
       {
-        condition: (formData) => formData?.dustGeneration > 0 || formData?.filterCakes > 0,
+        condition: (formData) => {
+          // Check if remelting exists (generates dust & filter cakes)
+          const processes = formData?.processes || [];
+          return processes.includes('remelting') || processes.includes('cleaning');
+        },
         category: "Dust Utilization",
         recommendation: "Stabilize dust and filter cakes and reuse in cement or brick manufacturing where regulations permit. This converts waste into valuable by-products."
       },
       {
         condition: (formData) => {
-          const scrapTypes = formData?.scrapTypes || [];
-          return scrapTypes.includes('painted') || scrapTypes.includes('coated');
+          // Check if cleaning process exists (handles painted/coated scrap)
+          const processes = formData?.processes || [];
+          return processes.includes('cleaning');
         },
         category: "Non-Metallic Fraction",
         recommendation: "Convert the non-metallic fraction (plastics, paints, coatings) into Refuse-Derived Fuel (RDF) or process via pyrolysis to recover energy. This reduces waste and generates value."
       },
       {
-        condition: (formData) => formData?.offGases > 0,
+        condition: (formData) => {
+          // Check if remelting exists (generates off-gases)
+          const processes = formData?.processes || [];
+          return processes.includes('remelting');
+        },
         category: "Off-gas Management",
         recommendation: "Use high-efficiency baghouse filters and integrate heat recovery systems to increase energy efficiency. This captures emissions and recovers valuable energy."
       },
       {
-        condition: (formData) => formData?.sortingMethod === 'manual',
+        condition: (formData) => {
+          // Check if manual sorting is being used
+          const sortingMethods = formData?.sortingMethods || [];
+          return sortingMethods.includes('manual');
+        },
         category: "Sorting Technology",
         recommendation: "Implement AI-powered sorting systems to improve efficiency and recovery rates. Automated sorting can increase purity by 15-20% compared to manual methods."
       },
       {
-        condition: (formData) => formData?.energyConsumption > 500,
+        condition: (formData) => {
+          // Check if furnace energy demand is high or if remelting process exists
+          const furnaceEnergy = formData?.furnaceEnergyDemand || 0;
+          const processes = formData?.processes || [];
+          return furnaceEnergy > 500 || processes.includes('remelting');
+        },
         category: "Energy Optimization",
         recommendation: "Use energy-efficient melting furnaces, implement automated scrap pre-treatment, optimize alloy separation processes, and recover and reuse dross and skimmings."
       }
@@ -311,6 +339,45 @@ const sustainableSolutionsRules = {
   }
 };
 
+// General sustainability recommendations for each stage (shown when no specific rules match)
+const generalRecommendations = {
+  mining: [
+    { category: "Resource Efficiency", recommendation: "Optimize ore extraction rates and minimize waste rock generation through precise drilling and blasting techniques." },
+    { category: "Water Conservation", recommendation: "Implement water recycling systems and monitor water quality to reduce freshwater consumption and prevent contamination." },
+    { category: "Progressive Rehabilitation", recommendation: "Begin mine site rehabilitation concurrently with operations to reduce long-term environmental impact and closure costs." }
+  ],
+  beneficiation: [
+    { category: "Energy Management", recommendation: "Monitor and optimize energy consumption in crushing and grinding operations, which typically account for 50-70% of beneficiation energy use." },
+    { category: "Chemical Management", recommendation: "Use environmentally friendly reagents where possible and implement closed-loop systems to minimize chemical discharge." },
+    { category: "Tailings Best Practices", recommendation: "Consider dry stacking or paste tailings technologies to reduce water consumption and improve tailings storage stability." }
+  ],
+  refining: [
+    { category: "By-product Utilization", recommendation: "Explore markets for all by-products including red mud, gypsum, and other residues to move toward zero-waste operations." },
+    { category: "Energy Optimization", recommendation: "Implement heat recovery systems and optimize process temperatures to reduce energy consumption per tonne of alumina produced." },
+    { category: "Emission Control", recommendation: "Install modern scrubbing systems to capture particulate matter and gaseous emissions, ensuring compliance with air quality standards." }
+  ],
+  smelting: [
+    { category: "Carbon Footprint Reduction", recommendation: "Transition to renewable energy sources and explore low-carbon technologies like inert anodes to significantly reduce CO₂ emissions." },
+    { category: "Process Efficiency", recommendation: "Optimize cell operations and reduce energy consumption through advanced process control and monitoring systems." },
+    { category: "Hazardous Waste Management", recommendation: "Implement safe handling and disposal methods for spent pot lining (SPL) and other hazardous wastes generated during electrolysis." }
+  ],
+  manufacturing: [
+    { category: "Material Efficiency", recommendation: "Minimize scrap generation through optimized cutting patterns, precision manufacturing, and design for manufacturing principles." },
+    { category: "Circular Economy", recommendation: "Design products for disassembly and recyclability to facilitate end-of-life material recovery and reuse." },
+    { category: "Clean Production", recommendation: "Use water-based coatings and non-toxic materials where possible to reduce environmental impact and worker exposure." }
+  ],
+  recycling: [
+    { category: "Collection Infrastructure", recommendation: "Develop comprehensive collection systems and partnerships to increase the availability of high-quality aluminium scrap." },
+    { category: "Sorting Technology", recommendation: "Invest in advanced sorting technologies like optical sorting and AI systems to improve alloy separation and purity." },
+    { category: "Quality Control", recommendation: "Implement strict quality control procedures to minimize contamination and maximize the value of recycled aluminium." }
+  ],
+  valorization: [
+    { category: "Innovation Focus", recommendation: "Invest in research and development to find new uses for industrial waste streams and by-products from aluminium production." },
+    { category: "Industry Partnerships", recommendation: "Collaborate with other industries that can utilize your waste streams as raw materials, creating symbiotic relationships." },
+    { category: "Market Development", recommendation: "Develop markets for valorized products and demonstrate their technical and economic viability to potential customers." }
+  ]
+};
+
 // Evaluate rules and return matching recommendations
 const evaluateRules = (stage, formData) => {
   const stageRules = sustainableSolutionsRules[stage];
@@ -330,9 +397,19 @@ const evaluateRules = (stage, formData) => {
       recommendation: rule.recommendation
     }));
 
+  // If no specific recommendations match, return general recommendations for the stage
+  if (matchingRecommendations.length === 0 && generalRecommendations[stage]) {
+    return {
+      title: stageRules.title,
+      recommendations: generalRecommendations[stage],
+      isGeneral: true
+    };
+  }
+
   return {
     title: stageRules.title,
-    recommendations: matchingRecommendations
+    recommendations: matchingRecommendations,
+    isGeneral: false
   };
 };
 
@@ -341,7 +418,7 @@ export default function SustainableSolutionsModal({ open, onClose, stage, formDa
     return null;
   }
 
-  const { title, recommendations } = evaluateRules(stage, formData);
+  const { title, recommendations, isGeneral } = evaluateRules(stage, formData);
   const IconComponent = stageIcons[stage] || Leaf;
   const hasRecommendations = recommendations.length > 0;
 
@@ -360,49 +437,50 @@ export default function SustainableSolutionsModal({ open, onClose, stage, formDa
         </DialogHeader>
         
         <ScrollArea className="h-[calc(85vh-120px)] pr-4">
-          {!hasRecommendations ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <AlertCircle className="w-16 h-16 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                No Specific Recommendations Yet
-              </h3>
-              <p className="text-gray-600 max-w-md">
-                Fill in the form fields to receive tailored sustainability recommendations based on your specific operations and inputs.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-6 mt-4">
-                {recommendations.map((item, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
-                        {item.category}
-                      </Badge>
-                    </div>
-                    <div className="flex items-start gap-3 text-gray-700">
-                      <span className="text-green-600 mt-1 shrink-0">🌱</span>
-                      <span className="text-sm leading-relaxed">{item.recommendation}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 p-5 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">💡</span>
-                  <div>
-                    <h4 className="font-semibold text-blue-900 mb-2">Implementation Tip</h4>
-                    <p className="text-sm text-blue-800 leading-relaxed">
-                      Start with quick wins that require minimal investment but provide immediate benefits. 
-                      Gradually implement more complex solutions as you build capacity and demonstrate ROI. 
-                      Measure and track the impact of each initiative to justify further investment in sustainability.
-                    </p>
-                  </div>
+          {isGeneral && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">ℹ️</span>
+                <div>
+                  <h4 className="font-semibold text-amber-900 mb-1">General Recommendations</h4>
+                  <p className="text-sm text-amber-800">
+                    Fill in more form fields to receive specific recommendations tailored to your operations. 
+                    Below are general best practices for this stage.
+                  </p>
                 </div>
               </div>
-            </>
+            </div>
           )}
+          
+          <div className="space-y-6 mt-4">
+            {recommendations.map((item, idx) => (
+              <div key={idx} className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2 mb-4">
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+                    {item.category}
+                  </Badge>
+                </div>
+                <div className="flex items-start gap-3 text-gray-700">
+                  <span className="text-green-600 mt-1 shrink-0">🌱</span>
+                  <span className="text-sm leading-relaxed">{item.recommendation}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 p-5 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">💡</span>
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">Implementation Tip</h4>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  Start with quick wins that require minimal investment but provide immediate benefits. 
+                  Gradually implement more complex solutions as you build capacity and demonstrate ROI. 
+                  Measure and track the impact of each initiative to justify further investment in sustainability.
+                </p>
+              </div>
+            </div>
+          </div>
         </ScrollArea>
       </DialogContent>
     </Dialog>
