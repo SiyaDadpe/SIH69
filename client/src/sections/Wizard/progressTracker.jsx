@@ -1,7 +1,7 @@
 import React from "react"
 import { CheckCircle2 } from "lucide-react"
 
-export default function ProgressTracker({ steps, currentStep = 0, onStepClick, completedSteps = [], completionPercentage = 0 }) {
+export default function ProgressTracker({ steps, currentStep = 0, onStepClick, completedSteps = [], completionPercentage = 0, materialSource = 'primary' }) {
   const defaultSteps = [
     { title: "Mining", description: "Extract raw materials from ore deposits" },
     { title: "Beneficiation", description: "Process and concentrate the ore" },
@@ -13,7 +13,14 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
   ]
 
   const items = steps?.length ? steps : defaultSteps
+  
+  // Check if step should be disabled (first 4 steps when 100% secondary)
+  const isStepDisabled = (idx) => {
+    return materialSource === 'secondary' && idx < 4;
+  };
+  
   const handleClick = (idx) => {
+    if (isStepDisabled(idx)) return; // Don't allow clicking disabled steps
     if (typeof onStepClick === "function") onStepClick(idx)
   }
   
@@ -39,33 +46,39 @@ export default function ProgressTracker({ steps, currentStep = 0, onStepClick, c
           const completed = isStepCompleted(idx)
           const active = idx === currentStep
           const upcoming = !completed && idx > currentStep
+          const disabled = isStepDisabled(idx)
 
           return (
             <li key={idx} className="relative pl-14 py-5">
               <button
                 type="button"
                 onClick={() => handleClick(idx)}
-                className="group text-left w-full"
+                disabled={disabled}
+                className={`group text-left w-full ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 aria-current={active ? "step" : undefined}
               >
                 <span
                   className={[
                     "absolute left-2 mt-1 flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300",
-                    completed && "bg-[#6b5b59] text-white border-transparent",
-                    active && "bg-[#BA7967] text-white border-transparent ring-8 ring-[#BA7967]/30 shadow-lg animate-float-strong",
-                    upcoming && "bg-white text-gray-700 border-gray-300",
+                    disabled && "bg-gray-300 text-gray-500 border-gray-400",
+                    !disabled && completed && "bg-[#6b5b59] text-white border-transparent",
+                    !disabled && active && "bg-[#BA7967] text-white border-transparent ring-8 ring-[#BA7967]/30 shadow-lg animate-float-strong",
+                    !disabled && upcoming && "bg-white text-gray-700 border-gray-300",
                   ].filter(Boolean).join(" ")}
                 >
-                  {completed ? (
+                  {disabled ? (
+                    <span className="text-lg">🚫</span>
+                  ) : completed ? (
                     <CheckCircle2 className="h-6 w-6" />
                   ) : (
                     <span className="text-sm font-semibold">{idx + 1}</span>
                   )}
                 </span>
                 <div className="transition-all duration-300">
-                  <p className={["font-semibold", active ? "text-[#181814]" : completed ? "text-[#6b5b59]" : "text-gray-800", "text-base sm:text-lg"].join(" ")}>{step.title}</p>
-                  <p className="text-sm sm:text-base text-gray-700">{step.description}</p>
-                  {completed && <p className="text-xs text-green-600 mt-1">✓ Completed</p>}
+                  <p className={["font-semibold", disabled ? "text-gray-500" : active ? "text-[#181814]" : completed ? "text-[#6b5b59]" : "text-gray-800", "text-base sm:text-lg"].join(" ")}>{step.title}</p>
+                  <p className={`text-sm sm:text-base ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>{step.description}</p>
+                  {disabled && <p className="text-xs text-gray-500 mt-1">⊘ Not applicable (100% Secondary)</p>}
+                  {!disabled && completed && <p className="text-xs text-green-600 mt-1">✓ Completed</p>}
                 </div>
               </button>
             </li>

@@ -5,6 +5,7 @@ import ProcessStages from './ProcessStages';
 import GeographicAnalysis from './GeographicAnalysis';
 import AIRecommendations from './AIRecommendations';
 import DetailedReports from './DetailedReports';
+import LinearCircularSummary from './LinearCircularSummary';
 
 export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'circular', selectedProject }) {
     
@@ -31,6 +32,16 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
         },
         {
             id: 3,
+            name: 'Linear vs Circular',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M9 6l-6 6 6 6m6-12l6 6-6 6" />
+                </svg>
+            ),
+            component: LinearCircularSummary
+        },
+        {
+            id: 4,
             name: 'Geographic Analysis',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +51,7 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
             component: GeographicAnalysis
         },
         {
-            id: 4,
+            id: 5,
             name: 'AI Recommendations',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +61,7 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
             component: AIRecommendations
         },
         {
-            id: 5,
+            id: 6,
             name: 'Detailed Reports',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,9 +238,10 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
                                     <p className="text-sm text-gray-700">
                                         {activeTab === 1 && "Overview of key performance indicators and comparative analysis"}
                                         {activeTab === 2 && "Detailed breakdown of production stages with efficiency metrics"}
-                                        {activeTab === 3 && "Geographic distribution, facilities, and supply chain visualization"}
-                                        {activeTab === 4 && "AI-powered recommendations for optimization and improvement"}
-                                        {activeTab === 5 && "Comprehensive reports with exportable data and insights"}
+                                        {activeTab === 3 && "Side-by-side summary of linear vs circular performance"}
+                                        {activeTab === 4 && "Geographic distribution, facilities, and supply chain visualization"}
+                                        {activeTab === 5 && "AI-powered recommendations for optimization and improvement"}
+                                        {activeTab === 6 && "Comprehensive reports with exportable data and insights"}
                                     </p>
                                 </div>
                             </div>

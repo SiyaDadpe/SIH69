@@ -9,6 +9,7 @@ import Reports from './pages/Reports';
 import Docs from './pages/Docs';
 import Analytics from './pages/Analytics';
 import ProcessCanvas from './pages/ProcessCanvas';
+import Playground from './pages/playground';
 import MainLayout from './layouts/MainLayout';
 import RouteError from './components/RouteError';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -73,6 +74,11 @@ function App() {
         {
           path: "analytics",
           element: <Analytics />,
+          errorElement: <RouteError />
+        },
+        {
+          path: "playground",
+          element: <Playground />,
           errorElement: <RouteError />
         }
       ]

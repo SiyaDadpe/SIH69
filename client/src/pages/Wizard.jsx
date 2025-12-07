@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react"
+import React, { useMemo, useState, useEffect, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import WizardForm from "@/sections/Wizard/wizardForm"
 import ProgressTracker from "@/sections/Wizard/progressTracker"
@@ -37,6 +37,13 @@ export default function Wizard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  
+  // Material source state
+  const [materialSourceInfo, setMaterialSourceInfo] = useState({ materialSource: 'primary', primaryPercentage: 100, secondaryPercentage: 0 })
+  
+  const handleMaterialSourceChange = useCallback((info) => {
+    setMaterialSourceInfo(info);
+  }, []);
 
 
   // Initialize or load workflow
@@ -436,6 +443,7 @@ export default function Wizard() {
             workflowData={workflowData}
             onWorkflowUpdate={handleWorkflowUpdate}
             onWorkflowSubmitted={handleWorkflowSubmitted}
+            onMaterialSourceChange={handleMaterialSourceChange}
           />
           <ProgressTracker 
             steps={steps} 
@@ -443,6 +451,7 @@ export default function Wizard() {
             onStepClick={setActiveStep}
             completedSteps={workflowData?.completedSteps || []}
             completionPercentage={completionPercentage}
+            materialSource={materialSourceInfo.materialSource}
           />
         </>
       )}

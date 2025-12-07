@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LCASuccessModal from "@/components/LCASuccessModal";
+import LCAPromptModal from "@/components/LCAPromptModal";
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -404,7 +405,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {} }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -542,6 +543,8 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         onForward={handleSubmit(onSubmit)}
         forwardDisabled={!isValid || isSaving}
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+        onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
+        isCalculatingLca={isCalculatingLca}
       />
     </>
   );
@@ -1051,7 +1054,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {} }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1233,6 +1236,8 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         onForward={handleSubmit(onSubmit)}
         forwardDisabled={!isValid || isSaving}
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
+        onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
+        isCalculatingLca={isCalculatingLca}
       />
     </>
   );
@@ -1781,6 +1786,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [lcaReportData, setLcaReportData] = useState(null)
   const [isCalculatingLca, setIsCalculatingLca] = useState(false)
   
+  // LCA Prompt Modal state (new simple modal)
+  const [showLCAPromptModal, setShowLCAPromptModal] = useState(false)
+  const [lcaPromptReportId, setLcaPromptReportId] = useState(null)
+  
   // AI Prediction state management
   const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
   const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
@@ -1961,13 +1970,96 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     }
   }
 
+  // Validate current and previous steps' required fields
+  const validateCurrentAndPreviousSteps = (updatedFormValues = null) => {
+    const stepsToValidate = steps.slice(0, activeStep + 1); // Current step + all previous
+    const allMissingFields = [];
+    
+    // Use updated values if provided, otherwise use current state
+    const valuesToValidate = updatedFormValues || formValues;
+    
+    for (const step of stepsToValidate) {
+      const stepName = step.key;
+      const stepData = valuesToValidate[stepName] || {};
+      
+      // Map frontend field names to backend field names for validation
+      const mappedData = mapFormDataToBackendFields(stepName, stepData);
+      
+      // Validate using the existing validation function
+      const validation = validateRequiredFields(stepName, mappedData);
+      
+      if (!validation.valid) {
+        allMissingFields.push({
+          stepName: step.label || stepName,
+          missingFields: validation.missingFields
+        });
+      }
+    }
+    
+    return {
+      valid: allMissingFields.length === 0,
+      missingByStep: allMissingFields
+    };
+  };
+
   // Handle LCA Calculation
-  const handleCalculateLCA = async () => {
+  const handleCalculateLCA = async (currentStepData = null) => {
     if (!workflowId) {
       alert('No workflow found. Please save your progress first.');
       return;
     }
 
+    console.log('📊 [LCA] Starting LCA calculation process...');
+    console.log('📊 [LCA] Current step:', stepKey);
+    console.log('📊 [LCA] Current step data provided:', !!currentStepData);
+
+    // Create updated form values with current step data
+    let updatedFormValues = { ...formValues };
+    
+    // Step 1: Save current step data if provided
+    if (currentStepData) {
+      console.log('💾 [LCA] Saving current step data first...');
+      
+      // Update the form values object immediately for validation
+      updatedFormValues = {
+        ...formValues,
+        [stepKey]: currentStepData
+      };
+      
+      try {
+        await handleSaveStep(stepKey, currentStepData);
+        console.log('✅ [LCA] Current step saved successfully');
+        
+        // Update formValues state (async)
+        setFormValues(updatedFormValues);
+      } catch (error) {
+        console.error('❌ [LCA] Failed to save current step:', error);
+        alert('Failed to save current step data. Please try again.');
+        return;
+      }
+    }
+
+    // Step 2: Validate current and previous steps using the updated values
+    console.log('🔍 [LCA] Validating current and previous steps...');
+    const validation = validateCurrentAndPreviousSteps(updatedFormValues);
+    
+    if (!validation.valid) {
+      // Show detailed validation error
+      let errorMsg = 'Please fill in the required fields before calculating LCA:\n\n';
+      validation.missingByStep.forEach(({ stepName, missingFields }) => {
+        errorMsg += `${stepName}:\n  - ${missingFields.join('\n  - ')}\n\n`;
+      });
+      alert(errorMsg);
+      return;
+    }
+    
+    console.log('✅ [LCA] Validation passed!');
+
+    // Step 3: Show the simple prompt modal
+    setLcaPromptReportId(workflowId); // Use workflowId as reportId for now
+    setShowLCAPromptModal(true);
+    
+    /* Original LCA calculation code - commented for now, will integrate later
     setIsCalculatingLca(true);
     
     try {
@@ -2013,6 +2105,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     } finally {
       setIsCalculatingLca(false);
     }
+    */
   };
 
   // Map frontend field names to backend field names
@@ -2264,6 +2357,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onOpenWorkflow={onOpenWorkflow}
             aiPopulatedFields={aiPopulatedFields['mining'] || new Set()}
             predictionMetadata={predictionMetadata['mining'] || {}}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       case 'beneficiation':
@@ -2279,6 +2374,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onOpenWorkflow={onOpenWorkflow}
             aiPopulatedFields={aiPopulatedFields['beneficiation'] || new Set()}
             predictionMetadata={predictionMetadata['beneficiation'] || {}}
+            onCalculateLCA={handleCalculateLCA}
+            isCalculatingLca={isCalculatingLca}
           />
         );
       case 'refining':
@@ -2458,6 +2555,13 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         onClose={() => setShowLCAModal(false)}
         reportData={lcaReportData || {}}
       />
+      
+      {/* LCA Prompt Modal (Simple) */}
+      <LCAPromptModal
+        isOpen={showLCAPromptModal}
+        onClose={() => setShowLCAPromptModal(false)}
+        reportId={lcaPromptReportId}
+      />
     </WizardContainer>
   )
 }
@@ -2564,7 +2668,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
-      onLcaCalculate={onCalculateLCA}
+      onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
     />
   )
@@ -3093,7 +3197,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
-      onLcaCalculate={onCalculateLCA}
+      onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
     />
   )
@@ -3664,7 +3768,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
-      onLcaCalculate={onCalculateLCA}
+      onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
     />
   )
@@ -4214,7 +4318,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
-      onLcaCalculate={onCalculateLCA}
+      onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
     />
   )
@@ -4835,7 +4939,7 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
       forwardDisabled={!isValid}
-      onLcaCalculate={onCalculateLCA}
+      onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
     />
   )

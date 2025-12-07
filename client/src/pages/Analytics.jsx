@@ -3,7 +3,121 @@ import { useSearchParams } from 'react-router-dom';
 import ProjectSelector from '../sections/analytics/ProjectSelector';
 import Header from '../sections/analytics/Header';
 import TabbedDashboard from '../sections/analytics/TabbedDashboard';
-import { getLCAReportById, getUserLCAReports } from '../services/lcaService';
+import { getLCAReportById, getUserLCAReports, getCalculatelcaById } from '../services/lcaService';
+
+// Single dummy calculatelca-style report used when no real reportId is provided
+const dummyCalculatelcaDoc = {
+    _id: 'dummy-report-1',
+    workflowId: 'dummy-workflow-1',
+    projectName: 'Demo Aluminum LCA',
+    metalType: 'Aluminium',
+    location: 'Demo Facility, IN',
+    analysisDate: { $date: new Date().toISOString() },
+    status: 'completed',
+    totalEnergyConsumption: 18000,
+    totalCO2Emissions: 21000,
+    totalWaterUsage: 5.8,
+    totalWasteGeneration: 1100,
+    totalAirQualityImpact: 700,
+    energyIntensity: 18000,
+    carbonIntensity: 21000,
+    circularityScore: 52.3,
+    circularityRating: 'Fair',
+    materialRecoveryRate: 92,
+    lcaStages: {
+        mining: { energyConsumption: 500, co2Emissions: 1000, waterUsage: 0.5, wasteGeneration: 120, airQualityImpact: 25, completed: true },
+        beneficiation: { energyConsumption: 1200, co2Emissions: 1500, waterUsage: 0.8, wasteGeneration: 200, airQualityImpact: 45, completed: true },
+        refining: { energyConsumption: 3500, co2Emissions: 4000, waterUsage: 2.5, wasteGeneration: 400, airQualityImpact: 160, completed: true },
+        smelting: { energyConsumption: 9000, co2Emissions: 11000, waterUsage: 1.0, wasteGeneration: 150, airQualityImpact: 320, completed: true },
+        manufacturing: { energyConsumption: 2800, co2Emissions: 4500, waterUsage: 0.7, wasteGeneration: 140, airQualityImpact: 90, completed: true },
+        recycling: { energyConsumption: 1200, co2Emissions: 0, waterUsage: 0.3, wasteGeneration: 70, airQualityImpact: 35, completed: true },
+        valorization: { energyConsumption: 300, co2Emissions: 0, waterUsage: 0.5, wasteGeneration: 30, airQualityImpact: 25, completed: true }
+    },
+    circularityIndex: 0.15,
+    linearityIndex: 0.85,
+    circularityComponents: {
+        recycledContentFactor: 0.2,
+        endOfLifeRecoveryFactor: 0.4,
+        valorizationFactor: 0.6
+    },
+    sankeyData: {
+        normalizationBasisTonnes: 1,
+        nodes: [
+            { id: 'primary', name: 'Primary Production', value: 0.7, column: 0, type: 'input', unit: 't' },
+            { id: 'recycled', name: 'Recycled Input', value: 0.3, column: 0, type: 'input', unit: 't' },
+            { id: 'manufacturing', name: 'Manufacturing', value: 1.0, column: 1, type: 'process', unit: 't' },
+            { id: 'scrap', name: 'Manufacturing Scrap', value: 0.1, column: 2, type: 'waste', unit: 't' },
+            { id: 'product', name: 'Product Use', value: 0.9, column: 2, type: 'output', unit: 't' },
+            { id: 'collection', name: 'Post-use Collection', value: 0.7, column: 3, type: 'process', unit: 't' },
+            { id: 'recyclingPlant', name: 'Recycling Plant', value: 0.5, column: 4, type: 'process', unit: 't' },
+            { id: 'valorization', name: 'Valorization', value: 0.2, column: 4, type: 'process', unit: 't' },
+            { id: 'losses', name: 'Landfill / Losses', value: 0.3, column: 4, type: 'waste', unit: 't' }
+        ],
+        links: [
+            { source: 'primary', target: 'manufacturing', value: 0.7 },
+            { source: 'recycled', target: 'manufacturing', value: 0.3 },
+            { source: 'manufacturing', target: 'scrap', value: 0.1 },
+            { source: 'manufacturing', target: 'product', value: 0.9 },
+            { source: 'product', target: 'collection', value: 0.7 },
+            { source: 'product', target: 'losses', value: 0.2 },
+            { source: 'collection', target: 'recyclingPlant', value: 0.5 },
+            { source: 'collection', target: 'losses', value: 0.2 },
+            { source: 'recyclingPlant', target: 'recycled', value: 0.5 },
+            { source: 'losses', target: 'valorization', value: 0.1 },
+            { source: 'losses', target: 'losses', value: 0.2 }
+        ]
+    },
+    recommendations: [],
+    metadata: {}
+};
+
+// NOTE: earlier we used a mock calculatelca doc here for UI testing.
+// Now Analytics fetches real calculatelca documents from the backend.
+
+// Convert a document from LCA.calculatelca into the analytics format
+const convertCalculatelcaToAnalytics = (doc) => {
+    const stages = doc.lcaStages || {};
+
+    return {
+        // basic info
+        projectName: doc.projectName || 'Aluminum LCA Project',
+        location: doc.location || 'Unknown',
+        timestamp: doc.analysisDate?.$date || doc.createdAt?.$date || new Date().toISOString(),
+        reportId: doc._id || doc.workflowId,
+
+        // aggregate metrics
+        totalGWP: doc.totalCO2Emissions || 0,
+        totalEnergy: doc.totalEnergyConsumption || 0,
+        totalWater: doc.totalWaterUsage || 0,
+        circularityScore: doc.circularityScore || 0,
+        circularityRating: doc.circularityRating || 'Unknown',
+
+        // new circularity vs linearity
+        circularityIndex: doc.circularityIndex ?? null,
+        linearityIndex: doc.linearityIndex ?? null,
+        circularityComponents: doc.circularityComponents || null,
+
+        // stage-wise data (keeps existing TabbedDashboard API)
+        stages: {
+            mining: stages.mining || {},
+            beneficiation: stages.beneficiation || {},
+            refining: stages.refining || {},
+            smelting: stages.smelting || {},
+            manufacturing: stages.manufacturing || {},
+            recycling: stages.recycling || {},
+            valorization: stages.valorization || {},
+        },
+
+        // sankey data for circularity flows
+        sankeyData: doc.sankeyData || null,
+
+        // metadata
+        calculatedAt: doc.analysisDate?.$date || doc.createdAt?.$date,
+        status: doc.status,
+        metalType: doc.metalType,
+        pdfUrl: doc.pdfReportUrl,
+    };
+};
 
 /**
  * Convert LCA report data to analytics format
@@ -61,39 +175,37 @@ export default function Analytics() {
             
             try {
                 if (reportId) {
-                    // Fetch specific LCA report
-                    console.log('📊 Fetching LCA report:', reportId);
+                    // First try enriched calculatelca document
+                    console.log('📊 Fetching calculatelca report:', reportId);
+                    try {
+                        const calcRes = await getCalculatelcaById(reportId);
+                        if (calcRes.success && calcRes.data) {
+                            const analyticsData = convertCalculatelcaToAnalytics(calcRes.data);
+                            console.log('✅ Calculatelca report loaded:', analyticsData);
+                            setProjectData([analyticsData]);
+                            setSelectedProject(analyticsData);
+                            return;
+                        }
+                    } catch (calcErr) {
+                        console.warn('⚠️ Failed to load calculatelca report, falling back to legacy:', calcErr.message);
+                    }
+
+                    // Fallback: legacy LCA report API
+                    console.log('📊 Fetching legacy LCA report:', reportId);
                     const response = await getLCAReportById(reportId);
-                    
                     if (response.success && response.data) {
                         const analyticsData = convertLCAToAnalytics(response.data);
-                        console.log('✅ LCA report loaded:', analyticsData);
-                        setProjectData([analyticsData]); // Wrap in array for compatibility
+                        console.log('✅ Legacy LCA report loaded:', analyticsData);
+                        setProjectData([analyticsData]);
                         setSelectedProject(analyticsData);
                     }
                 } else {
-                    // Fetch all user reports or fallback to mock data
-                    try {
-                        console.log('📊 Fetching all LCA reports...');
-                        const response = await getUserLCAReports({ limit: 50 });
-                        
-                        if (response.success && response.data.reports.length > 0) {
-                            const analyticsDataArray = response.data.reports.map(convertLCAToAnalytics);
-                            console.log('✅ Loaded', analyticsDataArray.length, 'LCA reports');
-                            setProjectData(analyticsDataArray);
-                        } else {
-                            // Fallback to mock data if no reports
-                            console.log('⚠️ No LCA reports found, loading mock data');
-                            const mockResponse = await fetch('/src/data/projectAnalytics.json');
-                            const mockData = await mockResponse.json();
-                            setProjectData(mockData);
-                        }
-                    } catch (apiError) {
-                        console.error('⚠️ API error, falling back to mock data:', apiError);
-                        const mockResponse = await fetch('/src/data/projectAnalytics.json');
-                        const mockData = await mockResponse.json();
-                        setProjectData(mockData);
-                    }
+                    // No reportId: show a single dummy analytics project
+                    console.log('ℹ️ No reportId provided, using dummy calculatelca report');
+                    const analyticsData = convertCalculatelcaToAnalytics(dummyCalculatelcaDoc);
+                    setProjectData([analyticsData]);
+                    setSelectedProject(analyticsData);
+                    return;
                 }
             } catch (error) {
                 console.error('❌ Error loading analytics data:', error);

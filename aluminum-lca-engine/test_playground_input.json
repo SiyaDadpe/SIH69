@@ -1,0 +1,55 @@
+{
+  "1. Mining (Bauxite Extraction)": {
+    "Mining Method": "Open Pit",
+    "Ore Grade (%)": 45,
+    "Overburden Ratio": 2.5,
+    "Equipment Type": "Electric",
+    "Water Usage (m³/t)": 0.5,
+    "Red Mud Generation (kg/t)": 1200
+  },
+  "2. Beneficiation (Ore Processing)": {
+    "Processes": ["Crushing", "Grinding", "Washing"],
+    "Water Consumption (m³/t)": 2.0,
+    "Electricity Use (kWh/t)": 150,
+    "Chemical Use": "Flocculants",
+    "Tailings Management": "Thickened Sludge"
+  },
+  "3. Alumina Refining (Bayer Process)": {
+    "Process Type": ["Caustic Digestion", "Calcination"],
+    "Enhancements": ["Heat Recovery", "Automation"],
+    "Energy Use (kWh/t)": 900,
+    "Water Use (m³/t)": 4.5,
+    "Red Mud Generation (kg/t)": 1400,
+    "Chemical Consumption (kg/t)": 45
+  },
+  "4. Aluminium Smelting (Hall-Héroult)": {
+    "Technology": ["Prebaked Anodes"],
+    "Optimizations": ["Inert Anode", "Point Feeding"],
+    "Energy (kWh/t)": 14000,
+    "Energy Source": "Renewable Mix",
+    "PFC Reduction": "Gas Treatment",
+    "Cell Efficiency (%)": 95
+  },
+  "5. Fabrication & Use Phase": {
+    "Processes": ["Casting", "Rolling", "Extrusion"],
+    "Enhancements": ["Scrap Recycling", "Energy-efficient Design"],
+    "Energy (kWh/t)": 3200,
+    "Recycled Content (%)": 40,
+    "Product Lifetime (years)": 30,
+    "Scrap Rate (%)": 12
+  },
+  "6. Recycling (End-of-Life)": {
+    "Methods": ["Remelting", "Closed-loop"],
+    "Processes": ["Sorting", "Shredding"],
+    "Collection Rate (%)": 90,
+    "Recovery Yield (%)": 93,
+    "Energy Demand (kWh/t)": 2500,
+    "Emission Savings (kg CO₂e/t)": 9500
+  },
+  "7. Waste Valorization": {
+    "Waste Type": ["Red Mud", "Dross"],
+    "Valorization Method": ["Cement Additive", "Iron Recovery"],
+    "Waste Utilized (%)": 60,
+    "Emission Reduction (kg CO₂e/t)": 800
+  }
+}

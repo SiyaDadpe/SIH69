@@ -352,7 +352,8 @@ async def shutdown_continuous_monitor():
 def _map_wizard_refining_to_model_input(refining: Dict[str, Any]) -> RefiningInput:
     """Map wizard refining object to model input schema."""
     if not refining:
-        return RefiningInput()
+        # Upstream should have validated; do not silently build defaults
+        raise ValueError("No refining stage data present; cannot build model input")
     
     processes = refining.get('processes', [])
     if not isinstance(processes, list):
@@ -416,6 +417,32 @@ def _map_wizard_refining_to_model_input(refining: Dict[str, Any]) -> RefiningInp
         location=location,
         toxicity_Red_Mud=toxicity,
     )
+
+
+def _has_refining_input(refining: Dict[str, Any] | None) -> bool:
+    """Return True only if there is meaningful refining input data."""
+    if not isinstance(refining, dict) or not refining:
+        return False
+
+    # Any processes or variants listed
+    if isinstance(refining.get('processes'), list) and refining.get('processes'):
+        return True
+    if isinstance(refining.get('variants'), list) and refining.get('variants'):
+        return True
+
+    # Key numeric drivers
+    for key in [
+        'digestionTemperature',
+        'refining_digestion_temperature_C',
+        'digestionPressure',
+        'refining_digestion_pressure_bar',
+        'causticConcentration',
+        'refining_caustic_concentration_gL',
+    ]:
+        if refining.get(key) is not None:
+            return True
+
+    return False
 
 @app.get("/")
 async def root():
@@ -769,6 +796,11 @@ async def predict_refining_and_save(workflow_id: str):
             raise HTTPException(status_code=404, detail="Workflow not found")
         ref_raw = wf.get("refining", {}) or {}
         logger.info(f"Processing refining for workflow {workflow_id}, input fields: {list(ref_raw.keys())}")
+
+        # Guard: if there is no meaningful refining input, skip prediction
+        if not _has_refining_input(ref_raw):
+            logger.info(f"Skipping refining prediction for workflow {workflow_id}: no refining input present")
+            raise HTTPException(status_code=400, detail="No refining stage data present; prediction not generated")
     except HTTPException:
         raise
     except Exception as e:

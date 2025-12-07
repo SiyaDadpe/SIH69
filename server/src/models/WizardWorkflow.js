@@ -105,6 +105,13 @@ const wizardWorkflowSchema = new mongoose.Schema(
         }
       },
       
+      // AI Predicted Fields (can be manually edited by users)
+      mining_energy_MJ_per_t_ore: { type: Number, default: null },
+      mining_co2_kg_per_t_ore: { type: Number, default: null },
+      mining_sox_kg_per_t_ore: { type: Number, default: null },
+      mining_nox_kg_per_t_ore: { type: Number, default: null },
+      mining_pm_kg_per_t_ore: { type: Number, default: null },
+      
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
       sustainabilityParameters: {
@@ -167,6 +174,13 @@ const wizardWorkflowSchema = new mongoose.Schema(
         toxicityOthers: String
       },
       
+      // AI Predicted Fields (can be manually edited by users)
+      beneficiation_water_m3_per_t_ore: { type: Number, default: null },
+      beneficiation_electricity_kWh_per_t_ore: { type: Number, default: null },
+      beneficiation_tailings_management: { type: String, default: null },
+      beneficiation_noise_pollution: { type: String, default: null },
+      beneficiation_dust_pollution: { type: String, default: null },
+      
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
       sustainabilityParameters: {
@@ -220,6 +234,16 @@ const wizardWorkflowSchema = new mongoose.Schema(
         enum: ['Stored in tailing ponds', 'Pipeline transport to disposal site']
       },
       
+      // AI Predicted Fields
+      refining_energy_MJ_per_t_alumina: { type: Number, default: null },
+      refining_water_m3_per_t_alumina: { type: Number, default: null },
+      refining_red_mud_kg_per_t_alumina: { type: Number, default: null },
+      refining_caustic_soda_kg_per_t_alumina: { type: Number, default: null },
+      refining_lime_kg_per_t_alumina: { type: Number, default: null },
+      refining_so2_kg_per_t_alumina: { type: Number, default: null },
+      refining_nox_kg_per_t_alumina: { type: Number, default: null },
+      refining_dust_kg_per_t_alumina: { type: Number, default: null },
+      
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
       sustainabilityParameters: {
@@ -269,6 +293,16 @@ const wizardWorkflowSchema = new mongoose.Schema(
       fluorideRecovery: Number, // % (frontend field name)
       thermalEnergyRecoveryPotential: Number, // % of total energy (original)
       thermalRecovery: Number, // % of total energy (frontend field name)
+      
+      // AI Predicted Fields
+      smelting_energy_kWh_per_t_al: { type: Number, default: null },
+      smelting_energy_MJ_per_t_al: { type: Number, default: null },
+      smelting_co2_kg_per_t_al: { type: Number, default: null },
+      smelting_pfc_kg_per_t_al: { type: Number, default: null },
+      smelting_so2_kg_per_t_al: { type: Number, default: null },
+      smelting_nox_kg_per_t_al: { type: Number, default: null },
+      smelting_fluoride_recovery_percent: { type: Number, default: null },
+      smelting_thermal_recovery_percent: { type: Number, default: null },
       
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
@@ -338,6 +372,12 @@ const wizardWorkflowSchema = new mongoose.Schema(
       corrosionBehaviorOthers: String,
       corrosionOthers: String,
       
+      // AI Predicted Fields
+      manufacturing_energy_MJ_per_t_product: { type: Number, default: null },
+      manufacturing_scrap_rate_percent: { type: Number, default: null },
+      manufacturing_recycled_content_percent: { type: Number, default: null },
+      manufacturing_transport_emissions_kgCO2e_per_t: { type: Number, default: null },
+      
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
       sustainabilityParameters: {
@@ -395,6 +435,15 @@ const wizardWorkflowSchema = new mongoose.Schema(
       closedLoopRecyclingPercentage: Number, // %
       openLoopRecyclingPercentage: Number, // %
       
+      // AI Predicted Fields
+      recycling_scrap_input_percent: { type: Number, default: null },
+      recycling_recovery_yield_percent: { type: Number, default: null },
+      recycling_energy_kWh_per_t_Al: { type: Number, default: null },
+      recycling_emission_savings_kgCO2e_per_t_Al: { type: Number, default: null },
+      recycling_collection_rate_percent: { type: Number, default: null },
+      recycling_closed_loop_percent: { type: Number, default: null },
+      recycling_open_loop_percent: { type: Number, default: null },
+      
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
       sustainabilityParameters: {
@@ -434,7 +483,7 @@ const wizardWorkflowSchema = new mongoose.Schema(
       // Economic viability for each method
       ironExtractionEconomicViability: {
         type: String,
-        enum: ['Low', 'Moderate', 'High']
+        enum: ['low', 'moderate', 'high']
       },
       rareEarthExtractionEconomicViability: {
         type: String,
@@ -534,20 +583,24 @@ const wizardWorkflowSchema = new mongoose.Schema(
       fluorideGasesRecoveryEfficiency: Number, // %
       rareEarthExtractionEconomicViability: {
         type: String,
-        enum: ['Low', 'Moderate', 'High']
+        enum: ['low', 'moderate', 'high']
       },
       splEncapsulationEconomicViability: {
         type: String,
-        enum: ['Low', 'Moderate', 'High']
+        enum: ['low', 'moderate', 'high']
       },
       drossRecoveryEconomicViability: {
         type: String,
-        enum: ['Low', 'Moderate', 'High']
+        enum: ['low', 'moderate', 'high']
       },
       fluorideCaptureEconomicViability: {
         type: String,
-        enum: ['Low', 'Moderate', 'High']
+        enum: ['low', 'moderate', 'high']
       },
+      
+      // AI Predicted Fields
+      valorization_recovery_efficiency_percent: { type: Number, default: null },
+      valorization_emission_reduction_kgCO2e_per_t_waste: { type: Number, default: null },
       
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
@@ -735,9 +788,8 @@ wizardWorkflowSchema.methods.markStepCompleted = function(stepNumber) {
     }
   }
   
-  // All steps completed
   this.currentStep = 6;
-  this.status = 'completed';
+  // this.status = 'completed'; // Removed: Keep as draft even when all steps filled
   return this.save();
 };
 
