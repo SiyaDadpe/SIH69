@@ -552,102 +552,81 @@ export default function Docs() {
             {/* Stage 1: Mining */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">1. Mining (Bauxite Extraction)</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 Bauxite mining involves extracting aluminum ore, often through surface methods that
                 disrupt land and generate waste like red mud precursors. Theoretically, higher ore grades
                 reduce energy intensity, while equipment type influences emissions—electric options lower
                 CO₂ if powered renewably. Overburden removal contributes to soil erosion and biodiversity
                 loss, emphasizing the need for sustainable practices to minimize environmental footprints.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Mining Stage Parameters — To be inserted
-              </div>
             </div>
 
             {/* Stage 2: Beneficiation */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">2. Beneficiation (Ore Washing, Crushing, Sorting)</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 Beneficiation refines bauxite by removing impurities, enhancing ore quality for
                 downstream processes. It is energy- and water-intensive, with mechanical steps like
                 crushing contributing to noise/dust pollution and chemical agents risking water
                 contamination. Theoretically, dry methods save water but increase energy use, while
                 effective tailings management prevents environmental hazards like slurry spills.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Beneficiation Stage Parameters — To be inserted
-              </div>
             </div>
 
             {/* Stage 3: Alumina Refining */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">3. Alumina Refining (Bayer Process)</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 The Bayer process extracts alumina from bauxite using caustic soda, involving high heat and
                 chemicals. Theoretically, it generates significant red mud waste, which is alkaline and toxic,
                 but enhancements like heat recovery improve efficiency and reduce emissions. Boundary
                 choices (e.g., cradle-to-gate) affect LCA accuracy, highlighting the need for customizable
                 models.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Alumina Refining Stage Parameters — To be inserted
-              </div>
             </div>
 
             {/* Stage 4: Smelting */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">4. Aluminium Smelting (Hall-Héroult Process)</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 Smelting uses electrolysis to produce aluminum, consuming massive electricity and
                 generating CO₂ from anodes. Theoretically, anode effects spike PFC emissions (potent
                 GHGs), but inert anodes could eliminate this. Renewable power integration reduces the grid-dependent 
                 carbon footprint, aligning with circularity by minimizing primary production.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Smelting Stage Parameters — To be inserted
-              </div>
             </div>
 
             {/* Stage 5: Manufacturing */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">5. Product Manufacturing (Fabrication & Use Phase)</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 Fabrication shapes aluminum into products, with energy use varying by method. In the use
                 phase, lightweighting reduces operational emissions (e.g., in transport). Theoretically,
                 design for recycling minimizes end-of-life waste, promoting circularity by extending product
                 lifespans and reducing maintenance-related impacts.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Manufacturing Stage Parameters — To be inserted
-              </div>
             </div>
 
             {/* Stage 6: Recycling */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">6. Recycling (End-of-Life Aluminium)</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 Recycling recovers aluminum scrap, using far less energy than primary production.
                 Theoretically, closed-loop systems preserve purity and maximize emission savings (up to
                 95% CO₂ reduction), while sorting technologies like ML-based optical methods minimize
                 contamination and improve yields.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Recycling Stage Parameters — To be inserted
-              </div>
             </div>
 
             {/* Stage 7: Valorization */}
             <div className="my-6 p-5 bg-white rounded-xl border border-[#BA7967]/20 shadow-sm">
               <h4 className="text-lg font-semibold text-[#BA7967] mb-3">7. Byproduct & Waste Valorization</h4>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700">
                 Valorization transforms wastes like red mud into valuable resources, reducing disposal
                 needs. Theoretically, this closes loops by substituting virgin materials (e.g., red mud in
                 cement lowers clinker emissions), mitigating toxicity risks and enhancing economic viability
                 through new revenue streams.
               </p>
-              <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center text-gray-500 italic">
-                📊 Table: Valorization Stage Parameters — To be inserted
-              </div>
             </div>
 
             <InfoBox type="note" title="Comprehensive LCA Input Fields">
