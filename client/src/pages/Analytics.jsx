@@ -85,19 +85,22 @@ const convertCalculatelcaToAnalytics = (doc) => {
         timestamp: doc.analysisDate?.$date || doc.createdAt?.$date || new Date().toISOString(),
         reportId: doc._id || doc.workflowId,
 
-        // aggregate metrics
-        totalGWP: doc.totalCO2Emissions || 0,
-        totalEnergy: doc.totalEnergyConsumption || 0,
-        totalWater: doc.totalWaterUsage || 0,
-        totalWasteGeneration: doc.totalWasteGeneration || 0,
-        totalAirQualityImpact: doc.totalAirQualityImpact || 0,
-        circularityScore: doc.circularityScore || 0,
+        // aggregate metrics (preserve new format with value/unit objects)
+        totalGWP: doc.totalCO2Emissions,
+        totalEnergy: doc.totalEnergyConsumption,
+        totalWater: doc.totalWaterUsage,
+        totalWasteGeneration: doc.totalWasteGeneration,
+        totalAirQualityImpact: doc.totalAirQualityImpact,
+        totalEnergyConsumption: doc.totalEnergyConsumption,
+        totalCO2Emissions: doc.totalCO2Emissions,
+        totalWaterUsage: doc.totalWaterUsage,
+        circularityScore: doc.circularityScore,
         circularityRating: doc.circularityRating || 'Unknown',
-        materialRecoveryRate: doc.materialRecoveryRate || 0,
+        materialRecoveryRate: doc.materialRecoveryRate,
 
-        // intensity metrics
-        energyIntensity: doc.energyIntensity || 0,
-        carbonIntensity: doc.carbonIntensity || 0,
+        // intensity metrics (preserve new format)
+        energyIntensity: doc.energyIntensity,
+        carbonIntensity: doc.carbonIntensity,
 
         // new circularity vs linearity
         circularityIndex: doc.circularityIndex ?? null,
@@ -241,9 +244,9 @@ export default function Analytics() {
                     // Fetch enriched calculatelca document
                     console.log('📊 Fetching calculatelca report:', reportId);
                     try {
-                        const calcRes = await getCalculatelcaById(reportId);
-                        if (calcRes.success && calcRes.data) {
-                            const analyticsData = convertCalculatelcaToAnalytics(calcRes.data);
+                        const calcData = await getCalculatelcaById(reportId);
+                        if (calcData && calcData._id) {
+                            const analyticsData = convertCalculatelcaToAnalytics(calcData);
                             console.log('✅ Calculatelca report loaded:', analyticsData);
                             setProjectData([analyticsData]);
                             setSelectedProject(analyticsData);
@@ -443,72 +446,8 @@ export default function Analytics() {
                 </div>
             ) : (
                 <>
-                    {/* Workflow Selector Dropdown */}
-                    {allReports && allReports.length > 0 && (
-                        <div className="bg-white border-b border-gray-200 px-6 py-4">
-                            <div className="max-w-7xl mx-auto">
-                                {/* Search Bar */}
-                                <div className="mb-3">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Search workflows..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA7967] focus:border-transparent text-sm"
-                                        />
-                                        <svg 
-                                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
-                                            fill="none" 
-                                            stroke="currentColor" 
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                {/* Workflow Dropdown */}
-                                <div className="flex items-center gap-4">
-                                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                                        Current Workflow:
-                                    </label>
-                                    <select
-                                        value={reportId}
-                                        onChange={(e) => navigate(`/analytics?reportId=${e.target.value}`)}
-                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA7967] focus:border-transparent text-sm"
-                                    >
-                                        {/* Always show current selected workflow first */}
-                                        {reportId && !filteredReports.find(r => r._id === reportId) && allReports.find(r => r._id === reportId) && (
-                                            <option key={reportId} value={reportId}>
-                                                {allReports.find(r => r._id === reportId)?.projectName} - {allReports.find(r => r._id === reportId)?.metalType || 'Aluminum'} ({new Date(allReports.find(r => r._id === reportId)?.createdAt).toLocaleDateString()}) ✓
-                                            </option>
-                                        )}
-                                        {filteredReports.map((report) => (
-                                            <option key={report._id} value={report._id}>
-                                                {report.projectName} - {report.metalType || 'Aluminum'} ({new Date(report.createdAt).toLocaleDateString()})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {searchQuery && (
-                                        <span className="text-xs text-gray-500 whitespace-nowrap">
-                                            {filteredReports.length} of {allReports.length}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Workflow Selector Dropdown - REMOVED: Search bar, View Latest Report button, and Compare button */}
+                    
                     <Header 
                         selectedProject={selectedProject}
                         mode={mode}

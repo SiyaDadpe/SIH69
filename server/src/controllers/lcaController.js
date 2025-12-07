@@ -760,11 +760,118 @@ const deleteLCAReport = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Download LCA report as PDF
+ * @route   GET /api/lca/reports/:id/pdf
+ * @access  Private
+ */
+const downloadLCAReportPDF = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  // Find report and verify ownership
+  const report = await CalculateLCA.findOne({ _id: id, userId });
+
+  if (!report) {
+    res.status(404);
+    throw new Error('LCA report not found');
+  }
+
+  // Check if PDF already exists
+  if (report.pdfReportUrl && report.pdfFilename) {
+    const pdfPath = path.join(__dirname, '../../', report.pdfReportUrl);
+    const fs = require('fs');
+    
+    if (fs.existsSync(pdfPath)) {
+      // Serve existing PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${report.pdfFilename}"`);
+      return res.sendFile(pdfPath);
+    }
+  }
+
+  // Generate new PDF if it doesn't exist
+  const uploadsDir = path.join(__dirname, '../../uploads/reports');
+  const fs = require('fs');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  const filename = generateFilename(report.projectName || 'LCA-Report');
+  const pdfPath = path.join(uploadsDir, filename);
+
+  // Prepare data for PDF generation
+  const lcaData = {
+    projectName: report.projectName,
+    location: report.location,
+    metalType: report.metalType,
+    analysisDate: report.analysisDate,
+    totalEnergyConsumption: typeof report.totalEnergyConsumption === 'object' 
+      ? report.totalEnergyConsumption.value 
+      : report.totalEnergyConsumption,
+    totalCO2Emissions: typeof report.totalCO2Emissions === 'object'
+      ? report.totalCO2Emissions.value
+      : report.totalCO2Emissions,
+    totalWaterUsage: typeof report.totalWaterUsage === 'object'
+      ? report.totalWaterUsage.value
+      : report.totalWaterUsage,
+    totalWasteGeneration: typeof report.totalWasteGeneration === 'object'
+      ? report.totalWasteGeneration.value
+      : report.totalWasteGeneration,
+    totalAirQualityImpact: typeof report.totalAirQualityImpact === 'object'
+      ? report.totalAirQualityImpact.value
+      : report.totalAirQualityImpact,
+    energyIntensity: typeof report.energyIntensity === 'object'
+      ? report.energyIntensity.value
+      : report.energyIntensity,
+    carbonIntensity: typeof report.carbonIntensity === 'object'
+      ? report.carbonIntensity.value
+      : report.carbonIntensity,
+    circularityScore: typeof report.circularityScore === 'object'
+      ? report.circularityScore.value
+      : report.circularityScore,
+    circularityRating: report.circularityRating,
+    materialRecoveryRate: typeof report.materialRecoveryRate === 'object'
+      ? report.materialRecoveryRate.value
+      : report.materialRecoveryRate,
+    circularityIndex: typeof report.circularityIndex === 'object'
+      ? report.circularityIndex.value
+      : report.circularityIndex,
+    linearityIndex: typeof report.linearityIndex === 'object'
+      ? report.linearityIndex.value
+      : report.linearityIndex,
+    lcaStages: report.lcaStages || {},
+    recommendations: report.recommendations || [],
+    sankeyData: report.sankeyData,
+  };
+
+  try {
+    // Generate PDF
+    await generateLCAReport(lcaData, pdfPath);
+
+    // Update report with PDF info
+    report.pdfReportUrl = `/uploads/reports/${filename}`;
+    report.pdfFilename = filename;
+    report.pdfFileSize = fs.statSync(pdfPath).size;
+    await report.save();
+
+    // Send PDF to client
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.sendFile(pdfPath);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500);
+    throw new Error('Failed to generate PDF report');
+  }
+});
+
 module.exports = {
   calculateLCA,
   getUserLCAReports,
   getLCAReportById,
   getCalculatelcaById,
   getUserLCAStats,
-  deleteLCAReport
+  deleteLCAReport,
+  downloadLCAReportPDF
 };

@@ -14,7 +14,8 @@ const {
   getLCAReportById,
   getCalculatelcaById,
   getUserLCAStats,
-  deleteLCAReport
+  deleteLCAReport,
+  downloadLCAReportPDF
 } = require('../controllers/lcaController');
 
 // ============================================================================
@@ -112,6 +113,17 @@ router.get('/calculatelca/:id', authenticate, getCalculatelcaById);
  *          }
  */
 router.delete('/reports/:id', authenticate, deleteLCAReport);
+
+/**
+ * @route   GET /api/lca/reports/:id/pdf
+ * @desc    Download LCA report as PDF
+ * @access  Private (user must own the report)
+ * 
+ * @param   id - LCA report ID
+ * 
+ * @returns PDF file download
+ */
+router.get('/reports/:id/pdf', authenticate, downloadLCAReportPDF);
 
 // ============================================================================
 // LCA STATISTICS ROUTES

@@ -62,6 +62,7 @@ export default function Header({ selectedProject, mode = 'circular', onModeChang
                     </div>
 
                     {/* Export Controls */}
+                    {/* Commented out: Share, Export, Print buttons
                     <div className="flex gap-2">
                         <button
                             onClick={() => handleExport('share')}
@@ -94,9 +95,11 @@ export default function Header({ selectedProject, mode = 'circular', onModeChang
                             Print
                         </button>
                     </div>
+                    */}
                 </div>
 
                 {/* Middle Row: Analysis Mode Toggle & Project Comparison */}
+                {/* Commented out: Analysis Mode Toggle (Linear Economy, Circular Economy, Comparison)
                 {selectedProject && (
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -144,6 +147,13 @@ export default function Header({ selectedProject, mode = 'circular', onModeChang
                             </div>
                         </div>
 
+                        {/* Multi-Project Comparison */}
+                        {/* <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-700">Compare Projects:</span>
+                            <div className="relative">
+                */}
+                {selectedProject && (
+                    <div className="flex items-center justify-between mb-4">
                         {/* Multi-Project Comparison */}
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-700">Compare Projects:</span>

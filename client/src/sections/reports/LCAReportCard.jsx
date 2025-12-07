@@ -9,8 +9,11 @@ import {
   TrendingUp,
   Eye,
   Factory,
+  Download,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { generateLCAPDFReport } from '@/utils/generatePDFReport';
+import { getCalculatelcaById } from '@/services/lcaService';
 
 const statusStyles = {
   completed: {
@@ -42,18 +45,22 @@ const formatDate = (dateString) => {
 };
 
 const getCircularityRating = (score) => {
-  if (!score && score !== 0) return 'N/A';
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  return 'Poor';
+  if (score === null || score === undefined || isNaN(score)) return 'N/A';
+  const numScore = Number(score);
+  if (numScore >= 80) return 'Excellent';
+  if (numScore >= 60) return 'Good';
+  if (numScore >= 40) return 'Fair';
+  if (numScore >= 20) return 'Poor';
+  return 'Very Poor';
 };
 
 const getCircularityColor = (score) => {
-  if (!score && score !== 0) return 'text-slate-600';
-  if (score >= 80) return 'text-emerald-600';
-  if (score >= 60) return 'text-blue-600';
-  if (score >= 40) return 'text-amber-600';
+  if (score === null || score === undefined || isNaN(score)) return 'text-slate-600';
+  const numScore = Number(score);
+  if (numScore >= 80) return 'text-emerald-600';
+  if (numScore >= 60) return 'text-blue-600';
+  if (numScore >= 40) return 'text-amber-600';
+  if (numScore >= 20) return 'text-orange-600';
   return 'text-red-600';
 };
 
@@ -70,8 +77,45 @@ const LCAReportCard = ({ report, viewMode = 'grid' }) => {
     }
   };
 
-  const circularityScore = report.circularityScore ?? report.metadata?.circularityScore;
-  const circularityRating = report.circularityRating || getCircularityRating(circularityScore);
+  const handleDownloadPDF = async () => {
+    const reportId = report._id || report.workflowId;
+    if (!reportId) return;
+
+    try {
+      // Fetch complete calculatelca data with all analytics
+      const lcaData = await getCalculatelcaById(reportId);
+      
+      if (!lcaData) {
+        throw new Error('Failed to fetch LCA data');
+      }
+
+      // Generate PDF on frontend with actual data
+      await generateLCAPDFReport(lcaData);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF report. Please try again.');
+    }
+  };
+
+  // Extract circularity score from new format {value, unit} or old format (number)
+  const circularityScoreRaw = report.circularityScore ?? report.metadata?.circularityScore;
+  const circularityScore = typeof circularityScoreRaw === 'object' && circularityScoreRaw?.value !== undefined
+    ? circularityScoreRaw.value
+    : circularityScoreRaw;
+  
+  // Always calculate rating from score, don't trust database rating
+  const circularityRating = getCircularityRating(circularityScore);
+
+  console.log('🔍 LCAReportCard Debug:', {
+    reportId: report._id,
+    projectName: report.projectName,
+    circularityScoreRaw,
+    circularityScore,
+    circularityRating,
+    status: report.status,
+    location: report.location,
+    metalType: report.metalType,
+  });
 
   return (
     <Card
@@ -152,6 +196,13 @@ const LCAReportCard = ({ report, viewMode = 'grid' }) => {
                 <Eye className="mr-2 h-4 w-4" />
                 View Analytics
               </Button>
+              <Button
+                variant="outline"
+                className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
+                onClick={handleDownloadPDF}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         ) : (
@@ -206,13 +257,22 @@ const LCAReportCard = ({ report, viewMode = 'grid' }) => {
                 )}
               </div>
             </div>
-            <Button
-              className="bg-[#BA7967] text-white hover:bg-[#3d3635]"
-              onClick={handleViewAnalytics}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              View Analytics
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                className="bg-[#BA7967] text-white hover:bg-[#3d3635]"
+                onClick={handleViewAnalytics}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View Analytics
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
+                onClick={handleDownloadPDF}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
           </>
         )}
       </CardContent>
