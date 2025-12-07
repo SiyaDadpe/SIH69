@@ -43,15 +43,17 @@ import {
   deleteReport,
   shareReport
 } from '@/services/reportService';
+import { getUserLCAReports } from '@/services/lcaService';
 import reportFiltersData from '@/data/reportFilters.json';
 import ReportCard from '@/sections/reports/ReportCard';
+import LCAReportCard from '@/sections/reports/LCAReportCard';
 import FiltersPanel from '@/sections/reports/FiltersPanel';
 import BulkActions from '@/sections/reports/BulkActions';
 import ExportReportDialog from '@/components/ExportReportDialog';
 import { toast } from 'sonner';
 import AnalyticsDashboard from '@/sections/reports/AnalyticsDashboard';
 
-const tabs = ['Active', 'Completed', 'Archived', 'All'];
+const tabs = ['Active', 'Completed', 'Archived', 'All', 'LCA Reports'];
 const PAGE_SIZE = 9;
 
 const sortOptions = [
@@ -85,6 +87,7 @@ const TAB_STATUS_MAP = {
     completed: ['published'],
     archived: ['archived'],
     all: null,
+    'lca reports': 'lca',
 };
 
 const STORAGE_KEY = 'reports.savedFilters';
@@ -130,17 +133,52 @@ const Reports = () => {
     const [totalReports, setTotalReports] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [lcaReports, setLcaReports] = useState([]);
+    const [loadingLCAReports, setLoadingLCAReports] = useState(false);
     const availableFilters = useMemo(
         () => (Array.isArray(reportFiltersData) ? reportFiltersData.length : 0),
         []
     );
 
     useEffect(() => {
+        const normalizedTab = activeTab.toLowerCase();
+        
+        // Handle LCA Reports tab separately
+        if (normalizedTab === 'lca reports') {
+            setLoadingLCAReports(true);
+            const lcaParams = {
+                page: currentPage,
+                limit: PAGE_SIZE,
+            };
+            if (searchTerm.trim()) {
+                lcaParams.search = searchTerm.trim();
+            }
+            getUserLCAReports(lcaParams)
+                .then((response) => {
+                    console.log('📊 LCA Reports Response:', response);
+                    const reports = response.data?.reports || [];
+                    const pagination = response.data?.pagination || {};
+                    
+                    setLcaReports(Array.isArray(reports) ? reports : []);
+                    setTotalReports(pagination.total || 0);
+                    setTotalPages(pagination.pages || 1);
+                })
+                .catch((err) => {
+                    console.error('Failed to load LCA reports:', err);
+                    setLcaReports([]);
+                    setTotalReports(0);
+                    setTotalPages(1);
+                    toast.error('Failed to load LCA reports from server');
+                })
+                .finally(() => setLoadingLCAReports(false));
+            return;
+        }
+
+        // Regular reports logic
         setLoadingReports(true);
         // Build backend query params
         const params = {};
         // Tab status
-        const normalizedTab = activeTab.toLowerCase();
         const allowedStatuses = TAB_STATUS_MAP[normalizedTab] || null;
         if (allowedStatuses && allowedStatuses.length === 1) {
             params.status = allowedStatuses[0];
@@ -520,7 +558,7 @@ const Reports = () => {
 
     // Optionally, fetch stats from backend if available, else fallback to local calculation
     const stats = useMemo(() => {
-        const counts = { active: 0, completed: 0, archived: 0 };
+        const counts = { active: 0, completed: 0, archived: 0, lca: lcaReports.length };
         reports.forEach((report) => {
             const status = (report.status || 'draft').toLowerCase();
             if (TAB_STATUS_MAP.active.includes(status)) {
@@ -532,7 +570,7 @@ const Reports = () => {
             }
         });
         return counts;
-    }, [reports]);
+    }, [reports, lcaReports]);
 
     // All filtering, sorting, and pagination is now backend-driven
     const filteredReports = reports;
@@ -833,6 +871,12 @@ const Reports = () => {
     const handleNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
     const resultLabel = `${sortedReports.length} report${sortedReports.length === 1 ? '' : 's'} found`;
+    
+    // Determine which reports to display based on active tab
+    const displayReports = activeTab.toLowerCase() === 'lca reports' ? lcaReports : visibleReports;
+    
+    // Check loading state based on active tab
+    const showLoadingState = activeTab.toLowerCase() === 'lca reports' ? loadingLCAReports : (loadingReports || isLoading);
 
     return (
         <div className="min-h-screen space-y-6 bg-[#FFFFFF] p-4 sm:p-6">
@@ -854,7 +898,7 @@ const Reports = () => {
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="rounded-xl border border-[#BA7967]/30 bg-white p-4">
                             <p className="text-sm text-[#6b5b59]">Active Reports</p>
                             <p className="mt-2 text-2xl font-semibold text-[#181814]">{stats.active}</p>
@@ -866,6 +910,10 @@ const Reports = () => {
                         <div className="rounded-xl border border-[#BA7967]/30 bg-white p-4">
                             <p className="text-sm text-[#6b5b59]">Archived Reports</p>
                             <p className="mt-2 text-2xl font-semibold text-[#181814]">{stats.archived}</p>
+                        </div>
+                        <div className="rounded-xl border border-[#BA7967]/30 bg-white p-4">
+                            <p className="text-sm text-[#6b5b59]">LCA Reports</p>
+                            <p className="mt-2 text-2xl font-semibold text-[#181814]">{stats.lca}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -1012,7 +1060,7 @@ const Reports = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            {isLoading ? (
+                            {showLoadingState ? (
                                 <div
                                     className={cn(
                                         'gap-4',
@@ -1045,7 +1093,7 @@ const Reports = () => {
                                         </Card>
                                     ))}
                                 </div>
-                            ) : visibleReports.length === 0 ? (
+                            ) : displayReports.length === 0 ? (
                                 <div className="grid place-items-center gap-3 rounded-2xl border border-dashed border-[#BA7967]/40 bg-[#F8F6F2] p-10 text-center text-sm text-[#6b5b59]">
                                     <ClipboardList className="h-6 w-6 text-[#BA7967]" />
                                     <p className="font-medium text-[#3d3635]">
@@ -1072,23 +1120,33 @@ const Reports = () => {
                                                 : 'flex flex-col'
                                         )}
                                     >
-                                        {visibleReports.map((report) => (
-                                            <ReportCard
-                                                key={report.id}
-                                                report={report}
-                                                selected={selectedReports.includes(report.id)}
-                                                onToggleSelect={() => toggleSelection(report.id)}
-                                                onExport={handleOpenExport}
-                                                onEdit={handleEdit}
-                                                onDuplicate={handleDuplicate}
-                                                onShare={handleShare}
-                                                onArchive={handleArchive}
-                                                onDelete={handleDelete}
-                                                onRefresh={loadReports}
-                                                statusPolicies={STATUS_POLICIES}
-                                                viewMode={viewMode}
-                                            />
-                                        ))}
+                                        {activeTab.toLowerCase() === 'lca reports' ? (
+                                            lcaReports.map((report) => (
+                                                <LCAReportCard
+                                                    key={report._id || report.workflowId}
+                                                    report={report}
+                                                    viewMode={viewMode}
+                                                />
+                                            ))
+                                        ) : (
+                                            visibleReports.map((report) => (
+                                                <ReportCard
+                                                    key={report.id}
+                                                    report={report}
+                                                    selected={selectedReports.includes(report.id)}
+                                                    onToggleSelect={() => toggleSelection(report.id)}
+                                                    onExport={handleOpenExport}
+                                                    onEdit={handleEdit}
+                                                    onDuplicate={handleDuplicate}
+                                                    onShare={handleShare}
+                                                    onArchive={handleArchive}
+                                                    onDelete={handleDelete}
+                                                    onRefresh={loadReports}
+                                                    statusPolicies={STATUS_POLICIES}
+                                                    viewMode={viewMode}
+                                                />
+                                            ))
+                                        )}
                                     </div>
                                 </>
                             )}

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ExecutiveSummary from './ExecutiveSummary';
 import ProcessStages from './ProcessStages';
 import GeographicAnalysis from './GeographicAnalysis';
-import AIRecommendations from './AIRecommendations';
+import AIRecommendations from './AIRecommendations_new';
 import DetailedReports from './DetailedReports';
 import LinearCircularSummary from './LinearCircularSummary';
 

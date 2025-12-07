@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LCASuccessModal from "@/components/LCASuccessModal";
 import LCAPromptModal from "@/components/LCAPromptModal";
+import SustainableSolutionsModal from "@/components/SustainableSolutionsModal";
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -207,7 +208,7 @@ function StepSection({
   )
 }
 
-function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false }) {
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false, showSustainableButton = false, onShowSustainable }) {
   const handleForwardClick = () => {
     if (typeof onForward === 'function') {
       onForward()
@@ -234,6 +235,22 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
         </Button>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {showSustainableButton && (
+          <motion.div whileHover={{ scale: 1.03 }}>
+            <Button
+              type="button"
+              onClick={() => {
+                if (typeof onShowSustainable === 'function') {
+                  onShowSustainable();
+                }
+              }}
+              className="relative overflow-hidden rounded-full border border-[#6B5B59] px-6 py-2 text-[#6B5B59] shadow-md transition-all duration-200 hover:bg-[#6B5B59] hover:text-white"
+              variant="outline"
+            >
+              🌱 Sustainable solutions
+            </Button>
+          </motion.div>
+        )}
         {showLca && (
           <motion.div
             animate={{ scale: [1, 1.02, 1] }}
@@ -405,7 +422,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -545,6 +562,12 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
         onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
         isCalculatingLca={isCalculatingLca}
+        showSustainableButton
+        onShowSustainable={() => {
+          setCurrentSustainableStage?.('mining');
+          setFormDataForSustainable?.(form.getValues());
+          setShowSustainableSolutions?.(true);
+        }}
       />
     </>
   );
@@ -1054,7 +1077,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1238,6 +1261,12 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
         forwardLabel={isSaving ? '💾 Saving...' : 'Next'}
         onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
         isCalculatingLca={isCalculatingLca}
+        showSustainableButton
+        onShowSustainable={() => {
+          setCurrentSustainableStage?.('beneficiation');
+          setFormDataForSustainable?.(form.getValues());
+          setShowSustainableSolutions?.(true);
+        }}
       />
     </>
   );
@@ -1795,6 +1824,11 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
   const [aiPopulatedFields, setAiPopulatedFields] = useState({})  // Tracks which fields were populated by AI (for styling)
   
+  // Sustainable Solutions Modal state
+  const [showSustainableSolutions, setShowSustainableSolutions] = useState(false)
+  const [currentSustainableStage, setCurrentSustainableStage] = useState(null)
+  const [formDataForSustainable, setFormDataForSustainable] = useState(null)
+  
   // Debug: Track formValues changes
   React.useEffect(() => {
     console.log('📊 [Wizard] formValues changed:', formValues);
@@ -1884,11 +1918,22 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 
   
   const handleNext = () => {
-    // Simply move to next step - AI predictions are already populated
-    if (activeStep < steps.length - 1) {
-      onStepChange(activeStep + 1)
+    // Validate current step before moving to next
+    const stepData = formValues[stepKey] || {};
+    const mappedData = mapFormDataToBackendFields(stepKey, stepData);
+    const validation = validateRequiredFields(stepKey, mappedData);
+    
+    if (!validation.valid) {
+      // Show validation error
+      alert(`Please fill in the required fields for ${currentStep.label}:\n\n- ${validation.missingFields.join('\n- ')}`);
+      return;
     }
-  }
+    
+    // Move to next step if validation passes
+    if (activeStep < steps.length - 1) {
+      onStepChange(activeStep + 1);
+    }
+  };
 
   const handleBack = () => {
     if (activeStep > 0) {
@@ -2016,9 +2061,10 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     // Create updated form values with current step data
     let updatedFormValues = { ...formValues };
     
-    // Step 1: Save current step data if provided
+    // Step 1: Integrate current step data if provided (without saving again to avoid rate limit)
+    // The step data should already be saved by the step's auto-save functionality
     if (currentStepData) {
-      console.log('💾 [LCA] Saving current step data first...');
+      console.log('📊 [LCA] Integrating current step data for validation...');
       
       // Update the form values object immediately for validation
       updatedFormValues = {
@@ -2026,17 +2072,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         [stepKey]: currentStepData
       };
       
-      try {
-        await handleSaveStep(stepKey, currentStepData);
-        console.log('✅ [LCA] Current step saved successfully');
-        
-        // Update formValues state (async)
-        setFormValues(updatedFormValues);
-      } catch (error) {
-        console.error('❌ [LCA] Failed to save current step:', error);
-        alert('Failed to save current step data. Please try again.');
-        return;
-      }
+      // Update formValues state
+      setFormValues(updatedFormValues);
     }
 
     // Step 2: Validate current and previous steps using the updated values
@@ -2055,57 +2092,56 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     
     console.log('✅ [LCA] Validation passed!');
 
-    // Step 3: Show the simple prompt modal
-    setLcaPromptReportId(workflowId); // Use workflowId as reportId for now
-    setShowLCAPromptModal(true);
-    
-    /* Original LCA calculation code - commented for now, will integrate later
+    // Step 3: Actually calculate and save LCA data
     setIsCalculatingLca(true);
     
     try {
       console.log('📊 [LCA] Starting LCA calculation...');
       console.log('📊 [LCA] Workflow ID:', workflowId);
-      console.log('📊 [LCA] Current form values:', formValues);
+      console.log('📊 [LCA] Current form values:', updatedFormValues);
+      
+      // Map all wizard data to backend field names
+      const mappedWizardData = {};
+      Object.keys(updatedFormValues).forEach(stepName => {
+        const stepData = updatedFormValues[stepName];
+        if (stepData && Object.keys(stepData).length > 0) {
+          mappedWizardData[stepName] = mapFormDataToBackendFields(stepName, stepData);
+        }
+      });
+      
+      console.log('📊 [LCA] Mapped wizard data:', mappedWizardData);
       
       // Prepare LCA data with current wizard state
+      // Use workflowData.name (the actual project name from wizard workflow)
       const lcaData = {
         workflowId: workflowId,
-        projectName: workflowData?.projectName || 'Aluminum LCA Project',
-        location: workflowData?.location || 'Unknown',
-        wizardData: formValues // Send current form values
+        projectName: workflowData?.name || workflowData?.projectName || `LCA Report ${new Date().toLocaleDateString()}`,
+        location: workflowData?.location || mappedWizardData?.mining?.location || 'Not specified',
+        currentStage: stepKey, // Send current step so backend only validates up to this step
+        wizardData: mappedWizardData // Send mapped data
       };
       
-      console.log('📊 [LCA] Sending data:', lcaData);
+      console.log('📊 [LCA] Sending data with currentStage:', stepKey);
+      console.log('📊 [LCA] Full data:', lcaData);
       const lcaResponse = await calculateLCA(lcaData);
       console.log('📊 [LCA] Response received:', lcaResponse);
       
       if (lcaResponse.success) {
         console.log('✅ [LCA] Calculation successful!', lcaResponse.data);
         
-        // Extract report data for modal
-        const reportData = {
-          reportId: lcaResponse.data.reportId,
-          projectName: lcaData.projectName,
-          pdfUrl: lcaResponse.data.pdfUrl,
-          summary: lcaResponse.data.summary || {}
-        };
-        
-        setLcaReportData(reportData);
-        setShowLCAModal(true);
+        // Show the simple prompt modal with the reportId
+        setLcaPromptReportId(lcaResponse.data.reportId || workflowId);
+        setShowLCAPromptModal(true);
       } else {
         console.error('❌ [LCA] Response was not successful:', lcaResponse);
         alert(lcaResponse.message || 'LCA calculation failed');
       }
     } catch (error) {
       console.error('❌ [LCA] Calculation failed:', error);
-      console.error('❌ [LCA] Error details:', error.response?.data || error.message);
-      
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to calculate LCA';
-      alert(`LCA Calculation Error: ${errorMessage}`);
+      alert(error.message || 'Failed to calculate LCA. Please try again.');
     } finally {
       setIsCalculatingLca(false);
     }
-    */
   };
 
   // Map frontend field names to backend field names
@@ -2359,6 +2395,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predictionMetadata={predictionMetadata['mining'] || {}}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       case 'beneficiation':
@@ -2376,6 +2415,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predictionMetadata={predictionMetadata['beneficiation'] || {}}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       case 'refining':
@@ -2391,6 +2433,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['refining'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       case 'smelting':
@@ -2406,6 +2451,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['smelting'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       case 'manufacturing':
@@ -2421,6 +2469,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['manufacturing'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       case 'recycling':
@@ -2436,6 +2487,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             aiPopulatedFields={aiPopulatedFields['recycling'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       case 'valorization':
@@ -2455,6 +2509,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             workflowId={workflowId}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
+            setShowSustainableSolutions={setShowSustainableSolutions}
+            setCurrentSustainableStage={setCurrentSustainableStage}
+            setFormDataForSustainable={setFormDataForSustainable}
           />
         );
       default:
@@ -2562,12 +2619,20 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
         onClose={() => setShowLCAPromptModal(false)}
         reportId={lcaPromptReportId}
       />
+      
+      {/* Sustainable Solutions Modal */}
+      <SustainableSolutionsModal
+        open={showSustainableSolutions}
+        onClose={() => setShowSustainableSolutions(false)}
+        stage={currentSustainableStage}
+        formData={formDataForSustainable}
+      />
     </WizardContainer>
   )
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2670,6 +2735,12 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       forwardDisabled={!isValid}
       onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => {
+        setCurrentSustainableStage?.('refining');
+        setFormDataForSustainable?.(form.getValues());
+        setShowSustainableSolutions?.(true);
+      }}
     />
   )
 
@@ -3099,7 +3170,7 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3199,6 +3270,12 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
       forwardDisabled={!isValid}
       onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => {
+        setCurrentSustainableStage?.('smelting');
+        setFormDataForSustainable?.(form.getValues());
+        setShowSustainableSolutions?.(true);
+      }}
     />
   )
 
@@ -3617,7 +3694,7 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -3770,6 +3847,12 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       forwardDisabled={!isValid}
       onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => {
+        setCurrentSustainableStage?.('manufacturing');
+        setFormDataForSustainable?.(form.getValues());
+        setShowSustainableSolutions?.(true);
+      }}
     />
   )
 
@@ -4216,7 +4299,7 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4320,6 +4403,12 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
       forwardDisabled={!isValid}
       onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => {
+        setCurrentSustainableStage?.('recycling');
+        setFormDataForSustainable?.(form.getValues());
+        setShowSustainableSolutions?.(true);
+      }}
     />
   )
 
@@ -4814,7 +4903,7 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4941,6 +5030,12 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
       forwardDisabled={!isValid}
       onLcaCalculate={() => onCalculateLCA?.(form.getValues())}
       isCalculatingLca={isCalculatingLca}
+      showSustainableButton
+      onShowSustainable={() => {
+        setCurrentSustainableStage?.('valorization');
+        setFormDataForSustainable?.(form.getValues());
+        setShowSustainableSolutions?.(true);
+      }}
     />
   )
 

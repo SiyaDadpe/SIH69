@@ -366,7 +366,7 @@ const calculateLCA = asyncHandler(async (req, res) => {
       console.log(`📋 [LCA Validation] ${stage} data:`, JSON.stringify(wizardData[stage], null, 2));
     });
 
-    // Validate required fields - ONLY for current stage if provided, otherwise all stages
+    // Validate required fields - ONLY up to and including current stage if provided
     // These field names should match what the frontend sends after mapping
     const validationErrors = [];
     const requiredFieldsByStage = {
@@ -379,10 +379,28 @@ const calculateLCA = asyncHandler(async (req, res) => {
       valorization: ['waste_types', 'valorization_methods']
     };
 
+    // Define stage order for progressive validation
+    const stageOrder = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+
     // Determine which stages to validate
-    const stagesToValidate = currentStage && stagesWithData.includes(currentStage) 
-      ? [currentStage]  // Only validate current stage
-      : stagesWithData;  // Validate all stages with data
+    let stagesToValidate;
+    if (currentStage) {
+      // Validate current stage and all previous stages
+      const currentStageIndex = stageOrder.indexOf(currentStage);
+      if (currentStageIndex >= 0) {
+        // Get all stages up to and including current stage that have data
+        stagesToValidate = stageOrder
+          .slice(0, currentStageIndex + 1)
+          .filter(stage => stagesWithData.includes(stage));
+        console.log(`🔍 [LCA Validation] Current stage: ${currentStage} (index ${currentStageIndex})`);
+      } else {
+        // Invalid stage name, validate all
+        stagesToValidate = stagesWithData;
+      }
+    } else {
+      // No current stage specified, validate all stages with data
+      stagesToValidate = stagesWithData;
+    }
 
     console.log('🔍 [LCA Validation] Validating stages:', stagesToValidate);
 
@@ -422,12 +440,27 @@ const calculateLCA = asyncHandler(async (req, res) => {
     
     console.log('✅ [LCA Validation] All required fields present for validated stages');
 
+    // Fetch metalType from workflow if workflowId is provided
+    let metalType = 'Aluminium'; // default
+    if (workflowId) {
+      try {
+        const workflow = await WizardWorkflow.findById(workflowId).select('metalType');
+        if (workflow && workflow.metalType) {
+          metalType = workflow.metalType;
+          console.log('📊 [LCA Calculation] Retrieved metalType from workflow:', metalType);
+        }
+      } catch (err) {
+        console.warn('⚠️ [LCA Calculation] Could not fetch workflow metalType:', err.message);
+      }
+    }
+
     // Create initial LCA record with pending status
     lcaRecord = new CalculateLCA({
       userId,
       workflowId: workflowId || null,
       projectName,
       location: location || 'Not specified',
+      metalType,
       status: 'pending',
       calculationParams: {
         wizardData: Object.keys(wizardData)
@@ -616,6 +649,94 @@ const getUserLCAStats = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get calculatelca report by ID (enriched format for analytics)
+ * @route   GET /api/lca/calculatelca/:id
+ * @access  Private
+ */
+const getCalculatelcaById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  const report = await CalculateLCA.findOne({ _id: id, userId })
+    .select('-__v');
+
+  if (!report) {
+    res.status(404);
+    throw new Error('LCA report not found');
+  }
+
+  // Transform stageData array to object format for frontend
+  const lcaStages = {};
+  if (report.stageData && Array.isArray(report.stageData)) {
+    report.stageData.forEach(stage => {
+      lcaStages[stage.stageName] = {
+        energyConsumption: stage.energyConsumption,
+        co2Emissions: stage.co2Emissions,
+        waterUsage: stage.waterUsage,
+        wasteGeneration: stage.wasteGeneration,
+        airQualityImpact: stage.airQualityImpact,
+        completed: stage.completed
+      };
+    });
+  }
+
+  // Return enriched format for analytics
+  const enrichedReport = {
+    _id: report._id,
+    workflowId: report.workflowId,
+    projectName: report.projectName,
+    metalType: report.metalType,
+    location: report.location,
+    analysisDate: { $date: report.analysisDate.toISOString() },
+    status: report.status,
+    
+    // Totals
+    totalEnergyConsumption: report.totalEnergyConsumption,
+    totalCO2Emissions: report.totalCO2Emissions,
+    totalWaterUsage: report.totalWaterUsage,
+    totalWasteGeneration: report.totalWasteGeneration,
+    totalAirQualityImpact: report.totalAirQualityImpact,
+    
+    // Intensity
+    energyIntensity: report.energyIntensity,
+    carbonIntensity: report.carbonIntensity,
+    
+    // Circularity
+    circularityScore: report.circularityScore,
+    circularityRating: report.circularityRating,
+    materialRecoveryRate: report.materialRecoveryRate,
+    circularityIndex: report.circularityIndex,
+    linearityIndex: report.linearityIndex,
+    circularityComponents: report.circularityComponents,
+    
+    // Stage data
+    lcaStages: lcaStages,
+    
+    // Sankey data for circularity visualization
+    sankeyData: report.sankeyData,
+    
+    // Recommendations
+    recommendations: report.recommendations,
+    
+    // Metadata
+    metadata: report.metadata,
+    
+    // PDF
+    pdfReportUrl: report.pdfReportUrl,
+    pdfFilename: report.pdfFilename,
+    
+    // Timestamps
+    createdAt: { $date: report.createdAt.toISOString() },
+    updatedAt: { $date: report.updatedAt.toISOString() }
+  };
+
+  res.status(200).json({
+    success: true,
+    data: enrichedReport
+  });
+});
+
+/**
  * @desc    Delete LCA report
  * @route   DELETE /api/lca/reports/:id
  * @access  Private
@@ -643,6 +764,7 @@ module.exports = {
   calculateLCA,
   getUserLCAReports,
   getLCAReportById,
+  getCalculatelcaById,
   getUserLCAStats,
   deleteLCAReport
 };

@@ -81,7 +81,25 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
     // Prefer engine-generated Sankey data when available; fall back to synthetic
     const getSankeyData = (stages, flowMode) => {
         if (engineSankey && engineSankey.nodes && engineSankey.links) {
-            return engineSankey;
+            // Convert backend format to D3 Sankey format
+            const nodes = Array.isArray(engineSankey.nodes) 
+                ? engineSankey.nodes.map((name, idx) => ({
+                    id: name.toLowerCase().replace(/\s+/g, '-'),
+                    name: name,
+                    value: 0,
+                    column: idx < 2 ? 0 : idx < 5 ? 1 : 2,
+                    type: idx < 2 ? 'input' : idx < 3 ? 'process' : 'output',
+                    unit: 't'
+                }))
+                : engineSankey.nodes;
+            
+            const links = engineSankey.links.map(link => ({
+                source: typeof link.source === 'number' ? nodes[link.source]?.id || link.source : link.source,
+                target: typeof link.target === 'number' ? nodes[link.target]?.id || link.target : link.target,
+                value: link.value || 0
+            }));
+            
+            return { nodes, links };
         }
 
         if (!stages || stages.length === 0) {
@@ -503,23 +521,23 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
             </div>
 
             {/* Implementation Timeline */}
-            <div>
+            {/* <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Implementation Timeline</h3>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="relative">
                         {/* Timeline Line */}
-                        <div className="absolute top-8 left-0 right-0 h-1 bg-gray-200"></div>
+                        {/* <div className="absolute top-8 left-0 right-0 h-1 bg-gray-200"></div>
                         <div 
                             className="absolute top-8 left-0 h-1 bg-[#BA7967] transition-all duration-500"
                             style={{ width: '40%' }}
-                        ></div>
+                        ></div> */}
 
                         {/* Timeline Steps */}
-                        <div className="relative grid grid-cols-5 gap-4">
+                        {/* <div className="relative grid grid-cols-5 gap-4">
                             {timelinePhases.map((phase, index) => (
                                 <div key={index} className="flex flex-col items-center">
                                     {/* Step Circle */}
-                                    <div className={`
+                                    {/* <div className={`
                                         w-16 h-16 rounded-full flex items-center justify-center relative z-10 border-4
                                         ${phase.status === 'completed' 
                                             ? 'bg-[#BA7967] border-[#BA7967]' 
@@ -537,10 +555,10 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                                         ) : (
                                             <div className="w-6 h-6 rounded-full bg-gray-300"></div>
                                         )}
-                                    </div>
+                                    </div> */}
 
                                     {/* Step Info */}
-                                    <div className="mt-4 text-center">
+                                    {/* <div className="mt-4 text-center">
                                         <div className={`text-sm font-semibold mb-1 ${
                                             phase.status === 'completed' || phase.status === 'in-progress'
                                                 ? 'text-gray-900'
@@ -560,10 +578,10 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Timeline Summary */}
-                    <div className="mt-8 pt-6 border-t border-gray-200">
+                    {/* <div className="mt-8 pt-6 border-t border-gray-200">
                         <div className="grid grid-cols-3 gap-4 text-center">
                             <div>
                                 <div className="text-2xl font-bold text-[#BA7967]">2</div>
@@ -580,7 +598,7 @@ export default function ExecutiveSummary({ mode, selectedProject }) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Material & Energy Flow Sankey Diagram */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

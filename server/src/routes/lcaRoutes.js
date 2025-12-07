@@ -12,6 +12,7 @@ const {
   calculateLCA,
   getUserLCAReports,
   getLCAReportById,
+  getCalculatelcaById,
   getUserLCAStats,
   deleteLCAReport
 } = require('../controllers/lcaController');
@@ -83,6 +84,20 @@ router.get('/reports', authenticate, getUserLCAReports);
  *          }
  */
 router.get('/reports/:id', authenticate, getLCAReportById);
+
+/**
+ * @route   GET /api/lca/calculatelca/:id
+ * @desc    Get calculatelca report by ID (enriched format for analytics)
+ * @access  Private
+ * 
+ * @param   id - CalculateLCA document ID
+ * 
+ * @returns {
+ *            success: boolean,
+ *            data: object (enriched report with lcaStages)
+ *          }
+ */
+router.get('/calculatelca/:id', authenticate, getCalculatelcaById);
 
 /**
  * @route   DELETE /api/lca/reports/:id

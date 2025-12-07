@@ -129,6 +129,12 @@ const CalculateLCASchema = new Schema({
     default: 'Not specified'
   },
 
+  metalType: {
+    type: String,
+    trim: true,
+    default: 'Aluminium'
+  },
+
   analysisDate: {
     type: Date,
     default: Date.now,
@@ -254,7 +260,8 @@ const CalculateLCASchema = new Schema({
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  toObject: { virtuals: true },
+  collection: 'calculatelca' // Use singular form instead of default 'calculatelcas'
 });
 
 // ============================================================================

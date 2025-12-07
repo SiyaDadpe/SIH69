@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import ProjectSelector from '../sections/analytics/ProjectSelector';
 import Header from '../sections/analytics/Header';
 import TabbedDashboard from '../sections/analytics/TabbedDashboard';
@@ -89,8 +89,15 @@ const convertCalculatelcaToAnalytics = (doc) => {
         totalGWP: doc.totalCO2Emissions || 0,
         totalEnergy: doc.totalEnergyConsumption || 0,
         totalWater: doc.totalWaterUsage || 0,
+        totalWasteGeneration: doc.totalWasteGeneration || 0,
+        totalAirQualityImpact: doc.totalAirQualityImpact || 0,
         circularityScore: doc.circularityScore || 0,
         circularityRating: doc.circularityRating || 'Unknown',
+        materialRecoveryRate: doc.materialRecoveryRate || 0,
+
+        // intensity metrics
+        energyIntensity: doc.energyIntensity || 0,
+        carbonIntensity: doc.carbonIntensity || 0,
 
         // new circularity vs linearity
         circularityIndex: doc.circularityIndex ?? null,
@@ -111,11 +118,16 @@ const convertCalculatelcaToAnalytics = (doc) => {
         // sankey data for circularity flows
         sankeyData: doc.sankeyData || null,
 
+        // AI recommendations from backend
+        aiRecommendations: doc.recommendations || [],
+        recommendations: doc.recommendations || [],
+
         // metadata
         calculatedAt: doc.analysisDate?.$date || doc.createdAt?.$date,
         status: doc.status,
         metalType: doc.metalType,
         pdfUrl: doc.pdfReportUrl,
+        metadata: doc.metadata || {},
     };
 };
 
@@ -158,14 +170,65 @@ const convertLCAToAnalytics = (lcaReport) => {
 
 export default function Analytics() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const reportId = searchParams.get('reportId');
     
     const [projectData, setProjectData] = useState(null);
     const [selectedProject, setSelectedProject] = useState(null);
+    const [allReports, setAllReports] = useState([]);
+    const [filteredReports, setFilteredReports] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [mode, setMode] = useState('circular');
     const [activeTab, setActiveTab] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Fetch all user reports for workflow selector
+    useEffect(() => {
+        const fetchAllReports = async () => {
+            try {
+                const response = await getUserLCAReports();
+                console.log('📊 Fetched reports response:', response);
+                
+                // Handle response structure: { success: true, data: { reports: [...] } }
+                if (response.success && response.data && response.data.reports && Array.isArray(response.data.reports)) {
+                    setAllReports(response.data.reports);
+                    setFilteredReports(response.data.reports);
+                } else {
+                    setAllReports([]);
+                    setFilteredReports([]);
+                }
+            } catch (err) {
+                console.warn('⚠️ Failed to load user reports for selector:', err.message);
+                setAllReports([]);
+                setFilteredReports([]);
+            }
+        };
+        fetchAllReports();
+    }, []);
+
+    // Search/filter reports
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setFilteredReports(allReports);
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        const filtered = allReports.filter(report => {
+            const projectName = (report.projectName || '').toLowerCase();
+            const metalType = (report.metalType || '').toLowerCase();
+            const location = (report.location || '').toLowerCase();
+            const date = new Date(report.createdAt).toLocaleDateString().toLowerCase();
+            
+            return projectName.includes(query) || 
+                   metalType.includes(query) || 
+                   location.includes(query) ||
+                   date.includes(query);
+        });
+        
+        setFilteredReports(filtered);
+    }, [searchQuery, allReports]);
 
     useEffect(() => {
         // Fetch project analytics data
@@ -175,7 +238,7 @@ export default function Analytics() {
             
             try {
                 if (reportId) {
-                    // First try enriched calculatelca document
+                    // Fetch enriched calculatelca document
                     console.log('📊 Fetching calculatelca report:', reportId);
                     try {
                         const calcRes = await getCalculatelcaById(reportId);
@@ -187,25 +250,16 @@ export default function Analytics() {
                             return;
                         }
                     } catch (calcErr) {
-                        console.warn('⚠️ Failed to load calculatelca report, falling back to legacy:', calcErr.message);
-                    }
-
-                    // Fallback: legacy LCA report API
-                    console.log('📊 Fetching legacy LCA report:', reportId);
-                    const response = await getLCAReportById(reportId);
-                    if (response.success && response.data) {
-                        const analyticsData = convertLCAToAnalytics(response.data);
-                        console.log('✅ Legacy LCA report loaded:', analyticsData);
-                        setProjectData([analyticsData]);
-                        setSelectedProject(analyticsData);
+                        console.error('❌ Failed to load calculatelca report:', calcErr.message);
+                        setError(`Report not found: ${calcErr.message}`);
+                        setLoading(false);
+                        return;
                     }
                 } else {
-                    // No reportId: show a single dummy analytics project
-                    console.log('ℹ️ No reportId provided, using dummy calculatelca report');
-                    const analyticsData = convertCalculatelcaToAnalytics(dummyCalculatelcaDoc);
-                    setProjectData([analyticsData]);
-                    setSelectedProject(analyticsData);
-                    return;
+                    // No reportId: show message to select a report
+                    console.log('ℹ️ No reportId provided');
+                    setProjectData([]);
+                    setSelectedProject(null);
                 }
             } catch (error) {
                 console.error('❌ Error loading analytics data:', error);
@@ -249,32 +303,212 @@ export default function Analytics() {
                         </svg>
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">Failed to Load Data</h3>
                         <p className="text-gray-600 mb-4">{error}</p>
-                        <button 
-                            onClick={() => window.location.reload()}
-                            className="bg-[#BA7967] hover:bg-[#a86b5c] text-white px-6 py-2 rounded-lg"
-                        >
-                            Retry
-                        </button>
+                        
+                        <div className="flex gap-3 justify-center">
+                            <button 
+                                onClick={() => navigate('/analytics')}
+                                className="bg-[#BA7967] hover:bg-[#a86b5c] text-white px-6 py-2 rounded-lg"
+                            >
+                                Select Different Workflow
+                            </button>
+                            <button 
+                                onClick={() => window.location.reload()}
+                                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg"
+                            >
+                                Retry
+                            </button>
+                        </div>
                     </div>
                 </div>
-            ) : !projectData || projectData.length === 0 ? (
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="text-center max-w-md">
-                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No Reports Available</h3>
-                        <p className="text-gray-600 mb-4">Complete a wizard workflow to generate your first LCA report.</p>
-                        <button 
-                            onClick={() => window.location.href = '/wizard'}
-                            className="bg-[#BA7967] hover:bg-[#a86b5c] text-white px-6 py-2 rounded-lg"
-                        >
-                            Go to Wizard
-                        </button>
+            ) : !reportId || !projectData || projectData.length === 0 ? (
+                <div className="min-h-screen bg-gray-50">
+                    {/* Header */}
+                    <div className="bg-white border-b border-gray-200 px-6 py-6">
+                        <div className="max-w-7xl mx-auto">
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
+                            <p className="text-gray-600">Select a workflow to view detailed analytics</p>
+                        </div>
+                    </div>
+
+                    {/* Search Bar */}
+                    <div className="max-w-7xl mx-auto px-6 py-6">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search by project name, metal type, location, or date..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA7967] focus:border-transparent shadow-sm"
+                            />
+                            <svg 
+                                className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
+                        {searchQuery && (
+                            <p className="mt-3 text-sm text-gray-600">
+                                Found {filteredReports.length} of {allReports.length} workflows
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Workflows Grid */}
+                    <div className="max-w-7xl mx-auto px-6 pb-12">
+                        {allReports && Array.isArray(allReports) && allReports.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredReports.map((report) => (
+                                    <div
+                                        key={report._id}
+                                        onClick={() => navigate(`/analytics?reportId=${report._id}`)}
+                                        className="bg-white rounded-lg shadow-md border border-gray-200 p-6 cursor-pointer hover:shadow-lg hover:border-[#BA7967] transition-all duration-200"
+                                    >
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="flex-1">
+                                                <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
+                                                    {report.projectName}
+                                                </h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {new Date(report.createdAt).toLocaleDateString('en-US', { 
+                                                        year: 'numeric', 
+                                                        month: 'short', 
+                                                        day: 'numeric' 
+                                                    })}
+                                                </p>
+                                            </div>
+                                            <svg className="w-6 h-6 text-[#BA7967]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                        </div>
+
+                                        <div className="space-y-3 mb-4">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="font-medium text-gray-700">Metal Type:</span>
+                                                <span className="px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] rounded text-xs font-medium">
+                                                    {report.metalType || 'Aluminum'}
+                                                </span>
+                                            </div>
+                                            {report.location && report.location !== 'Not specified' && (
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                    <span className="line-clamp-1">{report.location}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="capitalize">{report.status || 'completed'}</span>
+                                            </div>
+                                        </div>
+
+                                        <button className="w-full bg-[#BA7967] hover:bg-[#a86b5c] text-white py-2 px-4 rounded-lg transition-colors duration-200 text-sm font-medium">
+                                            View Analytics
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">No Reports Available</h3>
+                                <p className="text-gray-600 mb-4">Complete a wizard workflow to generate your first LCA report.</p>
+                                <button 
+                                    onClick={() => navigate('/wizard')}
+                                    className="bg-[#BA7967] hover:bg-[#a86b5c] text-white px-6 py-2 rounded-lg"
+                                >
+                                    Go to Wizard
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : (
                 <>
+                    {/* Workflow Selector Dropdown */}
+                    {allReports && allReports.length > 0 && (
+                        <div className="bg-white border-b border-gray-200 px-6 py-4">
+                            <div className="max-w-7xl mx-auto">
+                                {/* Search Bar */}
+                                <div className="mb-3">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Search workflows..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA7967] focus:border-transparent text-sm"
+                                        />
+                                        <svg 
+                                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {/* Workflow Dropdown */}
+                                <div className="flex items-center gap-4">
+                                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                                        Current Workflow:
+                                    </label>
+                                    <select
+                                        value={reportId}
+                                        onChange={(e) => navigate(`/analytics?reportId=${e.target.value}`)}
+                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA7967] focus:border-transparent text-sm"
+                                    >
+                                        {/* Always show current selected workflow first */}
+                                        {reportId && !filteredReports.find(r => r._id === reportId) && allReports.find(r => r._id === reportId) && (
+                                            <option key={reportId} value={reportId}>
+                                                {allReports.find(r => r._id === reportId)?.projectName} - {allReports.find(r => r._id === reportId)?.metalType || 'Aluminum'} ({new Date(allReports.find(r => r._id === reportId)?.createdAt).toLocaleDateString()}) ✓
+                                            </option>
+                                        )}
+                                        {filteredReports.map((report) => (
+                                            <option key={report._id} value={report._id}>
+                                                {report.projectName} - {report.metalType || 'Aluminum'} ({new Date(report.createdAt).toLocaleDateString()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {searchQuery && (
+                                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                                            {filteredReports.length} of {allReports.length}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <Header 
                         selectedProject={selectedProject}
                         mode={mode}
