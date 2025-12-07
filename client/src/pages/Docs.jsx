@@ -397,7 +397,7 @@ export default function Docs() {
             </InfoBox>
             <p className="mt-4">
               The solution integrates advanced technologies including <strong>React.js</strong> for the frontend, 
-              <strong> FastAPI</strong> for the backend, <strong>XGBoost</strong> for predictive modeling, and 
+              <strong> Node.js/Express FastAPI</strong> for the backend, <strong>XGBoost</strong> for predictive modeling, and 
               <strong> Brightway2</strong> for LCA computations. Feasibility is high due to mature open-source frameworks, 
               with potential challenges like data gaps addressed through industry partnerships and innovative ML techniques. 
               This innovative tool promises significant environmental, economic, strategic, and social benefits, 
@@ -672,7 +672,7 @@ export default function Docs() {
               </div>
               <div className="p-4 bg-white rounded-lg border border-[#BA7967]/20 shadow-sm">
                 <h4 className="font-semibold text-[#BA7967] mb-2">⚙️ Backend</h4>
-                <p className="text-sm text-gray-600">FastAPI (Python) for REST APIs handling LCA calculations.</p>
+                <p className="text-sm text-gray-600">Express.js (Node.js) for core REST APIs and FastAPI (Python) for LCA calculations and ML model serving.</p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-[#BA7967]/20 shadow-sm">
                 <h4 className="font-semibold text-[#BA7967] mb-2">🤖 AI/ML Engine</h4>
@@ -680,7 +680,7 @@ export default function Docs() {
               </div>
               <div className="p-4 bg-white rounded-lg border border-[#BA7967]/20 shadow-sm">
                 <h4 className="font-semibold text-[#BA7967] mb-2">🗄️ Database</h4>
-                <p className="text-sm text-gray-600">PostgreSQL with TimescaleDB for managing process and time-series data.</p>
+                <p className="text-sm text-gray-600">MongoDB for flexible document storage and managing process data.</p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-[#BA7967]/20 shadow-sm">
                 <h4 className="font-semibold text-[#BA7967] mb-2">📄 Reporting</h4>
@@ -695,7 +695,7 @@ export default function Docs() {
             {/* Schema Diagram with Zoom */}
             <h3 className="text-xl font-semibold mt-8 mb-4">System Architecture</h3>
             <ZoomableImage 
-              src={null}
+              src="/images/architecture.png"
               alt="ALVance System Architecture Diagram"
               caption="Figure 1: ALVance System Architecture - Use controls to zoom and pan (scroll to zoom, drag to pan)"
             />
@@ -884,37 +884,79 @@ export default function Docs() {
             </p>
             <div className="my-4 space-y-3">
               <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <span className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2">[1]</span>
+                <a 
+                  href="https://www.agriscigroup.us/articles/AEST-5-138.php" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2 hover:bg-[#BA7967] hover:text-white transition-colors cursor-pointer"
+                >
+                  [1] ↗
+                </a>
                 <p className="text-gray-700">
                   Abdollahi Javad. DOI: 10.17352/aest.000038 (2021). <em>"Life cycle assessment of aluminium production in India: A case study."</em> Science of The Total Environment.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <span className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2">[2]</span>
+                <a 
+                  href="https://www.researchgate.net/publication/353079734_Environmental_impact_assessment_of_aluminium_production_using_the_life_cycle_assessment_tool_and_multi-criteria_analysis" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2 hover:bg-[#BA7967] hover:text-white transition-colors cursor-pointer"
+                >
+                  [2] ↗
+                </a>
                 <p className="text-gray-700">
                   Abhijeet Digalwar. DOI: 10.1108/MBE-09-2012-0046 (2022). <em>"Green Manufacturing Practices and Sustainable Performance: An Empirical Study of the Indian Aluminium Industry."</em> Sustainability.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <span className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2">[3]</span>
+                <a 
+                  href="https://www.iso.org/standard/37456.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2 hover:bg-[#BA7967] hover:text-white transition-colors cursor-pointer"
+                >
+                  [3] ↗
+                </a>
                 <p className="text-gray-700">
                   International Organization for Standardization. (2006). <em>ISO 14040:2006 Environmental management — Life cycle assessment — Principles and framework.</em>
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <span className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2">[4]</span>
+                <a 
+                  href="https://beeindia.gov.in/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2 hover:bg-[#BA7967] hover:text-white transition-colors cursor-pointer"
+                >
+                  [4] ↗
+                </a>
                 <p className="text-gray-700">
                   Bureau of Energy Efficiency (BEE), Government of India. (2023). <em>National Energy Data Archive.</em>
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <span className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2">[5]</span>
+                <a 
+                  href="https://ibm.gov.in/IBMPortal/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2 hover:bg-[#BA7967] hover:text-white transition-colors cursor-pointer"
+                >
+                  [5] ↗
+                </a>
                 <p className="text-gray-700">
                   Indian Bureau of Mines (IBM), Ministry of Mines. (2023). <em>Indian Minerals Yearbook.</em>
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <span className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2">[6]</span>
+                <a 
+                  href="https://www.icmm.com/en-gb/research/innovation/2025/measuring-circularity-within-metals-values-chains" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-1 bg-[#BA7967]/10 text-[#BA7967] text-xs font-bold rounded mb-2 hover:bg-[#BA7967] hover:text-white transition-colors cursor-pointer"
+                >
+                  [6] ↗
+                </a>
                 <p className="text-gray-700">
                   International Council on Mining and Metals (ICMM). (2022). <em>"Measuring Circularity Within Metals Value Chains."</em>
                 </p>
