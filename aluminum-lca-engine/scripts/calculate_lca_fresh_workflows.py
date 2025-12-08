@@ -86,20 +86,20 @@ def build_lca_output_doc(
         "status": "completed",
         
         # ========== OVERALL LCA METRICS ==========
-        "totalEnergyConsumption": compact.get("totalEnergyConsumption", 0),
-        "totalCO2Emissions": compact.get("totalCO2Emissions", 0),
-        "totalWaterUsage": compact.get("totalWaterUsage", 0),
-        "totalWasteGeneration": compact.get("totalWasteGeneration", 0),
-        "totalAirQualityImpact": compact.get("totalAirQualityImpact", 0),
+        "totalEnergyConsumption": compact.get("totalEnergyConsumption", {"value": 0, "unit": "kWh"}),
+        "totalCO2Emissions": compact.get("totalCO2Emissions", {"value": 0, "unit": "kg CO2-eq"}),
+        "totalWaterUsage": compact.get("totalWaterUsage", {"value": 0, "unit": "m³"}),
+        "totalWasteGeneration": compact.get("totalWasteGeneration", {"value": 0, "unit": "kg"}),
+        "totalAirQualityImpact": compact.get("totalAirQualityImpact", {"value": 0, "unit": "kg PM2.5-eq"}),
         
         # Intensity metrics
-        "energyIntensity": compact.get("energyIntensity", 0),
-        "carbonIntensity": compact.get("carbonIntensity", 0),
+        "energyIntensity": compact.get("energyIntensity", {"value": 0, "unit": "kWh/tonne"}),
+        "carbonIntensity": compact.get("carbonIntensity", {"value": 0, "unit": "kg CO2-eq/tonne"}),
         
         # Circularity metrics
-        "circularityScore": compact.get("circularityScore", 0),
-        "circularityRating": _get_circularity_rating(compact.get("circularityScore", 0)),
-        "materialRecoveryRate": compact.get("materialRecoveryRate", 0),
+        "circularityScore": compact.get("circularityScore", {"value": 0, "unit": "score (0-100)"}),
+        "circularityRating": _get_circularity_rating(compact.get("circularityScore", {}).get("value", 0) if isinstance(compact.get("circularityScore"), dict) else compact.get("circularityScore", 0)),
+        "materialRecoveryRate": compact.get("materialRecoveryRate", {"value": 0, "unit": "%"}),
         
         # ========== STAGE-SPECIFIC LCA PARAMETERS ==========
         # Each stage has its own object with relevant LCA metrics
@@ -112,11 +112,11 @@ def build_lca_output_doc(
         stage_name = stage_info.get("stageName")
         if stage_name:
             doc["lcaStages"][stage_name] = {
-                "energyConsumption": stage_info.get("energyConsumption", 0),
-                "co2Emissions": stage_info.get("co2Emissions", 0),
-                "waterUsage": stage_info.get("waterUsage", 0),
-                "wasteGeneration": stage_info.get("wasteGeneration", 0),
-                "airQualityImpact": stage_info.get("airQualityImpact", 0),
+                "energyConsumption": stage_info.get("energyConsumption", {"value": 0, "unit": "kWh"}),
+                "co2Emissions": stage_info.get("co2Emissions", {"value": 0, "unit": "kg CO2-eq"}),
+                "waterUsage": stage_info.get("waterUsage", {"value": 0, "unit": "m³"}),
+                "wasteGeneration": stage_info.get("wasteGeneration", {"value": 0, "unit": "kg"}),
+                "airQualityImpact": stage_info.get("airQualityImpact", {"value": 0, "unit": "kg PM2.5-eq"}),
                 "completed": stage_info.get("completed", False),
                 # Include stage-specific parameters from source
                 "parameters": source.get(stage_name, {})
@@ -124,11 +124,11 @@ def build_lca_output_doc(
 
     # Ensure all known stages exist so frontend analytics never see missing keys
     default_stage_template = {
-        "energyConsumption": 0,
-        "co2Emissions": 0,
-        "waterUsage": 0,
-        "wasteGeneration": 0,
-        "airQualityImpact": 0,
+        "energyConsumption": {"value": 0, "unit": "kWh"},
+        "co2Emissions": {"value": 0, "unit": "kg CO2-eq"},
+        "waterUsage": {"value": 0, "unit": "m³"},
+        "wasteGeneration": {"value": 0, "unit": "kg"},
+        "airQualityImpact": {"value": 0, "unit": "kg PM2.5-eq"},
         "completed": False,
         "parameters": {},
     }
@@ -159,8 +159,9 @@ def build_lca_output_doc(
 
     # ========== CIRCULARITY & LINEARITY INDICES ==========
     circ = compute_circularity_indices(source)
-    doc["circularityIndex"] = circ.get("circularityIndex", 0.0)
-    doc["linearityIndex"] = circ.get("linearityIndex", 1.0 - doc["circularityIndex"])
+    circ_index_val = circ.get("circularityIndex", 0.0)
+    doc["circularityIndex"] = {"value": circ_index_val, "unit": "index (0-1)"}
+    doc["linearityIndex"] = {"value": circ.get("linearityIndex", 1.0 - circ_index_val), "unit": "index (0-1)"}
     components = circ.get("components")
     if isinstance(components, dict):
         doc["circularityComponents"] = components
@@ -331,9 +332,12 @@ def main():
                         processed += 1
                         
                         # Print key metrics
-                        print(f"  📊 Total Energy: {lca_output['totalEnergyConsumption']:.2f} kWh")
-                        print(f"  📊 Total CO2: {lca_output['totalCO2Emissions']:.2f} kg")
-                        print(f"  📊 Circularity Score: {lca_output['circularityScore']:.1f}/100")
+                        energy_val = lca_output['totalEnergyConsumption'].get('value', 0) if isinstance(lca_output['totalEnergyConsumption'], dict) else lca_output['totalEnergyConsumption']
+                        co2_val = lca_output['totalCO2Emissions'].get('value', 0) if isinstance(lca_output['totalCO2Emissions'], dict) else lca_output['totalCO2Emissions']
+                        circ_val = lca_output['circularityScore'].get('value', 0) if isinstance(lca_output['circularityScore'], dict) else lca_output['circularityScore']
+                        print(f"  📊 Total Energy: {energy_val:.2f} kWh")
+                        print(f"  📊 Total CO2: {co2_val:.2f} kg CO2-eq")
+                        print(f"  📊 Circularity Score: {circ_val:.1f}/100")
                         print(f"  📊 Stages: {len(lca_output['lcaStages'])}")
                         print()
                         
