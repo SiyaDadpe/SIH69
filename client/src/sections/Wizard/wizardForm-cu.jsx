@@ -5157,10 +5157,15 @@ function WizardContainer({ title, subtitle, children }) {
 }
 
 // Main Wizard Container
-export default function CopperWizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted }) {
+export default function CopperWizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted, onMaterialSourceChange }) {
   const [stepData, setStepData] = useState({});
   const [predicting, setPredicting] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Material Source Selection state
+  const [materialSource, setMaterialSource] = useState('primary'); // 'primary', 'secondary', or 'mixed'
+  const [primaryPercentage, setPrimaryPercentage] = useState(100);
+  const [secondaryPercentage, setSecondaryPercentage] = useState(0);
 
   const stepComponents = [
     { key: 'mining', backendKey: 'copperMining', Component: CopperMiningStep },
@@ -5171,6 +5176,21 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
     { key: 'recycling', backendKey: 'copperRecycling', Component: CopperRecyclingStep },
     { key: 'valorization', backendKey: 'copperValorization', Component: CopperValorizationStep },
   ];
+
+  // Notify parent of material source changes (only when it actually changes)
+  useEffect(() => {
+    if (onMaterialSourceChange) {
+      onMaterialSourceChange({ materialSource, primaryPercentage, secondaryPercentage });
+    }
+  }, [materialSource, primaryPercentage, secondaryPercentage]); // Removed onMaterialSourceChange from deps
+
+  // Auto-navigate to Manufacturing when 100% secondary is selected
+  useEffect(() => {
+    if (materialSource === 'secondary' && activeStep < 3) {
+      // Jump to Manufacturing (step 3, index 3)
+      onStepChange(3);
+    }
+  }, [materialSource, activeStep]); // Removed onStepChange from deps
 
   // Load initial data from workflow
   useEffect(() => {
@@ -5243,6 +5263,44 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
   const currentStep = steps[activeStep];
   const currentStepKey = stepComponents[activeStep].key;
 
+  // If 100% secondary copper is selected, skip first 3 stages
+  const renderStepContent = () => {
+    if (materialSource === 'secondary' && ['mining', 'beneficiation', 'refining'].includes(currentStepKey)) {
+      return (
+        <div className="p-8 text-center">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+              <div className="text-6xl mb-4">♻️</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                This stage is not applicable
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Since you've selected <strong>100% Secondary/Recycled Copper</strong>, the upstream stages 
+                (Mining, Beneficiation, and Refining) are skipped.
+              </p>
+              <p className="text-sm text-gray-500">
+                Your workflow begins at the <strong>Manufacturing</strong> stage.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <Component
+        onNext={handleNext}
+        onBack={handleBack}
+        onSave={handleSave}
+        initialValues={stepData[currentStepKey]}
+        onGenerateAIPrediction={handleGenerateAIPrediction}
+        predicting={predicting}
+        onSubmitSuccess={activeStep === steps.length - 1 ? handleSubmitSuccess : undefined}
+        saving={saving}
+      />
+    );
+  };
+
   return (
     <WizardContainer title={currentStep.title} subtitle={currentStep.description}>
       {/* Wizard Home Button */}
@@ -5261,17 +5319,118 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
           🏠 Wizard Home
         </Button>
       </div>
+
+      {/* Material Source Selection */}
+      <div className="mb-6 p-5 rounded-3xl border border-[#e7dfd2] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] shadow-xl">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Primary Material Source</h3>
+        <div className="space-y-3">
+          {/* Option 1: 100% Primary */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="radio"
+              name="materialSource"
+              value="primary"
+              checked={materialSource === 'primary'}
+              onChange={(e) => {
+                setMaterialSource('primary');
+                setPrimaryPercentage(100);
+                setSecondaryPercentage(0);
+              }}
+              className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+            />
+            <span className="text-gray-700 group-hover:text-gray-900 font-medium">
+              100% Primary Copper (from ore)
+            </span>
+          </label>
+
+          {/* Option 2: 100% Secondary */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="radio"
+              name="materialSource"
+              value="secondary"
+              checked={materialSource === 'secondary'}
+              onChange={(e) => {
+                setMaterialSource('secondary');
+                setPrimaryPercentage(0);
+                setSecondaryPercentage(100);
+              }}
+              className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+            />
+            <span className="text-gray-700 group-hover:text-gray-900 font-medium">
+              100% Secondary/Recycled Copper
+            </span>
+          </label>
+
+          {/* Option 3: Mixed */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="radio"
+                name="materialSource"
+                value="mixed"
+                checked={materialSource === 'mixed'}
+                onChange={(e) => {
+                  setMaterialSource('mixed');
+                  setPrimaryPercentage(50);
+                  setSecondaryPercentage(50);
+                }}
+                className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+              />
+              <span className="text-gray-700 group-hover:text-gray-900 font-medium whitespace-nowrap">
+                Mixed Primary/Secondary →
+              </span>
+            </label>
+            {materialSource === 'mixed' && (
+              <div className="flex items-center gap-2 flex-1">
+                <label className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Primary:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={primaryPercentage}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setPrimaryPercentage(val);
+                      setSecondaryPercentage(100 - val);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">%</span>
+                </label>
+                <span className="text-gray-400">|</span>
+                <label className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">Secondary:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={secondaryPercentage}
+                    onChange={(e) => {
+                      const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setSecondaryPercentage(val);
+                      setPrimaryPercentage(100 - val);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#BA7967] focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">%</span>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Info message for secondary selection */}
+        {materialSource === 'secondary' && (
+          <div className="mt-4 p-3 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-amber-50 to-orange-50 text-sm text-gray-700">
+            ℹ️ With 100% Secondary Copper, the first 3 stages (Mining, Beneficiation, Refining) are skipped. 
+            The workflow starts from Manufacturing stage.
+          </div>
+        )}
+      </div>
       
-      <Component
-        onNext={handleNext}
-        onBack={handleBack}
-        onSave={handleSave}
-        initialValues={stepData[currentStepKey]}
-        onGenerateAIPrediction={handleGenerateAIPrediction}
-        predicting={predicting}
-        onSubmitSuccess={activeStep === steps.length - 1 ? handleSubmitSuccess : undefined}
-        saving={saving}
-      />
+      {renderStepContent()}
     </WizardContainer>
   );
 }
