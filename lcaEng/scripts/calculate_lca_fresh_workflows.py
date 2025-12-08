@@ -277,8 +277,11 @@ def main():
         print(f"CYCLE #{cycle_number} - {cycle_start.strftime('%Y-%m-%d %H:%M:%S')} UTC")
         print(f"{'='*70}\n")
         
-        # Query for ALL workflows - get latest document for each workflowId
+        # Query for ALL aluminium workflows - get latest document for each workflowId
         pipeline = [
+            {
+                "$match": {"metalType": {"$regex": "^aluminium$", "$options": "i"}}
+            },
             {
                 "$sort": {"updatedAt": -1}
             },
@@ -294,7 +297,7 @@ def main():
             workflows = list(src.aggregate(pipeline))
             
             if not workflows:
-                print("No workflows found in collection.")
+                print("No aluminium workflows found in collection.")
             else:
                 print(f"Found {len(workflows)} workflow(s) to process\n")
                 
