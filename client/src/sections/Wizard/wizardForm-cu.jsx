@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,6 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Typography scale
 const HEADING_TEXT = "text-[22px] sm:text-[24px] md:text-[26px]";
@@ -230,6 +231,15 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
     miningCost: z.coerce.number().min(0).optional(),
     dieselPrice: z.coerce.number().min(0).optional(),
     electricityCost: z.coerce.number().min(0).optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      rehabilitationPlanActive: z.boolean().nullable().optional(),
+      overburdenRestoredPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+      waterReuseRate: z.coerce.number().min(0).max(100).nullable().optional(),
+      biodiversityProtectionScore: z.string().nullable().optional(),
+      dustSuppression: z.string().nullable().optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -761,6 +771,135 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
                 )} />
               </div>
             </section>
+
+            {/* Sustainability Parameters */}
+            <section className="space-y-6">
+              <div className="space-y-4">
+                <FormField
+                  control={control}
+                  name="followingSustainableRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value === true}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-base font-semibold cursor-pointer">
+                          Sustainability Focused
+                        </FormLabel>
+                        <FormDescription className="text-sm">
+                          Enable to include sustainability parameters for copper mining
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {form.watch("followingSustainableRules") === true && (
+                <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6">
+                  <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                    Sustainability Parameters
+                  </h3>
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.rehabilitationPlanActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked)}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-medium">Rehabilitation Plan Active</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.overburdenRestoredPercent"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Overburden Restored (%)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.waterReuseRate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Water Reuse Rate (%)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.biodiversityProtectionScore"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Biodiversity Protection Score</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select score" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Low">Low</SelectItem>
+                              <SelectItem value="Moderate">Moderate</SelectItem>
+                              <SelectItem value="High">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.dustSuppression"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dust Suppression</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Basic">Basic</SelectItem>
+                              <SelectItem value="Advanced">Advanced</SelectItem>
+                              <SelectItem value="Smart AI-Atomization">Smart AI-Atomization</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
           </form>
         </Form>
       </StepSection>
@@ -806,6 +945,15 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
     powerCostUsdPerKwh: z.coerce.number().min(0).optional(),
     reagentCostUsdPerKg: z.coerce.number().min(0).optional(),
     maintenanceCostUsdPerTonne: z.coerce.number().min(0).optional(),
+    // Sustainability Parameters
+    followingSustainableRules: z.boolean().nullable().optional(),
+    sustainabilityParameters: z.object({
+      bioBasedReagents: z.boolean().nullable().optional(),
+      zeroLiquidDischargeEnabled: z.boolean().nullable().optional(),
+      tailingsDewateringMethod: z.string().nullable().optional(),
+      waterTreatment: z.string().nullable().optional(),
+      tailingsReusePotentialPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -1296,6 +1444,139 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
                 )} />
               </div>
             </section>
+
+            {/* Sustainability Parameters */}
+            <section className="space-y-6">
+              <div className="space-y-4">
+                <FormField
+                  control={control}
+                  name="followingSustainableRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value === true}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-base font-semibold cursor-pointer">
+                          Sustainability Focused
+                        </FormLabel>
+                        <FormDescription className="text-sm">
+                          Enable to include sustainability parameters for copper beneficiation
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {form.watch("followingSustainableRules") === true && (
+                <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6">
+                  <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                    Sustainability Parameters
+                  </h3>
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.bioBasedReagents"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked)}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-medium">Bio-based Reagents</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.zeroLiquidDischargeEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked)}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-medium">Zero-Liquid-Discharge Enabled</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.tailingsDewateringMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tailings Dewatering Method</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Conventional">Conventional</SelectItem>
+                              <SelectItem value="Thickened">Thickened</SelectItem>
+                              <SelectItem value="Dry Stack">Dry Stack</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.waterTreatment"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Water Treatment</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select treatment" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Basic">Basic</SelectItem>
+                              <SelectItem value="Advanced">Advanced</SelectItem>
+                              <SelectItem value="Hybrid AI-Controlled">Hybrid AI-Controlled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={control}
+                      name="sustainabilityParameters.tailingsReusePotentialPercent"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tailings Reuse Potential (%)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
           </form>
         </Form>
       </StepSection>
@@ -1342,6 +1623,18 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
     heavyMetalResidueMgPerL: z.coerce.number().min(0).optional(),
     wasteSolutionPh: z.coerce.number().optional(),
     byProductRecoveryAuAgKgPerTonne: z.coerce.number().min(0).optional(),
+    followingSustainableRules: z.boolean().optional(),
+    sustainabilityParameters: z.object({
+      pyro_renewablePowerPercent: z.coerce.number().min(0).max(100).optional(),
+      pyro_slagRecyclingRate: z.coerce.number().min(0).max(100).optional(),
+      pyro_so2CaptureIntoSulfuricAcid: z.boolean().optional(),
+      pyro_flueGasCleaning: z.string().optional(),
+      pyro_wasteHeatCapturePercent: z.coerce.number().min(0).max(100).optional(),
+      hydro_acidRecoveryPercent: z.coerce.number().min(0).max(100).optional(),
+      hydro_organicSolventRecovery: z.boolean().optional(),
+      hydro_renewableElectricityUseInElectrowinning: z.boolean().optional(),
+      hydro_recycledWaterRate: z.coerce.number().min(0).max(100).optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -1819,6 +2112,210 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
                 )} />
               </div>
             </section>
+
+            {/* Sustainability Parameters Section */}
+            <section className="space-y-6">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Sustainability Focused
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Enable to provide sustainability parameters for this extraction stage
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("followingSustainableRules") && (
+                <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
+                  <div className="flex items-center gap-2 border-b border-[#BA7967]/20 pb-3">
+                    <div className="h-2 w-2 rounded-full bg-[#BA7967]" />
+                    <h4 className="text-sm font-semibold text-[#BA7967] uppercase tracking-wide">
+                      Extraction Sustainability Parameters
+                    </h4>
+                  </div>
+
+                  {/* Pyrometallurgical Route Sustainability */}
+                  {selectedRoute === "pyrometallurgical" && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2 pb-2">
+                        <h5 className="text-sm font-medium text-[#6B5B59]">Pyrometallurgical Route</h5>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.pyro_renewablePowerPercent"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Renewable Power (%)</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.pyro_slagRecyclingRate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Slag Recycling Rate (%)</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.pyro_so2CaptureIntoSulfuricAcid"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value || false}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>SO₂ Capture into Sulfuric Acid</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.pyro_flueGasCleaning"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Flue Gas Cleaning</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select method" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Electrostatic Precipitator">Electrostatic Precipitator</SelectItem>
+                                  <SelectItem value="Baghouse Filter">Baghouse Filter</SelectItem>
+                                  <SelectItem value="Multi-Stage Hybrid">Multi-Stage Hybrid</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.pyro_wasteHeatCapturePercent"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Waste Heat Capture (%)</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hydrometallurgical Route Sustainability */}
+                  {selectedRoute === "hydrometallurgical" && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2 pb-2">
+                        <h5 className="text-sm font-medium text-[#6B5B59]">Hydrometallurgical Route</h5>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.hydro_acidRecoveryPercent"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Acid Recovery (%)</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.hydro_organicSolventRecovery"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value || false}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>Organic Solvent Recovery</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.hydro_renewableElectricityUseInElectrowinning"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value || false}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>Renewable Electricity in Electrowinning</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={control}
+                          name="sustainabilityParameters.hydro_recycledWaterRate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Recycled Water Rate (%)</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
           </form>
         </Form>
       </StepSection>
@@ -1863,6 +2360,12 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
     reusePotentialPercent: z.coerce.number().min(0).max(100).optional(),
     energyReturnOnInvestment: z.coerce.number().min(0).optional(),
     usePhaseWaterConsumption: z.coerce.number().min(0).optional(),
+    followingSustainableRules: z.boolean().optional(),
+    sustainabilityParameters: z.object({
+      lifetimeExtensionYears: z.coerce.number().min(0).optional(),
+      reusePotentialPercent: z.coerce.number().min(0).max(100).optional(),
+      reducedMaintenanceMaterialsPercent: z.coerce.number().min(0).max(100).optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -2274,6 +2777,87 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
                   )} />
                 </div>
               </div>
+
+              {/* Sustainability Parameters Section */}
+              <section className="space-y-6 mt-8">
+                <FormField
+                  control={control}
+                  name="followingSustainableRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Sustainability Focused
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Enable to provide sustainability parameters for this use phase
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("followingSustainableRules") && (
+                  <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
+                    <div className="flex items-center gap-2 border-b border-[#BA7967]/20 pb-3">
+                      <div className="h-2 w-2 rounded-full bg-[#BA7967]" />
+                      <h4 className="text-sm font-semibold text-[#BA7967] uppercase tracking-wide">
+                        Use Phase Sustainability Parameters
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.lifetimeExtensionYears"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Lifetime Extension (years)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="Additional years" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.reusePotentialPercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Reuse Potential (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.reducedMaintenanceMaterialsPercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Reduced Maintenance Materials (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </StepSection>
         </form>
@@ -2323,6 +2907,14 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
     operatingHours: z.coerce.number().min(0).max(24).optional(),
     plantCapacity: z.coerce.number().min(0).optional(),
     maintenanceCost: z.coerce.number().min(0).optional(),
+    followingSustainableRules: z.boolean().optional(),
+    sustainabilityParameters: z.object({
+      designForRecycling: z.boolean().optional(),
+      surfaceTreatmentType: z.string().optional(),
+      wasteHeatRecoveryPercent: z.coerce.number().min(0).max(100).optional(),
+      renewableEnergySharePercent: z.coerce.number().min(0).max(100).optional(),
+      productLifetimeExtensionYears: z.coerce.number().min(0).optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -3159,6 +3751,127 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
                   />
                 </div>
               </div>
+
+              {/* Sustainability Parameters Section */}
+              <section className="space-y-6 mt-8">
+                <FormField
+                  control={control}
+                  name="followingSustainableRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Sustainability Focused
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Enable to provide sustainability parameters for this manufacturing stage
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("followingSustainableRules") && (
+                  <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
+                    <div className="flex items-center gap-2 border-b border-[#BA7967]/20 pb-3">
+                      <div className="h-2 w-2 rounded-full bg-[#BA7967]" />
+                      <h4 className="text-sm font-semibold text-[#BA7967] uppercase tracking-wide">
+                        Manufacturing Sustainability Parameters
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.designForRecycling"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || false}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Design for Recycling</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.surfaceTreatmentType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Surface Treatment Type</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select treatment" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Low-chemical">Low-chemical</SelectItem>
+                                <SelectItem value="Water-based">Water-based</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.wasteHeatRecoveryPercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Waste Heat Recovery (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.renewableEnergySharePercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Renewable Energy Share (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.productLifetimeExtensionYears"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Product Lifetime Extension (years)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="Additional years" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </StepSection>
         </form>
@@ -3214,6 +3927,13 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
     transportMode: z.string().optional(),
     scrapPrice: z.coerce.number().min(0).optional(),
     recycledProductValue: z.coerce.number().min(0).optional(),
+    followingSustainableRules: z.boolean().optional(),
+    sustainabilityParameters: z.object({
+      advancedCleaningSystems: z.boolean().optional(),
+      alloySortingCapability: z.string().optional(),
+      renewableEnergySharePercent: z.coerce.number().min(0).max(100).optional(),
+      slagRecycledPercent: z.coerce.number().min(0).max(100).optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -3800,6 +4520,114 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
                   )} />
                 </div>
               </div>
+
+              {/* Sustainability Parameters Section */}
+              <section className="space-y-6 mt-8">
+                <FormField
+                  control={control}
+                  name="followingSustainableRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Sustainability Focused
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Enable to provide sustainability parameters for this recycling stage
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("followingSustainableRules") && (
+                  <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
+                    <div className="flex items-center gap-2 border-b border-[#BA7967]/20 pb-3">
+                      <div className="h-2 w-2 rounded-full bg-[#BA7967]" />
+                      <h4 className="text-sm font-semibold text-[#BA7967] uppercase tracking-wide">
+                        Recycling Sustainability Parameters
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.advancedCleaningSystems"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || false}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Advanced Cleaning Systems</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.alloySortingCapability"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Alloy Sorting Capability</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select capability" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Basic">Basic</SelectItem>
+                                <SelectItem value="Advanced">Advanced</SelectItem>
+                                <SelectItem value="Precision">Precision</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.renewableEnergySharePercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Renewable Energy Share (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.slagRecycledPercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Slag Recycled (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </StepSection>
         </form>
@@ -3841,6 +4669,12 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
     // Economic / Circular Value
     revenueFromByProducts: z.coerce.number().min(0).optional(),
     marketPriceAcid: z.coerce.number().min(0).optional(),
+    followingSustainableRules: z.boolean().optional(),
+    sustainabilityParameters: z.object({
+      circularEconomyPartnerships: z.boolean().optional(),
+      wasteToProductInnovationLevel: z.string().optional(),
+      sulfurCaptureEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
+    }).optional(),
   });
 
   const form = useForm({
@@ -4209,6 +5043,100 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
                   )} />
                 </div>
               </div>
+
+              {/* Sustainability Parameters Section */}
+              <section className="space-y-6 mt-8">
+                <FormField
+                  control={control}
+                  name="followingSustainableRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Sustainability Focused
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Enable to provide sustainability parameters for this valorization stage
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("followingSustainableRules") && (
+                  <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
+                    <div className="flex items-center gap-2 border-b border-[#BA7967]/20 pb-3">
+                      <div className="h-2 w-2 rounded-full bg-[#BA7967]" />
+                      <h4 className="text-sm font-semibold text-[#BA7967] uppercase tracking-wide">
+                        Valorization Sustainability Parameters
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.circularEconomyPartnerships"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || false}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Circular Economy Partnerships</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.wasteToProductInnovationLevel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Waste-to-Product Innovation Level</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select level" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="None">None</SelectItem>
+                                <SelectItem value="Pilot">Pilot</SelectItem>
+                                <SelectItem value="Commercial">Commercial</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={control}
+                        name="sustainabilityParameters.sulfurCaptureEfficiencyPercent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sulfur Capture Efficiency (%)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </StepSection>
         </form>
@@ -4232,16 +5160,30 @@ function WizardContainer({ title, subtitle, children }) {
 export default function CopperWizardForm({ steps, activeStep, onStepChange, workflowId, workflowData, onWorkflowUpdate, onWorkflowSubmitted }) {
   const [stepData, setStepData] = useState({});
   const [predicting, setPredicting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const stepComponents = [
-    { key: 'mining', Component: CopperMiningStep },
-    { key: 'beneficiation', Component: CopperBeneficiationStep },
-    { key: 'refining', Component: CopperRefiningStep },
-    { key: 'manufacturing', Component: CopperManufacturingStep },
-    { key: 'usePhase', Component: CopperUsePhaseStep },
-    { key: 'recycling', Component: CopperRecyclingStep },
-    { key: 'valorization', Component: CopperValorizationStep },
+    { key: 'mining', backendKey: 'copperMining', Component: CopperMiningStep },
+    { key: 'beneficiation', backendKey: 'copperBeneficiation', Component: CopperBeneficiationStep },
+    { key: 'refining', backendKey: 'copperRefining', Component: CopperRefiningStep },
+    { key: 'manufacturing', backendKey: 'copperManufacturing', Component: CopperManufacturingStep },
+    { key: 'usePhase', backendKey: 'copperUsePhase', Component: CopperUsePhaseStep },
+    { key: 'recycling', backendKey: 'copperRecycling', Component: CopperRecyclingStep },
+    { key: 'valorization', backendKey: 'copperValorization', Component: CopperValorizationStep },
   ];
+
+  // Load initial data from workflow
+  useEffect(() => {
+    if (workflowData) {
+      const loadedData = {};
+      stepComponents.forEach(({ key, backendKey }) => {
+        if (workflowData[backendKey]) {
+          loadedData[key] = workflowData[backendKey];
+        }
+      });
+      setStepData(loadedData);
+    }
+  }, [workflowData]);
 
   const handleNext = () => {
     if (activeStep < steps.length - 1) {
@@ -4255,39 +5197,80 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
     }
   };
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     const stepKey = steps[activeStep].key;
+    const backendKey = stepComponents[activeStep].backendKey;
+    
+    console.log(`💾 [Copper] Saving ${stepKey} → ${backendKey}`, data);
+    
+    // Update local state
     setStepData(prev => ({ ...prev, [stepKey]: data }));
-    console.log(`Saved ${stepKey} data:`, data);
+    
+    // Save to backend if workflowId exists
+    if (workflowId) {
+      setSaving(true);
+      try {
+        const api = await import('@/services/api').then(m => m.default);
+        const response = await api.put(`/wizard/workflows/${workflowId}/steps/${backendKey}`, data);
+        
+        if (response.data.success && response.data.data?.workflow) {
+          console.log(`✅ [Copper] ${backendKey} saved successfully`);
+          onWorkflowUpdate?.(response.data.data.workflow);
+        }
+      } catch (error) {
+        console.error(`❌ [Copper] Error saving ${backendKey}:`, error);
+      } finally {
+        setSaving(false);
+      }
+    }
   };
 
   const handleGenerateAIPrediction = async (formData) => {
     setPredicting(true);
-    console.log('Generating AI predictions for copper...', formData);
+    console.log('🤖 [Copper] Generating AI predictions...', formData);
     // Simulate AI prediction
     await new Promise(resolve => setTimeout(resolve, 2000));
     setPredicting(false);
   };
 
   const handleSubmitSuccess = () => {
-    console.log('Copper wizard completed!', stepData);
+    console.log('✅ [Copper] Wizard completed!', stepData);
     // Handle final submission
     onWorkflowSubmitted?.({ workflow: workflowData });
   };
 
   const { Component } = stepComponents[activeStep];
   const currentStep = steps[activeStep];
+  const currentStepKey = stepComponents[activeStep].key;
 
   return (
     <WizardContainer title={currentStep.title} subtitle={currentStep.description}>
+      {/* Wizard Home Button */}
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (confirm('Return to wizard home page? Your current progress is saved and you can resume from Recent Projects.')) {
+              // Clear localStorage so it shows metal selection instead of auto-loading
+              localStorage.removeItem('currentWizardWorkflowId');
+              window.location.href = '/wizard';
+            }
+          }}
+          className="border-[#BA7967] text-[#BA7967] hover:bg-[#BA7967] hover:text-white"
+        >
+          🏠 Wizard Home
+        </Button>
+      </div>
+      
       <Component
         onNext={handleNext}
         onBack={handleBack}
         onSave={handleSave}
-        initialValues={stepData[steps[activeStep].key]}
+        initialValues={stepData[currentStepKey]}
         onGenerateAIPrediction={handleGenerateAIPrediction}
         predicting={predicting}
         onSubmitSuccess={activeStep === steps.length - 1 ? handleSubmitSuccess : undefined}
+        saving={saving}
       />
     </WizardContainer>
   );

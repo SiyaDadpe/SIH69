@@ -9,11 +9,21 @@
  */
 
 const mongoose = require('mongoose');
+const { 
+  copperMiningSchema,
+  copperBeneficiationSchema,
+  copperRefiningSchema,
+  copperManufacturingSchema,
+  copperUsePhaseSchema,
+  copperRecyclingSchema,
+  copperValorizationSchema
+} = require('./schemas/copperStages');
 
 /**
  * Wizard Workflow Schema
  * 
  * Stores detailed form data from the multi-step wizard interface
+ * Supports multiple metal types with metal-specific stage schemas
  */
 const wizardWorkflowSchema = new mongoose.Schema(
   {
@@ -670,6 +680,23 @@ const wizardWorkflowSchema = new mongoose.Schema(
       lowercase: true
     }],
 
+    // ============================================================================
+    // COPPER-SPECIFIC STAGES (metalType = 'Copper')
+    // ============================================================================
+    
+    /**
+     * Copper stages use different field names and structures
+     * These are only populated when metalType = 'Copper'
+     * 7 stages: mining, beneficiation, refining, manufacturing, usePhase, recycling, valorization
+     */
+    copperMining: copperMiningSchema,
+    copperBeneficiation: copperBeneficiationSchema,
+    copperRefining: copperRefiningSchema,
+    copperManufacturing: copperManufacturingSchema,
+    copperUsePhase: copperUsePhaseSchema,
+    copperRecycling: copperRecyclingSchema,
+    copperValorization: copperValorizationSchema,
+
     // Additional metadata
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -702,14 +729,58 @@ wizardWorkflowSchema.index({ createdAt: -1 });
  */
 wizardWorkflowSchema.virtual('completionPercentage').get(function() {
   if (!this.completedSteps || this.completedSteps.length === 0) return 0;
-  return Math.round((this.completedSteps.length / 7) * 100);
+  
+  // Both metal types have 7 stages
+  // Aluminum: mining, beneficiation, refining, smelting, manufacturing, recycling, valorization
+  // Copper: copperMining, copperBeneficiation, copperRefining, copperManufacturing, copperUsePhase, copperRecycling, copperValorization
+  const totalSteps = 7;
+  
+  return Math.round((this.completedSteps.length / totalSteps) * 100);
 });
 
 /**
  * Check if wizard is fully completed
  */
 wizardWorkflowSchema.virtual('isCompleted').get(function() {
-  return this.completedSteps && this.completedSteps.length === 7;
+  if (!this.completedSteps) return false;
+  
+  // Both metal types have 7 stages
+  const totalSteps = 7;
+  
+  return this.completedSteps.length === totalSteps;
+});
+
+// ============================================================================
+// MIDDLEWARE
+// ============================================================================
+
+/**
+ * Pre-save hook to ensure data integrity
+ * Prevents cross-contamination between metal types
+ */
+wizardWorkflowSchema.pre('save', function(next) {
+  // If metalType is Copper, remove any aluminum fields
+  if (this.metalType === 'Copper') {
+    this.mining = undefined;
+    this.beneficiation = undefined;
+    this.refining = undefined;
+    this.smelting = undefined;
+    this.manufacturing = undefined;
+    this.recycling = undefined;
+    this.valorization = undefined;
+  }
+  // If metalType is Aluminium, remove any copper fields
+  else if (this.metalType === 'Aluminium' || this.metalType === 'Aluminum') {
+    this.copperMining = undefined;
+    this.copperBeneficiation = undefined;
+    this.copperRefining = undefined;
+    this.copperManufacturing = undefined;
+    this.copperUsePhase = undefined;
+    this.copperRecycling = undefined;
+    this.copperValorization = undefined;
+  }
+  
+  next();
 });
 
 // ============================================================================
@@ -722,7 +793,7 @@ wizardWorkflowSchema.virtual('isCompleted').get(function() {
 wizardWorkflowSchema.statics.createEmpty = async function(userId, metalType = 'Aluminium', name = null) {
   const workflowName = name || `${metalType} LCA Wizard - ${new Date().toLocaleDateString()}`;
   
-  return await this.create({
+  const baseWorkflow = {
     name: workflowName,
     userId,
     metalType,
@@ -730,7 +801,30 @@ wizardWorkflowSchema.statics.createEmpty = async function(userId, metalType = 'A
     currentStep: 0,
     completedSteps: [],
     tags: ['wizard', metalType.toLowerCase()]
-  });
+  };
+
+  // Initialize only relevant fields based on metalType
+  if (metalType === 'Copper') {
+    // Initialize empty copper fields to prevent aluminum fields from being created
+    baseWorkflow.copperMining = {};
+    baseWorkflow.copperBeneficiation = {};
+    baseWorkflow.copperRefining = {};
+    baseWorkflow.copperManufacturing = {};
+    baseWorkflow.copperUsePhase = {};
+    baseWorkflow.copperRecycling = {};
+    baseWorkflow.copperValorization = {};
+  } else {
+    // Initialize empty aluminum fields (default)
+    baseWorkflow.mining = {};
+    baseWorkflow.beneficiation = {};
+    baseWorkflow.refining = {};
+    baseWorkflow.smelting = {};
+    baseWorkflow.manufacturing = {};
+    baseWorkflow.recycling = {};
+    baseWorkflow.valorization = {};
+  }
+  
+  return await this.create(baseWorkflow);
 };
 
 /**
@@ -797,9 +891,16 @@ wizardWorkflowSchema.methods.markStepCompleted = function(stepNumber) {
  * Update a specific step's data
  */
 wizardWorkflowSchema.methods.updateStep = function(stepName, data) {
-  const validSteps = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+  // Valid steps for aluminum
+  const aluminumSteps = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+  
+  // Valid steps for copper (different naming convention) - 7 stages
+  const copperSteps = ['copperMining', 'copperBeneficiation', 'copperRefining', 'copperManufacturing', 'copperUsePhase', 'copperRecycling', 'copperValorization'];
+  
+  const validSteps = this.metalType === 'Copper' ? copperSteps : aluminumSteps;
+  
   if (!validSteps.includes(stepName)) {
-    throw new Error(`Invalid step name: ${stepName}`);
+    throw new Error(`Invalid step name: ${stepName} for metal type: ${this.metalType}`);
   }
   
   // Deep merge with existing data to prevent overwrites

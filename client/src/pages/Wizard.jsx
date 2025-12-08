@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import WizardForm from "@/sections/Wizard/wizardForm"
+import CopperWizardForm from "@/sections/Wizard/wizardForm-cu"
 import ProgressTracker from "@/sections/Wizard/progressTracker"
 import MetalSelection from "@/components/MetalSelection"
 import { Button } from "@/components/ui/button"
@@ -17,7 +18,8 @@ export default function Wizard() {
   const navigate = useNavigate()
   const [selectedMetal, setSelectedMetal] = useState(null)
   
-  const steps = useMemo(() => [
+  // Define steps based on selected metal
+  const aluminumSteps = useMemo(() => [
     { title: "Mining", description: "Extract raw materials from ore deposits", key: "mining" },
     { title: "Beneficiation", description: "Process and concentrate the ore", key: "beneficiation" },
     { title: "Refining", description: "Purify the metal to required standards", key: "refining" },
@@ -26,6 +28,20 @@ export default function Wizard() {
     { title: "Recycling", description: "Recover and reprocess metal waste", key: "recycling" },
     { title: "Valorization", description: "Create value from by-products and waste", key: "valorization" },
   ], [])
+
+  const copperSteps = useMemo(() => [
+    { title: "Mining", description: "Extract copper ore from deposits", key: "mining" },
+    { title: "Beneficiation", description: "Concentrate copper ore", key: "beneficiation" },
+    { title: "Refining", description: "Purify copper to required standards", key: "refining" },
+    { title: "Manufacturing", description: "Transform copper into products", key: "manufacturing" },
+    { title: "Use Phase", description: "Product application and performance", key: "usePhase" },
+    { title: "Recycling", description: "Recover and reprocess copper waste", key: "recycling" },
+    { title: "Valorization", description: "Create value from by-products", key: "valorization" },
+  ], [])
+
+  const steps = useMemo(() => {
+    return selectedMetal === 'copper' ? copperSteps : aluminumSteps;
+  }, [selectedMetal, copperSteps, aluminumSteps])
 
   const [generatingReport, setGeneratingReport] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -151,7 +167,8 @@ export default function Wizard() {
         // Set metal type from loaded workflow
         const metalType = response.data.workflow.metalType;
         if (metalType) {
-          const workflowMetal = metalType.toLowerCase() === 'steel' ? 'steel' : 'aluminum';
+          const workflowMetal = metalType.toLowerCase() === 'steel' ? 'steel' : 
+                                metalType.toLowerCase() === 'copper' ? 'copper' : 'aluminum';
           setSelectedMetal(workflowMetal);
           console.log('🎯 Metal type from workflow:', workflowMetal);
         }
@@ -294,7 +311,8 @@ export default function Wizard() {
     }
 
     setSelectedMetal(metalType);
-    const normalizedMetal = metalType === 'steel' ? 'Steel' : 'Aluminium';
+    const normalizedMetal = metalType === 'steel' ? 'Steel' : 
+                           metalType === 'copper' ? 'Copper' : 'Aluminium';
     const projectMeta = selection && typeof selection === 'object' ? selection : null;
     initializeWorkflow(normalizedMetal, projectMeta);
   }
@@ -435,16 +453,29 @@ export default function Wizard() {
         </div>
       ) : (
         <>
-          <WizardForm 
-            steps={steps} 
-            activeStep={activeStep} 
-            onStepChange={setActiveStep}
-            workflowId={workflowId}
-            workflowData={workflowData}
-            onWorkflowUpdate={handleWorkflowUpdate}
-            onWorkflowSubmitted={handleWorkflowSubmitted}
-            onMaterialSourceChange={handleMaterialSourceChange}
-          />
+          {selectedMetal === 'copper' ? (
+            <CopperWizardForm 
+              steps={steps} 
+              activeStep={activeStep} 
+              onStepChange={setActiveStep}
+              workflowId={workflowId}
+              workflowData={workflowData}
+              onWorkflowUpdate={handleWorkflowUpdate}
+              onWorkflowSubmitted={handleWorkflowSubmitted}
+              onMaterialSourceChange={handleMaterialSourceChange}
+            />
+          ) : (
+            <WizardForm 
+              steps={steps} 
+              activeStep={activeStep} 
+              onStepChange={setActiveStep}
+              workflowId={workflowId}
+              workflowData={workflowData}
+              onWorkflowUpdate={handleWorkflowUpdate}
+              onWorkflowSubmitted={handleWorkflowSubmitted}
+              onMaterialSourceChange={handleMaterialSourceChange}
+            />
+          )}
           <ProgressTracker 
             steps={steps} 
             currentStep={activeStep} 
