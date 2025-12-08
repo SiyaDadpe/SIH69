@@ -1,3 +1,5 @@
+import FloatingChatbot from '../components/FloatingChatbot';
+
 export default function Login(){
     return(
         <> 

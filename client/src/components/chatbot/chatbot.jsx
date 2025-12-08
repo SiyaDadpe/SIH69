@@ -82,18 +82,7 @@ function App() {
       <div className={`flex flex-col w-full h-full ${theme.bg} ${isDarkPage ? 'text-white' : 'text-gray-800'}`}>
 
         {/* Header */}
-        <div 
-          className="p-4 border-b text-center text-xl font-semibold flex justify-center items-center gap-2 shadow-lg"
-          style={{
-            backgroundColor: '#F3F2EC',
-            backgroundImage: isDarkPage ? 'linear-gradient(135deg, #BA7967 0%, #6B5B59 100%)' : 'none',
-            borderBottomColor: 'rgba(186, 121, 103, 0.2)',
-            color: isDarkPage ? 'white' : '#374151'
-          }}
-        >
-          <MessageCircle className="w-5 h-5 " />
-          <span >ALVance Assistant</span>
-        </div>
+       
 
         {/* Chat Area */}
         <div className={`flex-1 overflow-y-auto p-6 space-y-4 ${theme.chatArea}`}>

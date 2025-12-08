@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import Plasma from '../components/animations/plasma';
 import { register, login } from '../services/authService';
 import { toast } from 'sonner';
-import floatingChatbot from '../components/FloatingChatbot';
+import FloatingChatbot from '../components/FloatingChatbot';
 
 export default function Signup() {
   const navigate = useNavigate();

@@ -1,9 +1,21 @@
 import { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
-import Chatbot from "./chatbot/chatbot";
+import { MessageCircle, X, Minus, Maximize, Minimize } from "lucide-react";
+import Chatbot from "./chatbot/chatbot.jsx";
 
 function FloatingChatbot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  const handleMinimize = () => {
+    setIsMinimized(true);
+    setIsMaximized(false);
+  };
+
+  const handleMaximize = () => {
+    setIsMinimized(false);
+    setIsMaximized(!isMaximized);
+  };
 
   return (
     <>
@@ -64,24 +76,62 @@ function FloatingChatbot() {
 
       {/* Chatbot Modal */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-9997 w-[420px] max-w-[calc(100vw-24px)] h-[500px] shadow-2xl rounded-2xl overflow-hidden"
+        <div 
+          className={`fixed z-9997 shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 ${
+            isMinimized 
+              ? 'bottom-6 right-6 w-[300px] h-[60px]' 
+              : isMaximized
+              ? 'inset-4 w-auto h-auto'
+              : 'bottom-6 right-6 w-[420px] max-w-[calc(100vw-24px)] h-[500px]'
+          }`}
           style={{
             animation: 'slideInFromBottom 0.3s ease-out'
           }}
         >
-          {/* Close Button */}
-          <button
-            onClick={() => setIsOpen(false)}
-            className="absolute top-4 right-4 z-10 bg-[#6B5B59] hover:bg-[#BA7967] text-white rounded-full p-2 transition-all duration-200 shadow-lg"
-            aria-label="Close Chatbot"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Header with controls */}
+          <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-[#BA7967] to-[#6B5B59] px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-sm">ALVance Assistant</span>
+            </div>
+            <div className="flex gap-2">
+              
+              {/* Minimize Button */}
+              <button
+                onClick={handleMinimize}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 transition-all duration-200"
+                aria-label="Minimize Chatbot"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              
+              {/* Maximize Button */}
+              <button
+                onClick={handleMaximize}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 transition-all duration-200"
+                aria-label={isMaximized ? "Restore Chatbot" : "Maximize Chatbot"}
+              >
+                {isMaximized ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              </button>
+              
+              
+              {/* Close Button */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full p-1.5 transition-all duration-200"
+                aria-label="Close Chatbot"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           
           {/* Chatbot Component */}
-          <div className="w-full h-full">
-            <Chatbot />
-          </div>
+          {!isMinimized && (
+            <div className="w-full h-full pt-[52px]">
+              <Chatbot />
+            </div>
+          )}
         </div>
       )}
     </>
