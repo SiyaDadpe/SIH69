@@ -10,6 +10,7 @@ import Docs from './pages/Docs';
 import Analytics from './pages/Analytics';
 import ProcessCanvas from './pages/ProcessCanvas';
 import Playground from './pages/playground';
+import AlchemyLab from './pages/alchemyLab';
 import MainLayout from './layouts/MainLayout';
 import RouteError from './components/RouteError';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -79,6 +80,11 @@ function App() {
         {
           path: "playground",
           element: <Playground />,
+          errorElement: <RouteError />
+        },
+        {
+          path: "alchemy-lab",
+          element: <AlchemyLab />,
           errorElement: <RouteError />
         }
       ]
