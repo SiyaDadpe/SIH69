@@ -147,13 +147,16 @@ def _default_recommendations(compact: Dict[str, Any]) -> List[Dict[str, Any]]:
     stages = compact.get("stageData", [])
     # Find smelting
     smelt = next((s for s in stages if s.get("stageName") == "smelting"), None)
-    if smelt and smelt.get("energyConsumption", 0) > compact.get("totalEnergyConsumption", 0) * 0.5:
+    smelt_energy = smelt.get("energyConsumption", {}).get("value", 0) if isinstance(smelt.get("energyConsumption"), dict) else smelt.get("energyConsumption", 0) if smelt else 0
+    total_energy = compact.get("totalEnergyConsumption", {}).get("value", 0) if isinstance(compact.get("totalEnergyConsumption"), dict) else compact.get("totalEnergyConsumption", 0)
+    if smelt and smelt_energy > total_energy * 0.5:
         recs.append({
             "priority": "HIGH",
             "title": "Optimize Smelting Energy Usage",
             "description": "Smelting dominates energy – consider renewable PPAs, heat recovery, and anode tech upgrades."
         })
-    if compact.get("totalCO2Emissions", 0) > 10000:
+    total_co2_val = compact.get("totalCO2Emissions", {}).get("value", 0) if isinstance(compact.get("totalCO2Emissions"), dict) else compact.get("totalCO2Emissions", 0)
+    if total_co2_val > 10000:
         recs.append({
             "priority": "HIGH",
             "title": "Implement Carbon Reduction Strategies",
@@ -162,21 +165,26 @@ def _default_recommendations(compact: Dict[str, Any]) -> List[Dict[str, Any]]:
     # Water hotspots (beneficiation + refining)
     ben = next((s for s in stages if s.get("stageName") == "beneficiation"), None)
     refi = next((s for s in stages if s.get("stageName") == "refining"), None)
-    if ben and refi and (ben.get("waterUsage", 0) + refi.get("waterUsage", 0)) > compact.get("totalWaterUsage", 0) * 0.5:
+    ben_water = ben.get("waterUsage", {}).get("value", 0) if isinstance(ben.get("waterUsage"), dict) else ben.get("waterUsage", 0) if ben else 0
+    refi_water = refi.get("waterUsage", {}).get("value", 0) if isinstance(refi.get("waterUsage"), dict) else refi.get("waterUsage", 0) if refi else 0
+    total_water_val = compact.get("totalWaterUsage", {}).get("value", 0) if isinstance(compact.get("totalWaterUsage"), dict) else compact.get("totalWaterUsage", 0)
+    if ben and refi and (ben_water + refi_water) > total_water_val * 0.5:
         recs.append({
             "priority": "MEDIUM",
             "title": "Enhance Water Recycling",
             "description": "Beneficiation & refining dominate water – implement closed-loop systems and process water recovery."
         })
     # Refining waste (red mud)
-    if refi and refi.get("wasteGeneration", 0) > 400:
+    refi_waste = refi.get("wasteGeneration", {}).get("value", 0) if isinstance(refi.get("wasteGeneration"), dict) else refi.get("wasteGeneration", 0) if refi else 0
+    if refi and refi_waste > 400:
         recs.append({
             "priority": "HIGH",
             "title": "Improve Red Mud Management",
             "description": "Refining waste high – explore valorization (cement/geopolymer) and improved storage strategies."
         })
     # Air emissions from smelting
-    if smelt and smelt.get("airQualityImpact", 0) > 300:
+    smelt_air = smelt.get("airQualityImpact", {}).get("value", 0) if isinstance(smelt.get("airQualityImpact"), dict) else smelt.get("airQualityImpact", 0) if smelt else 0
+    if smelt and smelt_air > 300:
         recs.append({
             "priority": "MEDIUM",
             "title": "Upgrade Emission Controls",
@@ -219,11 +227,11 @@ def build_compact_output(serialized: Dict[str, Any]) -> Dict[str, Any]:
         total_air += air
         stage_data.append({
             "stageName": stage if stage != "waste" else "valorization",
-            "energyConsumption": _round(energy, 2),
-            "co2Emissions": _round(co2, 2),
-            "waterUsage": _round(water, 2),
-            "wasteGeneration": _round(waste, 2),
-            "airQualityImpact": _round(air, 2),
+            "energyConsumption": {"value": _round(energy, 2), "unit": "kWh"},
+            "co2Emissions": {"value": _round(co2, 2), "unit": "kg CO2-eq"},
+            "waterUsage": {"value": _round(water, 2), "unit": "m³"},
+            "wasteGeneration": {"value": _round(waste, 2), "unit": "kg"},
+            "airQualityImpact": {"value": _round(air, 2), "unit": "kg PM2.5-eq"},
             "completed": True
         })
 
@@ -237,16 +245,16 @@ def build_compact_output(serialized: Dict[str, Any]) -> Dict[str, Any]:
         "projectName": scenario_name,
         "location": params.get("mining", {}).get("location", "GLO"),
         "analysisDate": {"$date": {"$numberLong": str(int(datetime.utcnow().timestamp() * 1000))}},
-        "totalEnergyConsumption": _round(total_energy, 2),
-        "totalCO2Emissions": _round(total_co2, 2),
-        "totalWaterUsage": _round(total_water, 2),
-        "totalWasteGeneration": _round(total_waste, 2),
-        "totalAirQualityImpact": _round(total_air, 2),
-        "energyIntensity": _round(total_energy / (amount_kg / 1000.0), 2),  # per tonne
-        "carbonIntensity": _round(total_co2 / (amount_kg / 1000.0), 2),
-        "circularityScore": circularity["circularityScore"],
+        "totalEnergyConsumption": {"value": _round(total_energy, 2), "unit": "kWh"},
+        "totalCO2Emissions": {"value": _round(total_co2, 2), "unit": "kg CO2-eq"},
+        "totalWaterUsage": {"value": _round(total_water, 2), "unit": "m³"},
+        "totalWasteGeneration": {"value": _round(total_waste, 2), "unit": "kg"},
+        "totalAirQualityImpact": {"value": _round(total_air, 2), "unit": "kg PM2.5-eq"},
+        "energyIntensity": {"value": _round(total_energy / (amount_kg / 1000.0), 2), "unit": "kWh/tonne"},
+        "carbonIntensity": {"value": _round(total_co2 / (amount_kg / 1000.0), 2), "unit": "kg CO2-eq/tonne"},
+        "circularityScore": {"value": circularity["circularityScore"], "unit": "score (0-100)"},
         "circularityRating": circularity["circularityRating"],
-        "materialRecoveryRate": circularity["materialRecoveryRate"],
+        "materialRecoveryRate": {"value": circularity["materialRecoveryRate"], "unit": "%"},
         "status": "completed",
         "calculationParams": {"wizardData": stage_order},
         "stageData": stage_data,

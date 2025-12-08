@@ -606,10 +606,16 @@ const updateStep = asyncHandler(async (req, res) => {
   }
 
   const validSteps = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
-  if (!validSteps.includes(stepName)) {
+  const validCopperSteps = ['copperMining', 'copperBeneficiation', 'copperRefining', 'copperManufacturing', 'copperUsePhase', 'copperRecycling', 'copperValorization'];
+  
+  // Check if step is valid for aluminum or copper
+  const isAluminumStep = validSteps.includes(stepName);
+  const isCopperStep = validCopperSteps.includes(stepName);
+  
+  if (!isAluminumStep && !isCopperStep) {
     return res.status(400).json({
       success: false,
-      message: `Invalid step name. Must be one of: ${validSteps.join(', ')}`
+      message: `Invalid step name. Must be one of: ${validSteps.join(', ')} (aluminum) or ${validCopperSteps.join(', ')} (copper)`
     });
   }
 

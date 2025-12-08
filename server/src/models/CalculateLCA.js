@@ -129,6 +129,12 @@ const CalculateLCASchema = new Schema({
     default: 'Not specified'
   },
 
+  metalType: {
+    type: String,
+    trim: true,
+    default: 'Aluminium'
+  },
+
   analysisDate: {
     type: Date,
     default: Date.now,
@@ -200,6 +206,42 @@ const CalculateLCASchema = new Schema({
     max: [100, 'Material recovery rate cannot exceed 100']
   },
 
+  // Circularity vs Linearity indices
+  circularityIndex: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 1
+  },
+
+  linearityIndex: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 1
+  },
+
+  circularityComponents: {
+    type: Schema.Types.Mixed,
+    default: {}
+  },
+
+  // Sankey diagram data for material flow visualization
+  sankeyData: {
+    normalizationBasisTonnes: {
+      type: Number,
+      default: 1
+    },
+    nodes: {
+      type: [Schema.Types.Mixed],
+      default: []
+    },
+    links: {
+      type: [Schema.Types.Mixed],
+      default: []
+    }
+  },
+
   // Stage-wise data
   stageData: [StageDataSchema],
 
@@ -254,7 +296,8 @@ const CalculateLCASchema = new Schema({
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  toObject: { virtuals: true },
+  collection: 'calculatelca' // Use singular form instead of default 'calculatelcas'
 });
 
 // ============================================================================

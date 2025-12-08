@@ -100,8 +100,10 @@ export const getCalculatelcaById = async (reportId) => {
     const response = await api.get(`/lca/calculatelca/${reportId}`);
 
     console.log('✅ [LCA Service] Retrieved calculatelca report:', reportId);
+    console.log('✅ [LCA Service] Response data:', response.data);
 
-    return response.data;
+    // API returns {success: true, data: reportData}
+    return response.data.data || response.data;
   } catch (error) {
     console.error('❌ [LCA Service] Error fetching calculatelca report:', error);
 

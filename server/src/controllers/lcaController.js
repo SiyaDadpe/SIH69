@@ -366,7 +366,7 @@ const calculateLCA = asyncHandler(async (req, res) => {
       console.log(`📋 [LCA Validation] ${stage} data:`, JSON.stringify(wizardData[stage], null, 2));
     });
 
-    // Validate required fields - ONLY for current stage if provided, otherwise all stages
+    // Validate required fields - ONLY up to and including current stage if provided
     // These field names should match what the frontend sends after mapping
     const validationErrors = [];
     const requiredFieldsByStage = {
@@ -379,10 +379,28 @@ const calculateLCA = asyncHandler(async (req, res) => {
       valorization: ['waste_types', 'valorization_methods']
     };
 
+    // Define stage order for progressive validation
+    const stageOrder = ['mining', 'beneficiation', 'refining', 'smelting', 'manufacturing', 'recycling', 'valorization'];
+
     // Determine which stages to validate
-    const stagesToValidate = currentStage && stagesWithData.includes(currentStage) 
-      ? [currentStage]  // Only validate current stage
-      : stagesWithData;  // Validate all stages with data
+    let stagesToValidate;
+    if (currentStage) {
+      // Validate current stage and all previous stages
+      const currentStageIndex = stageOrder.indexOf(currentStage);
+      if (currentStageIndex >= 0) {
+        // Get all stages up to and including current stage that have data
+        stagesToValidate = stageOrder
+          .slice(0, currentStageIndex + 1)
+          .filter(stage => stagesWithData.includes(stage));
+        console.log(`🔍 [LCA Validation] Current stage: ${currentStage} (index ${currentStageIndex})`);
+      } else {
+        // Invalid stage name, validate all
+        stagesToValidate = stagesWithData;
+      }
+    } else {
+      // No current stage specified, validate all stages with data
+      stagesToValidate = stagesWithData;
+    }
 
     console.log('🔍 [LCA Validation] Validating stages:', stagesToValidate);
 
@@ -422,12 +440,27 @@ const calculateLCA = asyncHandler(async (req, res) => {
     
     console.log('✅ [LCA Validation] All required fields present for validated stages');
 
+    // Fetch metalType from workflow if workflowId is provided
+    let metalType = 'Aluminium'; // default
+    if (workflowId) {
+      try {
+        const workflow = await WizardWorkflow.findById(workflowId).select('metalType');
+        if (workflow && workflow.metalType) {
+          metalType = workflow.metalType;
+          console.log('📊 [LCA Calculation] Retrieved metalType from workflow:', metalType);
+        }
+      } catch (err) {
+        console.warn('⚠️ [LCA Calculation] Could not fetch workflow metalType:', err.message);
+      }
+    }
+
     // Create initial LCA record with pending status
     lcaRecord = new CalculateLCA({
       userId,
       workflowId: workflowId || null,
       projectName,
       location: location || 'Not specified',
+      metalType,
       status: 'pending',
       calculationParams: {
         wizardData: Object.keys(wizardData)
@@ -616,6 +649,94 @@ const getUserLCAStats = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get calculatelca report by ID (enriched format for analytics)
+ * @route   GET /api/lca/calculatelca/:id
+ * @access  Private
+ */
+const getCalculatelcaById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  const report = await CalculateLCA.findOne({ _id: id, userId })
+    .select('-__v');
+
+  if (!report) {
+    res.status(404);
+    throw new Error('LCA report not found');
+  }
+
+  // Transform stageData array to object format for frontend
+  const lcaStages = {};
+  if (report.stageData && Array.isArray(report.stageData)) {
+    report.stageData.forEach(stage => {
+      lcaStages[stage.stageName] = {
+        energyConsumption: stage.energyConsumption,
+        co2Emissions: stage.co2Emissions,
+        waterUsage: stage.waterUsage,
+        wasteGeneration: stage.wasteGeneration,
+        airQualityImpact: stage.airQualityImpact,
+        completed: stage.completed
+      };
+    });
+  }
+
+  // Return enriched format for analytics
+  const enrichedReport = {
+    _id: report._id,
+    workflowId: report.workflowId,
+    projectName: report.projectName,
+    metalType: report.metalType,
+    location: report.location,
+    analysisDate: { $date: report.analysisDate.toISOString() },
+    status: report.status,
+    
+    // Totals
+    totalEnergyConsumption: report.totalEnergyConsumption,
+    totalCO2Emissions: report.totalCO2Emissions,
+    totalWaterUsage: report.totalWaterUsage,
+    totalWasteGeneration: report.totalWasteGeneration,
+    totalAirQualityImpact: report.totalAirQualityImpact,
+    
+    // Intensity
+    energyIntensity: report.energyIntensity,
+    carbonIntensity: report.carbonIntensity,
+    
+    // Circularity
+    circularityScore: report.circularityScore,
+    circularityRating: report.circularityRating,
+    materialRecoveryRate: report.materialRecoveryRate,
+    circularityIndex: report.circularityIndex,
+    linearityIndex: report.linearityIndex,
+    circularityComponents: report.circularityComponents,
+    
+    // Stage data
+    lcaStages: lcaStages,
+    
+    // Sankey data for circularity visualization
+    sankeyData: report.sankeyData,
+    
+    // Recommendations
+    recommendations: report.recommendations,
+    
+    // Metadata
+    metadata: report.metadata,
+    
+    // PDF
+    pdfReportUrl: report.pdfReportUrl,
+    pdfFilename: report.pdfFilename,
+    
+    // Timestamps
+    createdAt: { $date: report.createdAt.toISOString() },
+    updatedAt: { $date: report.updatedAt.toISOString() }
+  };
+
+  res.status(200).json({
+    success: true,
+    data: enrichedReport
+  });
+});
+
+/**
  * @desc    Delete LCA report
  * @route   DELETE /api/lca/reports/:id
  * @access  Private
@@ -639,10 +760,118 @@ const deleteLCAReport = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Download LCA report as PDF
+ * @route   GET /api/lca/reports/:id/pdf
+ * @access  Private
+ */
+const downloadLCAReportPDF = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  // Find report and verify ownership
+  const report = await CalculateLCA.findOne({ _id: id, userId });
+
+  if (!report) {
+    res.status(404);
+    throw new Error('LCA report not found');
+  }
+
+  // Check if PDF already exists
+  if (report.pdfReportUrl && report.pdfFilename) {
+    const pdfPath = path.join(__dirname, '../../', report.pdfReportUrl);
+    const fs = require('fs');
+    
+    if (fs.existsSync(pdfPath)) {
+      // Serve existing PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${report.pdfFilename}"`);
+      return res.sendFile(pdfPath);
+    }
+  }
+
+  // Generate new PDF if it doesn't exist
+  const uploadsDir = path.join(__dirname, '../../uploads/reports');
+  const fs = require('fs');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  const filename = generateFilename(report.projectName || 'LCA-Report');
+  const pdfPath = path.join(uploadsDir, filename);
+
+  // Prepare data for PDF generation
+  const lcaData = {
+    projectName: report.projectName,
+    location: report.location,
+    metalType: report.metalType,
+    analysisDate: report.analysisDate,
+    totalEnergyConsumption: typeof report.totalEnergyConsumption === 'object' 
+      ? report.totalEnergyConsumption.value 
+      : report.totalEnergyConsumption,
+    totalCO2Emissions: typeof report.totalCO2Emissions === 'object'
+      ? report.totalCO2Emissions.value
+      : report.totalCO2Emissions,
+    totalWaterUsage: typeof report.totalWaterUsage === 'object'
+      ? report.totalWaterUsage.value
+      : report.totalWaterUsage,
+    totalWasteGeneration: typeof report.totalWasteGeneration === 'object'
+      ? report.totalWasteGeneration.value
+      : report.totalWasteGeneration,
+    totalAirQualityImpact: typeof report.totalAirQualityImpact === 'object'
+      ? report.totalAirQualityImpact.value
+      : report.totalAirQualityImpact,
+    energyIntensity: typeof report.energyIntensity === 'object'
+      ? report.energyIntensity.value
+      : report.energyIntensity,
+    carbonIntensity: typeof report.carbonIntensity === 'object'
+      ? report.carbonIntensity.value
+      : report.carbonIntensity,
+    circularityScore: typeof report.circularityScore === 'object'
+      ? report.circularityScore.value
+      : report.circularityScore,
+    circularityRating: report.circularityRating,
+    materialRecoveryRate: typeof report.materialRecoveryRate === 'object'
+      ? report.materialRecoveryRate.value
+      : report.materialRecoveryRate,
+    circularityIndex: typeof report.circularityIndex === 'object'
+      ? report.circularityIndex.value
+      : report.circularityIndex,
+    linearityIndex: typeof report.linearityIndex === 'object'
+      ? report.linearityIndex.value
+      : report.linearityIndex,
+    lcaStages: report.lcaStages || {},
+    recommendations: report.recommendations || [],
+    sankeyData: report.sankeyData,
+  };
+
+  try {
+    // Generate PDF
+    await generateLCAReport(lcaData, pdfPath);
+
+    // Update report with PDF info
+    report.pdfReportUrl = `/uploads/reports/${filename}`;
+    report.pdfFilename = filename;
+    report.pdfFileSize = fs.statSync(pdfPath).size;
+    await report.save();
+
+    // Send PDF to client
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.sendFile(pdfPath);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500);
+    throw new Error('Failed to generate PDF report');
+  }
+});
+
 module.exports = {
   calculateLCA,
   getUserLCAReports,
   getLCAReportById,
+  getCalculatelcaById,
   getUserLCAStats,
-  deleteLCAReport
+  deleteLCAReport,
+  downloadLCAReportPDF
 };

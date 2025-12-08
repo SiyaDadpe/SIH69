@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ExecutiveSummary from './ExecutiveSummary';
 import ProcessStages from './ProcessStages';
 import GeographicAnalysis from './GeographicAnalysis';
-import AIRecommendations from './AIRecommendations';
+import AIRecommendations from './AIRecommendations_new';
 import DetailedReports from './DetailedReports';
 import LinearCircularSummary from './LinearCircularSummary';
+import SankeyDiagramTab from './SankeyDiagramTab';
 
 export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'circular', selectedProject }) {
     
@@ -32,6 +33,16 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
         },
         {
             id: 3,
+            name: 'Sankey Diagram',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+            ),
+            component: SankeyDiagramTab
+        },
+        {
+            id: 4,
             name: 'Linear vs Circular',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,7 +52,7 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
             component: LinearCircularSummary
         },
         {
-            id: 4,
+            id: 5,
             name: 'Geographic Analysis',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +62,7 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
             component: GeographicAnalysis
         },
         {
-            id: 5,
+            id: 6,
             name: 'AI Recommendations',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +72,7 @@ export default function TabbedDashboard({ activeTab = 1, onTabChange, mode = 'ci
             component: AIRecommendations
         },
         {
-            id: 6,
+            id: 7,
             name: 'Detailed Reports',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
