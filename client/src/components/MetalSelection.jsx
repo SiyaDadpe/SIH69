@@ -121,7 +121,12 @@ export default function MetalSelection({ onSelect }) {
         metalType: metalTypeFilter,
       });
 
-      const workflows = response?.data?.workflows || [];
+      let workflows = response?.data?.workflows || [];
+
+      // Client-side filtering as additional safety
+      if (metalTypeFilter) {
+        workflows = workflows.filter(w => w.metalType === metalTypeFilter);
+      }
 
       setRecentProjects(workflows);
     } catch (error) {
@@ -195,8 +200,18 @@ export default function MetalSelection({ onSelect }) {
   };
 
   const handleLoadExistingWorkflow = (workflowId) => {
+    // Find the workflow in recentProjects to get its metalType
+    const workflow = recentProjects.find(w => w._id === workflowId);
+    const workflowMetalType = workflow?.metalType;
+    
+    // Determine metal from workflow's metalType, fallback to selectedMetal
+    let metal = selectedMetal || 'aluminum';
+    if (workflowMetalType === 'Copper') metal = 'copper';
+    else if (workflowMetalType === 'Aluminium') metal = 'aluminum';
+    else if (workflowMetalType === 'Steel') metal = 'steel';
+    
     const payload = {
-      metal: selectedMetal || 'aluminum', // Use selected metal, fallback to aluminum
+      metal: metal,
       mode: 'load',
       workflowId: workflowId
     };

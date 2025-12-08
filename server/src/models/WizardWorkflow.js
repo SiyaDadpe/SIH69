@@ -791,6 +791,11 @@ wizardWorkflowSchema.pre('save', function(next) {
  * Create a new empty wizard workflow
  */
 wizardWorkflowSchema.statics.createEmpty = async function(userId, metalType = 'Aluminium', name = null) {
+  // Use default if metalType is not provided or invalid
+  if (!metalType || metalType === 'null' || metalType === 'undefined') {
+    metalType = 'Aluminium';
+  }
+  
   const workflowName = name || `${metalType} LCA Wizard - ${new Date().toLocaleDateString()}`;
   
   const baseWorkflow = {

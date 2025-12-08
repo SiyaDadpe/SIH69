@@ -18,6 +18,7 @@ const SystemStatus = require('./SystemStatus');
 const Operation = require('./Operation');
 const Report = require('./Report');
 const WizardWorkflow = require('./WizardWorkflow');
+const CopperWorkflow = require('./CopperWorkflow');
 const WizardWorkflowOutput = require('./WizardWorkflowOutput');
 const CalculateLCA = require('./CalculateLCA');
 
@@ -30,6 +31,7 @@ module.exports = {
   Operation,
   Report,
   WizardWorkflow,
+  CopperWorkflow,
   WizardWorkflowOutput,
   CalculateLCA
 };
