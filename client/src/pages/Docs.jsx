@@ -1,5 +1,4 @@
 import React from 'react';
-import floatingChatbot from '../components/FloatingChatbot';
 
 export default function Docs() {
   return (
@@ -21,7 +20,6 @@ export default function Docs() {
           </p>
         </div>
       </div>
-      <FloatingChatbot />
     </div>
   );
 }
