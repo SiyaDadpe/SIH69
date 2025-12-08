@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
 import { useSidebar } from '../contexts/SidebarContext'
+import FloatingChatbot from '../components/FloatingChatbot' 
 import { cn } from '@/lib/utils'
 
 function MainLayout() {
@@ -19,6 +20,7 @@ function MainLayout() {
       >
         <Outlet />
       </main>
+      <FloatingChatbot />
     </div>
   )
 }

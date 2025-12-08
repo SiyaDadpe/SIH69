@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import FloatingChatbot from '../components/FloatingChatbot';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -745,6 +746,7 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+      <FloatingChatbot />
     </div>
   );
 };

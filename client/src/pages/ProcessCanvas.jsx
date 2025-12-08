@@ -16,6 +16,7 @@ import CanvasToolbar from '@/components/canvas/CanvasToolbar';
 import SubprocessSelectionModal from '@/components/canvas/SubprocessSelectionModal';
 import CanvasNodeComponent from '@/components/canvas/CanvasNode';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import FloatingChatbot from '@/components/FloatingChatbot';
 
 // Hooks
 import { useCanvasState } from '@/hooks/useCanvasState';
@@ -254,6 +255,7 @@ const ProcessCanvas = ({ initialMetal = 'steel', projectName = 'Untitled Workflo
           confirmText="OK"
           cancelText="Cancel"
         />
+        <FloatingChatbot />
       </div>
     </ReactFlowProvider>
   );

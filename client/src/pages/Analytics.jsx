@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ProjectSelector from '../sections/analytics/ProjectSelector';
 import Header from '../sections/analytics/Header';
 import TabbedDashboard from '../sections/analytics/TabbedDashboard';
+import FloatingChatbot from '../components/FloatingChatbot';
 import { getLCAReportById, getUserLCAReports, getCalculatelcaById } from '../services/lcaService';
 
 // Single dummy calculatelca-style report used when no real reportId is provided
@@ -471,6 +472,7 @@ export default function Analytics() {
                     />
                 </>
             )}
+            <FloatingChatbot/>
         </div>
     );
 }

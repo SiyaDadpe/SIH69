@@ -5,6 +5,7 @@ import CopperWizardForm from "@/sections/Wizard/wizardForm-cu"
 import ProgressTracker from "@/sections/Wizard/progressTracker"
 import MetalSelection from "@/components/MetalSelection"
 import { Button } from "@/components/ui/button"
+import floatingChatbot from '../components/FloatingChatbot';
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react"
 import {
   createWizardWorkflow,
@@ -486,6 +487,7 @@ export default function Wizard() {
           />
         </>
       )}
+      <FloatingChatbot />
     </div>
   )
 }

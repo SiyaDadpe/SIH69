@@ -5,6 +5,7 @@ import { getUserLCAReports } from '@/services/lcaService';
 import LCAReportCard from '@/sections/reports/LCAReportCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import FloatingChatbot from '../components/FloatingChatbot';
 
 const PAGE_SIZE = 12;
 
@@ -137,6 +138,7 @@ const Reports = () => {
                     </>
                 )}
             </div>
+            <FloatingChatbot />
         </div>
     );
 };
