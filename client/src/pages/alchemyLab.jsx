@@ -135,6 +135,55 @@ const BY_PRODUCTS = {
     { id: 'cu-54', name: 'Heavy-Metal Sludge', emoji: '☣️', category: 'Cross-Stage' },
     { id: 'cu-55', name: 'Waste Heat (all)', emoji: '🌡️', category: 'Cross-Stage' },
     { id: 'cu-56', name: 'Water Streams', emoji: '💧', category: 'Cross-Stage' },
+  ],
+  steel: [
+    // Mining Stage
+    { id: 'st-1', name: 'Overburden & Waste Rock', emoji: '🪨', category: 'Mining' },
+    { id: 'st-2', name: 'Iron Ore Tailings', emoji: '🧱', category: 'Mining' },
+    { id: 'st-3', name: 'Mine Dust', emoji: '💨', category: 'Mining' },
+    { id: 'st-4', name: 'Mine Water', emoji: '💧', category: 'Mining' },
+
+    // Beneficiation Stage
+    { id: 'st-5', name: 'Beneficiation Tailings', emoji: '📉', category: 'Beneficiation' },
+    { id: 'st-6', name: 'Slimes', emoji: '🌫️', category: 'Beneficiation' },
+    { id: 'st-7', name: 'Process Water', emoji: '💦', category: 'Beneficiation' },
+
+    // Pyrometallurgy (Ironmaking & Steelmaking)
+    { id: 'st-8', name: 'Blast Furnace Slag', emoji: '🌋', category: 'Pyrometallurgy' },
+    { id: 'st-9', name: 'Steel Slag (BOF/EAF)', emoji: '🌑', category: 'Pyrometallurgy' },
+    { id: 'st-10', name: 'Mill Scale', emoji: '⚖️', category: 'Pyrometallurgy' },
+    { id: 'st-11', name: 'EAF Dust', emoji: '🌫️', category: 'Pyrometallurgy' },
+    { id: 'st-12', name: 'Blast Furnace Gas', emoji: '💨', category: 'Pyrometallurgy' },
+    { id: 'st-13', name: 'Coke Oven Gas', emoji: '🔥', category: 'Pyrometallurgy' },
+    { id: 'st-14', name: 'Spent Refractories', emoji: '🧱', category: 'Pyrometallurgy' },
+    { id: 'st-15', name: 'Desulfurization Slag', emoji: '🧪', category: 'Pyrometallurgy' },
+
+    // Hydrometallurgy (Pickling/Coating)
+    { id: 'st-16', name: 'Spent Pickling Liquor', emoji: '🧪', category: 'Hydrometallurgy' },
+    { id: 'st-17', name: 'Acid Regeneration Sludge', emoji: '🟤', category: 'Hydrometallurgy' },
+    { id: 'st-18', name: 'Plating Sludge (Zn/Sn)', emoji: '🛡️', category: 'Hydrometallurgy' },
+
+    // Manufacturing
+    { id: 'st-19', name: 'New Scrap (Offcuts)', emoji: '✂️', category: 'Manufacturing' },
+    { id: 'st-20', name: 'Grinding Swarf', emoji: '⚙️', category: 'Manufacturing' },
+    { id: 'st-21', name: 'Oily Mill Scale', emoji: '🛢️', category: 'Manufacturing' },
+    { id: 'st-22', name: 'Used Lubricants', emoji: '🛢️', category: 'Manufacturing' },
+    { id: 'st-23', name: 'Packaging Waste', emoji: '📦', category: 'Manufacturing' },
+
+    // Use Phase
+    { id: 'st-24', name: 'Corrosion Products (Rust)', emoji: '🍂', category: 'Use Phase' },
+    { id: 'st-25', name: 'Wear Particles', emoji: '✨', category: 'Use Phase' },
+
+    // Recycling
+    { id: 'st-26', name: 'Post-consumer Scrap', emoji: '🚗', category: 'Recycling' },
+    { id: 'st-27', name: 'Zinc Dross (Galvanizing)', emoji: '🛡️', category: 'Recycling' },
+    { id: 'st-28', name: 'Tin Plate Scrap', emoji: '🥫', category: 'Recycling' },
+    { id: 'st-29', name: 'Shredder Residue (ASR)', emoji: '🚙', category: 'Recycling' },
+
+    // Cross-Stage
+    { id: 'st-30', name: 'Waste Heat', emoji: '🌡️', category: 'Cross-Stage' },
+    { id: 'st-31', name: 'Process Water', emoji: '🔄', category: 'Cross-Stage' },
+    { id: 'st-32', name: 'Slag (General)', emoji: '🪨', category: 'Cross-Stage' },
   ]
 };
 
@@ -472,6 +521,123 @@ const VALORIZATION_PRODUCTS = {
     { id: 'vp-cu-56-1', name: 'Zero Liquid Discharge', emoji: '💧', description: 'Water conservation' },
     { id: 'vp-cu-56-2', name: 'Closed-loop Recycling', emoji: '🔄', description: 'Water reuse' },
   ],
+  
+  // Steel Valorization
+  'st-1': [
+    { id: 'vp-st-1-1', name: 'Mine Backfill', emoji: '🕳️', description: 'Pit reclamation' },
+    { id: 'vp-st-1-2', name: 'Road Base', emoji: '🛣️', description: 'Construction aggregate' },
+  ],
+  'st-2': [
+    { id: 'vp-st-2-1', name: 'Bricks', emoji: '🧱', description: 'Construction material' },
+    { id: 'vp-st-2-2', name: 'Cement Additive', emoji: '🏗️', description: 'After processing' },
+  ],
+  'st-3': [
+    { id: 'vp-st-3-1', name: 'Soil Additive', emoji: '🌱', description: 'Agricultural use' },
+  ],
+  'st-4': [
+    { id: 'vp-st-4-1', name: 'Dust Suppression', emoji: '💦', description: 'Mine site use' },
+  ],
+  'st-5': [
+    { id: 'vp-st-5-1', name: 'Dam Construction', emoji: '🧱', description: 'Tailings dam walls' },
+  ],
+  'st-6': [
+    { id: 'vp-st-6-1', name: 'Ceramics', emoji: '🏺', description: 'Tile production' },
+  ],
+  'st-7': [
+    { id: 'vp-st-7-1', name: 'Recycled Water', emoji: '🔄', description: 'Process reuse' },
+  ],
+  'st-8': [
+    { id: 'vp-st-8-1', name: 'GGBFS (Cement)', emoji: '🏗️', description: 'Cement replacement' },
+    { id: 'vp-st-8-2', name: 'Road Aggregate', emoji: '🛣️', description: 'Road construction' },
+    { id: 'vp-st-8-3', name: 'Mineral Wool', emoji: '🧶', description: 'Insulation material' },
+  ],
+  'st-9': [
+    { id: 'vp-st-9-1', name: 'Asphalt Aggregate', emoji: '🛣️', description: 'Road paving' },
+    { id: 'vp-st-9-2', name: 'Soil Conditioner', emoji: '🌱', description: 'Liming agent' },
+    { id: 'vp-st-9-3', name: 'Rail Ballast', emoji: '🛤️', description: 'Railway construction' },
+  ],
+  'st-10': [
+    { id: 'vp-st-10-1', name: 'Sinter Feed', emoji: '🔥', description: 'Iron recovery' },
+    { id: 'vp-st-10-2', name: 'Cement Clinker', emoji: '🏗️', description: 'Raw material' },
+    { id: 'vp-st-10-3', name: 'Briquettes', emoji: '🧱', description: 'Furnace feed' },
+  ],
+  'st-11': [
+    { id: 'vp-st-11-1', name: 'Zinc Recovery', emoji: '🛡️', description: 'Waelz kiln process' },
+    { id: 'vp-st-11-2', name: 'Glazed Tiles', emoji: '🏺', description: 'Ceramic pigment' },
+  ],
+  'st-12': [
+    { id: 'vp-st-12-1', name: 'Electricity', emoji: '⚡', description: 'Power generation' },
+    { id: 'vp-st-12-2', name: 'Process Heat', emoji: '🔥', description: 'Stoves heating' },
+  ],
+  'st-13': [
+    { id: 'vp-st-13-1', name: 'Hydrogen Recovery', emoji: '🧪', description: 'Chemical feedstock' },
+    { id: 'vp-st-13-2', name: 'Power Generation', emoji: '⚡', description: 'Turbine fuel' },
+  ],
+  'st-14': [
+    { id: 'vp-st-14-1', name: 'Refractory Recycling', emoji: '🧱', description: 'New bricks' },
+    { id: 'vp-st-14-2', name: 'Slag Conditioner', emoji: '🧪', description: 'Steelmaking' },
+  ],
+  'st-15': [
+    { id: 'vp-st-15-1', name: 'Gypsum Substitute', emoji: '⚪', description: 'Cement/Wallboard' },
+    { id: 'vp-st-15-2', name: 'Road Base', emoji: '🛣️', description: 'Construction' },
+  ],
+  'st-16': [
+    { id: 'vp-st-16-1', name: 'Regenerated Acid', emoji: '🧪', description: 'HCl recovery' },
+    { id: 'vp-st-16-2', name: 'Iron Oxide Pigment', emoji: '🎨', description: 'Red pigment' },
+    { id: 'vp-st-16-3', name: 'Ferric Chloride', emoji: '💧', description: 'Water treatment' },
+  ],
+  'st-17': [
+    { id: 'vp-st-17-1', name: 'Iron Oxide', emoji: '🔴', description: 'Magnetic material' },
+  ],
+  'st-18': [
+    { id: 'vp-st-18-1', name: 'Metal Recovery', emoji: '⛏️', description: 'Zn/Sn extraction' },
+  ],
+  'st-19': [
+    { id: 'vp-st-19-1', name: 'Remelting', emoji: '🔥', description: 'Internal recycling' },
+  ],
+  'st-20': [
+    { id: 'vp-st-20-1', name: 'Briquettes', emoji: '🧱', description: 'Furnace feed' },
+  ],
+  'st-21': [
+    { id: 'vp-st-21-1', name: 'Sinter Feed', emoji: '🔥', description: 'After deoiling' },
+  ],
+  'st-22': [
+    { id: 'vp-st-22-1', name: 'Energy Recovery', emoji: '⚡', description: 'Fuel source' },
+  ],
+  'st-23': [
+    { id: 'vp-st-23-1', name: 'Recycling', emoji: '♻️', description: 'Material recovery' },
+  ],
+  'st-24': [
+    { id: 'vp-st-24-1', name: 'Scrap Feed', emoji: '🔄', description: 'Remelting' },
+  ],
+  'st-25': [
+    { id: 'vp-st-25-1', name: 'Metal Recovery', emoji: '⛏️', description: 'Collection systems' },
+  ],
+  'st-26': [
+    { id: 'vp-st-26-1', name: 'EAF Feedstock', emoji: '⚡', description: 'Electric steelmaking' },
+  ],
+  'st-27': [
+    { id: 'vp-st-27-1', name: 'Zinc Oxide', emoji: '⚪', description: 'Chemical/Rubber ind.' },
+    { id: 'vp-st-27-2', name: 'Zinc Dust', emoji: '🌫️', description: 'Paint/Chemicals' },
+  ],
+  'st-28': [
+    { id: 'vp-st-28-1', name: 'Detinning', emoji: '🥫', description: 'Tin recovery' },
+    { id: 'vp-st-28-2', name: 'Steel Scrap', emoji: '🔩', description: 'Clean scrap' },
+  ],
+  'st-29': [
+    { id: 'vp-st-29-1', name: 'Energy Recovery', emoji: '⚡', description: 'Waste-to-energy' },
+    { id: 'vp-st-29-2', name: 'Plastics Recycling', emoji: '♻️', description: 'Polymer recovery' },
+  ],
+  'st-30': [
+    { id: 'vp-st-30-1', name: 'District Heating', emoji: '🏠', description: 'Community heat' },
+    { id: 'vp-st-30-2', name: 'Power Generation', emoji: '⚡', description: 'Steam turbines' },
+  ],
+  'st-31': [
+    { id: 'vp-st-31-1', name: 'Zero Liquid Discharge', emoji: '💧', description: 'Water conservation' },
+  ],
+  'st-32': [
+    { id: 'vp-st-32-1', name: 'Construction', emoji: '🏗️', description: 'Various uses' },
+  ],
 };
 
 // Helper function to group by-products by category
@@ -582,7 +748,7 @@ export default function AlchemyLab() {
       {/* Three Column Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Column - By-Product Library */}
-        <div className="w-80 bg-[#faf8f7] border-r border-gray-200 flex flex-col overflow-hidden">
+        <div className="w-[450px] bg-[#faf8f7] border-r border-gray-200 flex flex-col overflow-hidden">
           {/* Metal Selector */}
           <div className="p-4 border-b border-gray-200 bg-white shrink-0">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -599,6 +765,7 @@ export default function AlchemyLab() {
               >
                 <option value="aluminium">🔘 Aluminium</option>
                 <option value="copper">🔶 Copper</option>
+                <option value="steel">🔩 Steel</option>
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
             </div>
@@ -617,67 +784,75 @@ export default function AlchemyLab() {
           </div>
 
           {/* Scrollable By-Products List - Categorized */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {Object.entries(groupedByProducts).map(([category, items]) => (
-              <div key={category} className="rounded-xl overflow-hidden border border-gray-200 bg-white">
-                {/* Category Header */}
-                <div 
-                  className={`${CATEGORIES[category]?.headerColor || 'bg-gray-100'} px-3 py-2 border-b border-gray-200 cursor-pointer flex items-center justify-between`}
-                  onClick={() => toggleCategory(category)}
-                >
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <span className="text-lg">{CATEGORIES[category]?.emoji || '📦'}</span>
-                    {category}
-                    <span className="ml-2 text-xs bg-white/60 text-gray-600 px-2 py-0.5 rounded-full">
-                      {items.length}
-                    </span>
-                  </h3>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${collapsedCategories[category] ? '-rotate-90' : ''}`} />
-                </div>
-                
-                {/* Items in Category */}
-                {!collapsedCategories[category] && (
-                  <div className="p-2 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                    {items.map((item) => {
-                      const catConfig = CATEGORIES[item.category] || {};
-                      const isInCanvas = canvasItems.find(ci => ci.id === item.id);
-                      
-                      return (
-                        <div
-                          key={item.id}
-                          draggable={!isInCanvas}
-                          onDragStart={(e) => handleDragStart(e, item)}
-                          onDragEnd={handleDragEnd}
-                          className={`
-                            ${catConfig.color || 'bg-gray-50 border-gray-200'} 
-                            border rounded-lg p-2.5 
-                            ${isInCanvas 
-                              ? 'opacity-40 cursor-not-allowed' 
-                              : 'cursor-grab active:cursor-grabbing hover:shadow-md hover:scale-[1.02]'
-                            }
-                            transition-all duration-200
-                            ${draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''}
-                          `}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex gap-4 items-start">
+              {[0, 1].map(colIndex => (
+                <div key={colIndex} className="flex-1 flex flex-col gap-4 min-w-0">
+                  {Object.entries(groupedByProducts)
+                    .filter((_, index) => index % 2 === colIndex)
+                    .map(([category, items]) => (
+                      <div key={category} className="rounded-xl overflow-hidden border border-gray-200 bg-white flex flex-col relative">
+                        {/* Category Header */}
+                        <div 
+                          className={`${CATEGORIES[category]?.headerColor || 'bg-gray-100'} px-3 py-2 border-b border-gray-200 cursor-pointer flex items-center justify-between sticky top-0 z-10`}
+                          onClick={() => toggleCategory(category)}
                         >
-                          <div className="flex items-center gap-2">
-                            {!isInCanvas && (
-                              <GripVertical className="w-4 h-4 text-gray-400 shrink-0" />
-                            )}
-                            <span className="text-base">{item.emoji}</span>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-800 text-sm truncate">{item.name}</h4>
-                            </div>
-                            {isInCanvas && (
-                              <span className="text-green-600 text-xs">✓</span>
-                            )}
-                          </div>
+                          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="text-lg">{CATEGORIES[category]?.emoji || '📦'}</span>
+                            {category}
+                            <span className="ml-2 text-xs bg-white/60 text-gray-600 px-2 py-0.5 rounded-full">
+                              {items.length}
+                            </span>
+                          </h3>
+                          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${collapsedCategories[category] ? '-rotate-90' : ''}`} />
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                        
+                        {/* Items in Category */}
+                        {!collapsedCategories[category] && (
+                          <div className="p-2 space-y-2">
+                            {items.map((item) => {
+                              const catConfig = CATEGORIES[item.category] || {};
+                              const isInCanvas = canvasItems.find(ci => ci.id === item.id);
+                              
+                              return (
+                                <div
+                                  key={item.id}
+                                  draggable={!isInCanvas}
+                                  onDragStart={(e) => handleDragStart(e, item)}
+                                  onDragEnd={handleDragEnd}
+                                  className={`
+                                    ${catConfig.color || 'bg-gray-50 border-gray-200'} 
+                                    border rounded-lg p-2.5 
+                                    ${isInCanvas 
+                                      ? 'opacity-40 cursor-not-allowed' 
+                                      : 'cursor-grab active:cursor-grabbing hover:shadow-md hover:scale-[1.02]'
+                                    }
+                                    transition-all duration-200
+                                    ${draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''}
+                                  `}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {!isInCanvas && (
+                                      <GripVertical className="w-4 h-4 text-gray-400 shrink-0" />
+                                    )}
+                                    <span className="text-base">{item.emoji}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-gray-800 text-sm truncate" title={item.name}>{item.name}</h4>
+                                    </div>
+                                    {isInCanvas && (
+                                      <span className="text-green-600 text-xs">✓</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              ))}
+            </div>
 
             {Object.keys(groupedByProducts).length === 0 && (
               <div className="text-center py-8 text-gray-400">
