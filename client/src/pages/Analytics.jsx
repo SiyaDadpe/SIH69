@@ -184,11 +184,13 @@ export default function Analytics() {
     const [mode, setMode] = useState('circular');
     const [activeTab, setActiveTab] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [loadingReports, setLoadingReports] = useState(true);
     const [error, setError] = useState(null);
 
     // Fetch all user reports for workflow selector
     useEffect(() => {
         const fetchAllReports = async () => {
+            setLoadingReports(true);
             try {
                 const response = await getUserLCAReports();
                 console.log('📊 Fetched reports response:', response);
@@ -205,6 +207,8 @@ export default function Analytics() {
                 console.warn('⚠️ Failed to load user reports for selector:', err.message);
                 setAllReports([]);
                 setFilteredReports([]);
+            } finally {
+                setLoadingReports(false);
             }
         };
         fetchAllReports();
@@ -291,7 +295,7 @@ export default function Analytics() {
 
     return (
         <div className="analytics-page min-h-screen bg-gray-50">
-            {loading ? (
+            {(loading || loadingReports) ? (
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#BA7967] mx-auto mb-4"></div>

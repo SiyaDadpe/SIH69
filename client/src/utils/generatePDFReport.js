@@ -748,44 +748,111 @@ export const generateLCAPDFReport = async (lcaData) => {
     doc.setTextColor(0, 0, 0);
     yPos += 20;
 
-    // Process Nodes section
-    addSubsectionHeader('Process Nodes');
-
-    doc.setFillColor(249, 250, 251); // Gray-50
-    doc.roundedRect(20, yPos, pageWidth - 40, lcaData.sankeyData.nodes.length * 6 + 8, 2, 2, 'F');
+    // Visual Sankey Diagram
+    addSubsectionHeader('Material Flow Diagram');
     
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(...COLORS.gray[700]);
-    let nodeY = yPos + 7;
-    lcaData.sankeyData.nodes.forEach((node, index) => {
+    const nodes = lcaData.sankeyData.nodes;
+    const links = lcaData.sankeyData.links;
+    
+    // Calculate positions for nodes in a vertical layout
+    const nodeHeight = 15;
+    const nodeWidth = 60;
+    const startX = 30;
+    const spacing = 8;
+    const diagramStartY = yPos;
+    
+    // Draw nodes and collect their positions
+    const nodePositions = [];
+    nodes.forEach((node, index) => {
+      const nodeY = diagramStartY + (index * (nodeHeight + spacing));
+      nodePositions.push({ x: startX, y: nodeY, width: nodeWidth, height: nodeHeight });
+      
+      // Draw node box
       doc.setFillColor(...COLORS.primary);
-      doc.circle(25, nodeY - 1.5, 1.5, 'F');
-      doc.text(`${node}`, 30, nodeY);
-      nodeY += 6;
+      doc.setFillColor(59, 130, 246); // Blue-500
+      doc.roundedRect(startX, nodeY, nodeWidth, nodeHeight, 2, 2, 'F');
+      
+      // Node label
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(255, 255, 255);
+      const nodeText = node.length > 12 ? node.substring(0, 10) + '..' : node;
+      doc.text(nodeText, startX + nodeWidth / 2, nodeY + nodeHeight / 2 + 2, { align: 'center' });
     });
+    
     doc.setTextColor(0, 0, 0);
-
-    yPos = nodeY + 8;
+    
+    // Draw flows with arrows and values
+    const flowStartX = startX + nodeWidth + 5;
+    const maxFlow = Math.max(...links.map(l => l.value), 1);
+    
+    links.forEach((link, index) => {
+      const sourcePos = nodePositions[link.source];
+      const targetPos = nodePositions[link.target];
+      
+      if (sourcePos && targetPos) {
+        const fromY = sourcePos.y + sourcePos.height / 2;
+        const toY = targetPos.y + targetPos.height / 2;
+        const arrowX = flowStartX + 40;
+        
+        // Draw flow line (curved if different levels)
+        const flowThickness = Math.max(1, (link.value / maxFlow) * 5);
+        doc.setLineWidth(flowThickness);
+        doc.setDrawColor(...COLORS.success);
+        
+        if (Math.abs(fromY - toY) < 5) {
+          // Straight line for same level
+          doc.line(flowStartX, fromY, arrowX, fromY);
+        } else {
+          // Curved line for different levels
+          const midX = (flowStartX + arrowX) / 2;
+          doc.line(flowStartX, fromY, midX, fromY);
+          doc.line(midX, fromY, midX, toY);
+          doc.line(midX, toY, arrowX, toY);
+        }
+        
+        // Draw arrowhead
+        doc.setFillColor(...COLORS.success);
+        const arrowSize = 2;
+        doc.triangle(
+          arrowX, toY,
+          arrowX - arrowSize, toY - arrowSize,
+          arrowX - arrowSize, toY + arrowSize,
+          'F'
+        );
+        
+        // Flow value label
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(...COLORS.gray[700]);
+        const labelY = Math.min(fromY, toY) + Math.abs(fromY - toY) / 2;
+        doc.text(`${link.value.toFixed(2)} t`, flowStartX + 20, labelY - 2);
+      }
+    });
+    
+    doc.setLineWidth(0.5);
+    doc.setTextColor(0, 0, 0);
+    yPos = diagramStartY + (nodes.length * (nodeHeight + spacing)) + 15;
+    
     checkNewPage(60);
 
-    // Material Flows section
-    addSubsectionHeader('Material Flows');
+    // Material Flows Table (detailed breakdown)
+    addSubsectionHeader('Detailed Flow Data');
 
-    const flowData = lcaData.sankeyData.links.map(link => {
-      const sourceName = lcaData.sankeyData.nodes[link.source];
-      const targetName = lcaData.sankeyData.nodes[link.target];
+    const flowData = links.map(link => {
+      const sourceName = nodes[link.source];
+      const targetName = nodes[link.target];
       return [
         sourceName,
-        '→',
         targetName,
-        (link.value.toFixed(3) + ' t')
+        link.value.toFixed(3) + ' t',
+        ((link.value / links.reduce((sum, l) => sum + l.value, 0)) * 100).toFixed(1) + '%'
       ];
     });
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Source', '', 'Target', 'Flow Amount']],
+      head: [['From Stage', 'To Stage', 'Flow Amount', '% of Total']],
       body: flowData,
       theme: 'grid',
       headStyles: { 
@@ -799,10 +866,10 @@ export const generateLCAPDFReport = async (lcaData) => {
         cellPadding: 3
       },
       columnStyles: {
-        0: { cellWidth: 60, fontStyle: 'bold' },
-        1: { cellWidth: 10, halign: 'center', textColor: COLORS.primary },
-        2: { cellWidth: 60, fontStyle: 'bold' },
-        3: { halign: 'right', fontStyle: 'bold', textColor: COLORS.success }
+        0: { cellWidth: 50, fontStyle: 'bold' },
+        1: { cellWidth: 50, fontStyle: 'bold' },
+        2: { halign: 'right', fontStyle: 'bold', textColor: COLORS.success },
+        3: { halign: 'right', textColor: COLORS.info }
       },
       alternateRowStyles: { fillColor: [248, 250, 252] }
     });
