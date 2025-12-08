@@ -24,6 +24,7 @@ import {
   Calculator,
   Loader2
 } from "lucide-react"
+import FloatingChatbot from '../components/FloatingChatbot';
 
 // FastAPI LCA Engine endpoint
 const LCA_ENGINE_API = "http://localhost:8100/api/playground/calculate"
@@ -872,6 +873,7 @@ export default function Playground() {
           </div>
         </div>
       </div>
+        <FloatingChatbot />
     </div>
   )
 }
