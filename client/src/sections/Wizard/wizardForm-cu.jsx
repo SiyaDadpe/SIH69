@@ -189,70 +189,115 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
 // Step 1: Mining
 function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
-    miningMethod: z.string().min(1, "Mining method is required"),
-    oreType: z.string().min(1, "Ore type is required"),
-    oreGradePercentCu: z.coerce.number().min(0, "Ore grade is required"),
-    region: z.string().min(1, "Region or country is required"),
-    depositDepth: z.coerce.number().min(0).optional(),
-    benchHeight: z.coerce.number().min(0).optional(),
-    rockHardnessIndex: z.coerce.number().min(0).optional(),
-    overburdenWasteRatio: z.coerce.number().min(0, "Overburden / waste ratio is required"),
-    strippingRatio: z.coerce.number().min(0).optional(),
-    tailingsGenerationRate: z.coerce.number().min(0).optional(),
-    mineProductionPerDay: z.coerce.number().min(0, "Mine production is required"),
-    averageHaulDistance: z.coerce.number().min(0, "Average haul distance is required"),
-    mineLifetimeYears: z.coerce.number().min(0).optional(),
-    oreThroughputPerYear: z.coerce.number().min(0).optional(),
-    shiftHoursPerDay: z.coerce.number().min(0).optional(),
-    equipmentAvailabilityPercent: z.coerce.number().min(0).max(100).optional(),
-    equipmentType: z.string().min(1, "Equipment type is required"),
-    equipmentCount: z.coerce.number().min(0).optional(),
-    equipmentCapacity: z.coerce.number().min(0).optional(),
-    explosivesUsed: z.coerce.number().min(0).optional(),
-    fuelConsumption: z.coerce.number().min(0, "Fuel consumption is required"),
-    electricityConsumption: z.coerce.number().min(0, "Electricity consumption is required"),
-    powerSourceMixRenewable: z.coerce.number().min(0).optional(),
-    powerSourceMixFossil: z.coerce.number().min(0).optional(),
-    powerSourceMixGrid: z.coerce.number().min(0).optional(),
-    energyEfficiency: z.coerce.number().min(0).max(100).optional(),
-    waterConsumption: z.coerce.number().min(0, "Water consumption is required"),
-    waterSource: z.string().min(1, "Water source is required"),
-    waterReuseRate: z.coerce.number().min(0).max(100).optional(),
-    waterDischargePh: z.coerce.number().optional(),
-    acidMineDrainageRisk: z.string().optional(),
-    directGhgEmissions: z.coerce.number().min(0).optional(),
-    dustEmissions: z.coerce.number().min(0).optional(),
-    noiseLevel: z.coerce.number().min(0).optional(),
-    landDisturbed: z.coerce.number().min(0).optional(),
-    rehabilitationArea: z.coerce.number().min(0).optional(),
-    biodiversityImpact: z.coerce.number().min(0).optional(),
-    oreRecovery: z.coerce.number().min(0).max(100).optional(),
-    oreLoss: z.coerce.number().min(0).max(100).optional(),
-    miningCost: z.coerce.number().min(0).optional(),
-    dieselPrice: z.coerce.number().min(0).optional(),
-    electricityCost: z.coerce.number().min(0).optional(),
+    miningMethod: z.string().nullable().optional(),
+    oreType: z.string().nullable().optional(),
+    oreGradePercentCu: z.coerce.number().nullable().optional(),
+    region: z.string().nullable().optional(),
+    depositDepth: z.coerce.number().nullable().optional(),
+    benchHeight: z.coerce.number().nullable().optional(),
+    rockHardnessIndex: z.coerce.number().nullable().optional(),
+    overburdenWasteRatio: z.coerce.number().nullable().optional(),
+    strippingRatio: z.coerce.number().nullable().optional(),
+    tailingsGenerationRate: z.coerce.number().nullable().optional(),
+    mineProductionPerDay: z.coerce.number().nullable().optional(),
+    averageHaulDistance: z.coerce.number().nullable().optional(),
+    mineLifetimeYears: z.coerce.number().nullable().optional(),
+    oreThroughputPerYear: z.coerce.number().nullable().optional(),
+    shiftHoursPerDay: z.coerce.number().nullable().optional(),
+    equipmentAvailabilityPercent: z.coerce.number().nullable().optional(),
+    equipmentType: z.string().nullable().optional(),
+    equipmentCount: z.coerce.number().nullable().optional(),
+    equipmentCapacity: z.coerce.number().nullable().optional(),
+    explosivesUsed: z.coerce.number().nullable().optional(),
+    fuelConsumption: z.coerce.number().nullable().optional(),
+    electricityConsumption: z.coerce.number().nullable().optional(),
+    powerSourceMixRenewable: z.coerce.number().nullable().optional(),
+    powerSourceMixFossil: z.coerce.number().nullable().optional(),
+    powerSourceMixGrid: z.coerce.number().nullable().optional(),
+    energyEfficiency: z.coerce.number().nullable().optional(),
+    waterConsumption: z.coerce.number().nullable().optional(),
+    waterSource: z.string().nullable().optional(),
+    waterReuseRate: z.coerce.number().nullable().optional(),
+    waterDischargePh: z.coerce.number().nullable().optional(),
+    acidMineDrainageRisk: z.string().nullable().optional(),
+    directGhgEmissions: z.coerce.number().nullable().optional(),
+    dustEmissions: z.coerce.number().nullable().optional(),
+    noiseLevel: z.coerce.number().nullable().optional(),
+    landDisturbed: z.coerce.number().nullable().optional(),
+    rehabilitationArea: z.coerce.number().nullable().optional(),
+    biodiversityImpact: z.coerce.number().nullable().optional(),
+    oreRecovery: z.coerce.number().nullable().optional(),
+    oreLoss: z.coerce.number().nullable().optional(),
+    miningCost: z.coerce.number().nullable().optional(),
+    dieselPrice: z.coerce.number().nullable().optional(),
+    electricityCost: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
       rehabilitationPlanActive: z.boolean().nullable().optional(),
-      overburdenRestoredPercent: z.coerce.number().min(0).max(100).nullable().optional(),
-      waterReuseRate: z.coerce.number().min(0).max(100).nullable().optional(),
+      overburdenRestoredPercent: z.coerce.number().nullable().optional(),
+      waterReuseRate: z.coerce.number().nullable().optional(),
       biodiversityProtectionScore: z.string().nullable().optional(),
       dustSuppression: z.string().nullable().optional(),
-    }).optional(),
+    }).nullable().optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: initialValues || {},
-    mode: "onChange",
+    defaultValues: initialValues || {
+      sustainabilityParameters: {},
+    },
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, setValue, watch, formState: { isValid, errors } } = form;
 
-  const onSubmit = (data) => {
-    onSave?.(data);
-    onNext?.();
+  useEffect(() => {
+    if (initialValues) {
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: false, shouldDirty: false });
+      });
+    }
+  }, [initialValues, setValue]);
+
+  const onSubmit = async (data) => {
+    console.log('='.repeat(80));
+    console.log('🎯 [Copper Mining Form] FORM SUBMISSION STARTED');
+    console.log('='.repeat(80));
+    console.log('📋 Form Data:', JSON.stringify(data, null, 2));
+    console.log('✅ Form is valid:', isValid);
+    console.log('❌ Form errors:', Object.keys(errors));
+
+    try {
+      console.log('💾 [Copper Mining Form] Calling onSave function...');
+      if (!onSave) {
+        console.error('❌ [Copper Mining Form] onSave function is not provided!');
+        return;
+      }
+
+      await onSave(data);
+      console.log('✅ [Copper Mining Form] onSave completed successfully');
+
+      // Small delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('➡️  [Copper Mining Form] Calling onNext to move to next step...');
+      if (onNext) {
+        onNext();
+        console.log('✅ [Copper Mining Form] onNext called');
+      }
+
+      console.log('='.repeat(80));
+      console.log('✅ [Copper Mining Form] FORM SUBMISSION COMPLETED');
+      console.log('='.repeat(80));
+    } catch (e) {
+      console.error('='.repeat(80));
+      console.error('❌ [Copper Mining Form] FORM SUBMISSION FAILED');
+      console.error('='.repeat(80));
+      console.error('Error details:', e);
+      console.error('Error message:', e.message);
+      console.error('Error stack:', e.stack);
+    }
   };
 
   const miningMethodOptions = [
@@ -285,7 +330,7 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
     <StepFooterActions
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
+      forwardDisabled={false}
     />
   );
 
@@ -302,6 +347,138 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+            {/* Sustainability Checkbox - COMMENTED OUT FOR NOW */}
+            {/* 
+            <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-gradient-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === true}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-semibold cursor-pointer">
+                        Sustainability Focused
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Enable to include sustainability parameters for copper mining
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+            */}
+
+            {/* Sustainability Parameters - COMMENTED OUT FOR NOW */}
+            {/* 
+            {watch("followingSustainableRules") === true && (
+              <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6">
+                <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.rehabilitationPlanActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value === true}
+                            onCheckedChange={(checked) => field.onChange(checked)}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="font-medium">Rehabilitation Plan Active</FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.overburdenRestoredPercent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Overburden Restored (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.waterReuseRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Water Reuse Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.biodiversityProtectionScore"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Biodiversity Protection Score</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select score" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Moderate">Moderate</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={control}
+                    name="sustainabilityParameters.dustSuppression"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dust Suppression</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select method" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Basic">Basic</SelectItem>
+                            <SelectItem value="Advanced">Advanced</SelectItem>
+                            <SelectItem value="Smart AI-Atomization">Smart AI-Atomization</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+            */}
+
             <section className="space-y-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#6B5B59]">Geology & Site Fundamentals</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -356,7 +533,7 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
                   <FormItem>
                     <FormLabel className={GROUP_HEADING_TEXT}>Region or Country*</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Chile, Atacama" {...field} />
+                      <Input placeholder="e.g., Chile, Atacama" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -771,135 +948,6 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
                 )} />
               </div>
             </section>
-
-            {/* Sustainability Parameters */}
-            <section className="space-y-6">
-              <div className="space-y-4">
-                <FormField
-                  control={control}
-                  name="followingSustainableRules"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value === true}
-                          onCheckedChange={(checked) => field.onChange(checked)}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="text-base font-semibold cursor-pointer">
-                          Sustainability Focused
-                        </FormLabel>
-                        <FormDescription className="text-sm">
-                          Enable to include sustainability parameters for copper mining
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {form.watch("followingSustainableRules") === true && (
-                <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6">
-                  <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                    Sustainability Parameters
-                  </h3>
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <FormField
-                      control={control}
-                      name="sustainabilityParameters.rehabilitationPlanActive"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value === true}
-                              onCheckedChange={(checked) => field.onChange(checked)}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="font-medium">Rehabilitation Plan Active</FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={control}
-                      name="sustainabilityParameters.overburdenRestoredPercent"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Overburden Restored (%)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={control}
-                      name="sustainabilityParameters.waterReuseRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Water Reuse Rate (%)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={control}
-                      name="sustainabilityParameters.biodiversityProtectionScore"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Biodiversity Protection Score</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select score" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Low">Low</SelectItem>
-                              <SelectItem value="Moderate">Moderate</SelectItem>
-                              <SelectItem value="High">High</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={control}
-                      name="sustainabilityParameters.dustSuppression"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Dust Suppression</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Basic">Basic</SelectItem>
-                              <SelectItem value="Advanced">Advanced</SelectItem>
-                              <SelectItem value="Smart AI-Atomization">Smart AI-Atomization</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-            </section>
           </form>
         </Form>
       </StepSection>
@@ -910,41 +958,41 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
 // Step 2: Beneficiation
 function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
-    oreType: z.string().min(1, "Ore type is required"),
-    oreGradePercentCu: z.coerce.number().min(0, "Ore grade is required"),
-    concentrateGradePercentCu: z.coerce.number().min(0, "Concentrate grade is required"),
-    mineralogyDetails: z.string().optional(),
-    mineralogyDetailsOther: z.string().optional(),
-    particleSizeAfterGrinding: z.coerce.number().min(0).optional(),
-    moistureContentPercent: z.coerce.number().min(0).max(100).optional(),
-    grindingEnergyKwhPerTonne: z.coerce.number().min(0, "Grinding energy is required"),
-    reagentConsumptionKgPerTonne: z.coerce.number().min(0, "Reagent consumption is required"),
-    reagentType: z.string().optional(),
-    reagentMixRatioPercent: z.coerce.number().min(0).max(100).optional(),
-    flotationCellType: z.string().optional(),
-    thickenerEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
-    filtrationType: z.string().optional(),
-    equipmentAgeYears: z.coerce.number().min(0).optional(),
-    millLoadingPercent: z.coerce.number().min(0).max(100).optional(),
-    waterConsumptionM3PerTonne: z.coerce.number().min(0, "Water consumption is required"),
-    waterRecycledPercent: z.coerce.number().min(0, "Water recycled % is required"),
-    waterSource: z.string().optional(),
-    processWaterTemperature: z.coerce.number().optional(),
-    slurryPumpingDistanceKm: z.coerce.number().min(0).optional(),
-    recoveryEfficiencyPercent: z.coerce.number().min(0, "Recovery efficiency is required"),
-    tailingsProducedTonnePerTonne: z.coerce.number().min(0).optional(),
-    tailingsSolidsContentPercent: z.coerce.number().min(0).max(100).optional(),
-    tailingsStorageType: z.string().optional(),
-    chemicalResidueInTailingsMgPerL: z.coerce.number().min(0).optional(),
-    airEmissionsPmKgPerTonne: z.coerce.number().min(0).optional(),
-    wastewaterPh: z.coerce.number().optional(),
-    wastewaterCodMgPerL: z.coerce.number().min(0).optional(),
-    ghgEmissionsKgCo2ePerTonne: z.coerce.number().min(0).optional(),
-    plantCapacityTPerDay: z.coerce.number().min(0).optional(),
-    operatingHoursPerDay: z.coerce.number().min(0).optional(),
-    powerCostUsdPerKwh: z.coerce.number().min(0).optional(),
-    reagentCostUsdPerKg: z.coerce.number().min(0).optional(),
-    maintenanceCostUsdPerTonne: z.coerce.number().min(0).optional(),
+    oreType: z.string().nullable().optional(),
+    oreGradePercentCu: z.coerce.number().nullable().optional(),
+    concentrateGradePercentCu: z.coerce.number().nullable().optional(),
+    mineralogyDetails: z.string().nullable().optional(),
+    mineralogyDetailsOther: z.string().nullable().optional(),
+    particleSizeAfterGrinding: z.coerce.number().nullable().optional(),
+    moistureContentPercent: z.coerce.number().nullable().optional(),
+    grindingEnergyKwhPerTonne: z.coerce.number().nullable().optional(),
+    reagentConsumptionKgPerTonne: z.coerce.number().nullable().optional(),
+    reagentType: z.string().nullable().optional(),
+    reagentMixRatioPercent: z.coerce.number().nullable().optional(),
+    flotationCellType: z.string().nullable().optional(),
+    thickenerEfficiencyPercent: z.coerce.number().nullable().optional(),
+    filtrationType: z.string().nullable().optional(),
+    equipmentAgeYears: z.coerce.number().nullable().optional(),
+    millLoadingPercent: z.coerce.number().nullable().optional(),
+    waterConsumptionM3PerTonne: z.coerce.number().nullable().optional(),
+    waterRecycledPercent: z.coerce.number().nullable().optional(),
+    waterSource: z.string().nullable().optional(),
+    processWaterTemperature: z.coerce.number().nullable().optional(),
+    slurryPumpingDistanceKm: z.coerce.number().nullable().optional(),
+    recoveryEfficiencyPercent: z.coerce.number().nullable().optional(),
+    tailingsProducedTonnePerTonne: z.coerce.number().nullable().optional(),
+    tailingsSolidsContentPercent: z.coerce.number().nullable().optional(),
+    tailingsStorageType: z.string().nullable().optional(),
+    chemicalResidueInTailingsMgPerL: z.coerce.number().nullable().optional(),
+    airEmissionsPmKgPerTonne: z.coerce.number().nullable().optional(),
+    wastewaterPh: z.coerce.number().nullable().optional(),
+    wastewaterCodMgPerL: z.coerce.number().nullable().optional(),
+    ghgEmissionsKgCo2ePerTonne: z.coerce.number().nullable().optional(),
+    plantCapacityTPerDay: z.coerce.number().nullable().optional(),
+    operatingHoursPerDay: z.coerce.number().nullable().optional(),
+    powerCostUsdPerKwh: z.coerce.number().nullable().optional(),
+    reagentCostUsdPerKg: z.coerce.number().nullable().optional(),
+    maintenanceCostUsdPerTonne: z.coerce.number().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -952,23 +1000,49 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
       zeroLiquidDischargeEnabled: z.boolean().nullable().optional(),
       tailingsDewateringMethod: z.string().nullable().optional(),
       waterTreatment: z.string().nullable().optional(),
-      tailingsReusePotentialPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+      tailingsReusePotentialPercent: z.coerce.number().nullable().optional(),
     }).optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || {},
-    mode: "onChange",
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { isValid }, watch } = form;
+  const { control, handleSubmit, setValue, formState: { isValid, errors }, watch } = form;
+
+  // Sync form with updated initialValues
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Beneficiation Form] Syncing with updated initial values:', initialValues);
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
+      });
+      console.log('✅ [Beneficiation Form] Form synced');
+    }
+  }, [JSON.stringify(initialValues), setValue]);
 
   const selectedMineralogy = watch("mineralogyDetails");
 
-  const onSubmit = (data) => {
-    onSave?.(data);
-    onNext?.();
+  const onSubmit = async (data) => {
+    console.log('🎯 [Beneficiation Form] FORM SUBMISSION STARTED');
+    console.log('📋 Form Data:', JSON.stringify(data, null, 2));
+    try {
+      if (!onSave) {
+        console.error('❌ [Beneficiation Form] onSave not provided!');
+        return;
+      }
+      await onSave(data);
+      console.log('✅ [Beneficiation Form] onSave completed');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (onNext) {
+        onNext();
+        console.log('✅ [Beneficiation Form] onNext called');
+      }
+    } catch (e) {
+      console.error('❌ [Beneficiation Form] submission failed:', e);
+    }
   };
 
   const oreTypeOptions = [
@@ -1012,7 +1086,7 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
     <StepFooterActions
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
+      forwardDisabled={false}
     />
   );
 
@@ -1445,7 +1519,8 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
               </div>
             </section>
 
-            {/* Sustainability Parameters */}
+            {/* Sustainability Parameters - COMMENTED OUT */}
+            {/* 
             <section className="space-y-6">
               <div className="space-y-4">
                 <FormField
@@ -1588,68 +1663,86 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
 // Step 3: Extraction (formerly Refining)
 function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
-    processRoute: z.string().min(1, "Process route is required"),
-    oreType: z.string().min(1, "Ore type is required"),
-    concentrateGradePercentCu: z.coerce.number().min(0, "Concentrate grade is required"),
-    oreThroughputTPerDay: z.coerce.number().min(0).optional(),
-    moistureContentPercent: z.coerce.number().min(0).max(100).optional(),
-    impurityContentPercent: z.coerce.number().min(0).optional(),
+    processRoute: z.string().nullable().optional(),
+    oreType: z.string().nullable().optional(),
+    concentrateGradePercentCu: z.coerce.number().nullable().optional(),
+    oreThroughputTPerDay: z.coerce.number().nullable().optional(),
+    moistureContentPercent: z.coerce.number().nullable().optional(),
+    impurityContentPercent: z.coerce.number().nullable().optional(),
     // Pyrometallurgical
-    smeltingTechnique: z.string().optional(),
-    smeltingEnergyMjPerTonne: z.coerce.number().min(0).optional(),
-    fuelType: z.string().optional(),
-    sulfurCaptureEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
-    slagProducedKgPerTonne: z.coerce.number().min(0).optional(),
-    metalLossInSlagPercent: z.coerce.number().min(0).max(100).optional(),
-    electrorefiningEnergyKwhPerTonne: z.coerce.number().min(0).optional(),
-    waterConsumptionM3PerTonnePyro: z.coerce.number().min(0).optional(),
-    recycledWaterPercentPyro: z.coerce.number().min(0).max(100).optional(),
-    acidProducedKgH2SO4PerTonne: z.coerce.number().min(0).optional(),
+    smeltingTechnique: z.string().nullable().optional(),
+    smeltingEnergyMjPerTonne: z.coerce.number().nullable().optional(),
+    fuelType: z.string().nullable().optional(),
+    sulfurCaptureEfficiencyPercent: z.coerce.number().nullable().optional(),
+    slagProducedKgPerTonne: z.coerce.number().nullable().optional(),
+    metalLossInSlagPercent: z.coerce.number().nullable().optional(),
+    electrorefiningEnergyKwhPerTonne: z.coerce.number().nullable().optional(),
+    waterConsumptionM3PerTonnePyro: z.coerce.number().nullable().optional(),
+    recycledWaterPercentPyro: z.coerce.number().nullable().optional(),
+    acidProducedKgH2SO4PerTonne: z.coerce.number().nullable().optional(),
     // Hydrometallurgical
-    leachingMethod: z.string().optional(),
-    acidConsumptionKgH2SO4PerTonne: z.coerce.number().min(0).optional(),
-    leachingEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
-    electrowinningEnergyKwhPerKgCu: z.coerce.number().min(0).optional(),
-    solventLossKgPerTonneCu: z.coerce.number().min(0).optional(),
-    electrowinningCurrentDensity: z.coerce.number().min(0).optional(),
-    waterConsumptionM3PerTonneHydro: z.coerce.number().min(0).optional(),
-    recycledWaterPercentHydro: z.coerce.number().min(0).max(100).optional(),
-    temperatureCelsius: z.coerce.number().optional(),
+    leachingMethod: z.string().nullable().optional(),
+    acidConsumptionKgH2SO4PerTonne: z.coerce.number().nullable().optional(),
+    leachingEfficiencyPercent: z.coerce.number().nullable().optional(),
+    electrowinningEnergyKwhPerKgCu: z.coerce.number().nullable().optional(),
+    solventLossKgPerTonneCu: z.coerce.number().nullable().optional(),
+    electrowinningCurrentDensity: z.coerce.number().nullable().optional(),
+    waterConsumptionM3PerTonneHydro: z.coerce.number().nullable().optional(),
+    recycledWaterPercentHydro: z.coerce.number().nullable().optional(),
+    temperatureCelsius: z.coerce.number().nullable().optional(),
     // Environmental and By-Product
-    ghgEmissionsKgCo2ePerTonne: z.coerce.number().min(0).optional(),
-    so2EmissionsKgPerTonne: z.coerce.number().min(0).optional(),
-    slagRecyclingRatePercent: z.coerce.number().min(0).max(100).optional(),
-    acidRecyclingPercent: z.coerce.number().min(0).max(100).optional(),
-    heavyMetalResidueMgPerL: z.coerce.number().min(0).optional(),
-    wasteSolutionPh: z.coerce.number().optional(),
-    byProductRecoveryAuAgKgPerTonne: z.coerce.number().min(0).optional(),
+    ghgEmissionsKgCo2ePerTonne: z.coerce.number().nullable().optional(),
+    so2EmissionsKgPerTonne: z.coerce.number().nullable().optional(),
+    slagRecyclingRatePercent: z.coerce.number().nullable().optional(),
+    acidRecyclingPercent: z.coerce.number().nullable().optional(),
+    heavyMetalResidueMgPerL: z.coerce.number().nullable().optional(),
+    wasteSolutionPh: z.coerce.number().nullable().optional(),
+    byProductRecoveryAuAgKgPerTonne: z.coerce.number().nullable().optional(),
     followingSustainableRules: z.boolean().optional(),
     sustainabilityParameters: z.object({
-      pyro_renewablePowerPercent: z.coerce.number().min(0).max(100).optional(),
-      pyro_slagRecyclingRate: z.coerce.number().min(0).max(100).optional(),
-      pyro_so2CaptureIntoSulfuricAcid: z.boolean().optional(),
-      pyro_flueGasCleaning: z.string().optional(),
-      pyro_wasteHeatCapturePercent: z.coerce.number().min(0).max(100).optional(),
-      hydro_acidRecoveryPercent: z.coerce.number().min(0).max(100).optional(),
-      hydro_organicSolventRecovery: z.boolean().optional(),
-      hydro_renewableElectricityUseInElectrowinning: z.boolean().optional(),
-      hydro_recycledWaterRate: z.coerce.number().min(0).max(100).optional(),
+      pyro_renewablePowerPercent: z.coerce.number().nullable().optional(),
+      pyro_slagRecyclingRate: z.coerce.number().nullable().optional(),
+      pyro_so2CaptureIntoSulfuricAcid: z.boolean().nullable().optional(),
+      pyro_flueGasCleaning: z.string().nullable().optional(),
+      pyro_wasteHeatCapturePercent: z.coerce.number().nullable().optional(),
+      hydro_acidRecoveryPercent: z.coerce.number().nullable().optional(),
+      hydro_organicSolventRecovery: z.boolean().nullable().optional(),
+      hydro_renewableElectricityUseInElectrowinning: z.boolean().nullable().optional(),
+      hydro_recycledWaterRate: z.coerce.number().nullable().optional(),
     }).optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || {},
-    mode: "onChange",
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { isValid }, watch } = form;
+  const { control, handleSubmit, setValue, formState: { isValid, errors }, watch } = form;
+
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Refining Form] Syncing with initial values');
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
+      });
+      console.log('✅ [Refining Form] Form synced');
+    }
+  }, [JSON.stringify(initialValues), setValue]);
 
   const selectedRoute = watch("processRoute");
 
-  const onSubmit = (data) => {
-    onSave?.(data);
-    onNext?.();
+  const onSubmit = async (data) => {
+    console.log('🎯 [Refining Form] FORM SUBMISSION');
+    try {
+      if (!onSave) return;
+      await onSave(data);
+      console.log('✅ [Refining Form] Saved');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (onNext) onNext();
+    } catch (e) {
+      console.error('❌ [Refining Form] Failed:', e);
+    }
   };
 
   const processRouteOptions = [
@@ -1680,7 +1773,7 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
     <StepFooterActions
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
+      forwardDisabled={false}
     />
   );
 
@@ -2113,209 +2206,7 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
               </div>
             </section>
 
-            {/* Sustainability Parameters Section */}
-            <section className="space-y-6">
-              <FormField
-                control={control}
-                name="followingSustainableRules"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value || false}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Sustainability Focused
-                      </FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Enable to provide sustainability parameters for this extraction stage
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("followingSustainableRules") && (
-                <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
-                  <div className="flex items-center gap-2 border-b border-[#BA7967]/20 pb-3">
-                    <div className="h-2 w-2 rounded-full bg-[#BA7967]" />
-                    <h4 className="text-sm font-semibold text-[#BA7967] uppercase tracking-wide">
-                      Extraction Sustainability Parameters
-                    </h4>
-                  </div>
-
-                  {/* Pyrometallurgical Route Sustainability */}
-                  {selectedRoute === "pyrometallurgical" && (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-2 pb-2">
-                        <h5 className="text-sm font-medium text-[#6B5B59]">Pyrometallurgical Route</h5>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.pyro_renewablePowerPercent"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Renewable Power (%)</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.pyro_slagRecyclingRate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Slag Recycling Rate (%)</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.pyro_so2CaptureIntoSulfuricAcid"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value || false}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>SO₂ Capture into Sulfuric Acid</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.pyro_flueGasCleaning"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Flue Gas Cleaning</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select method" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Electrostatic Precipitator">Electrostatic Precipitator</SelectItem>
-                                  <SelectItem value="Baghouse Filter">Baghouse Filter</SelectItem>
-                                  <SelectItem value="Multi-Stage Hybrid">Multi-Stage Hybrid</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.pyro_wasteHeatCapturePercent"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Waste Heat Capture (%)</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Hydrometallurgical Route Sustainability */}
-                  {selectedRoute === "hydrometallurgical" && (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-2 pb-2">
-                        <h5 className="text-sm font-medium text-[#6B5B59]">Hydrometallurgical Route</h5>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.hydro_acidRecoveryPercent"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Acid Recovery (%)</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.hydro_organicSolventRecovery"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value || false}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>Organic Solvent Recovery</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.hydro_renewableElectricityUseInElectrowinning"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value || false}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>Renewable Electricity in Electrowinning</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={control}
-                          name="sustainabilityParameters.hydro_recycledWaterRate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Recycled Water Rate (%)</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="number" placeholder="0-100" value={field.value ?? ""} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
+            {/* Sustainability Parameters Section - COMMENTED OUT */}
           </form>
         </Form>
       </StepSection>
@@ -2327,58 +2218,76 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
 function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Product & Application Data
-    productType: z.string().min(1, "Product type is required"),
-    applicationSector: z.string().min(1, "Application sector is required"),
-    productLifetimeYears: z.coerce.number().min(0).optional(),
-    installationMethod: z.string().optional(),
-    serviceWeight: z.coerce.number().min(0).optional(),
-    operatingTemperature: z.coerce.number().optional(),
-    environmentType: z.string().optional(),
+    productType: z.string().nullable().optional(),
+    applicationSector: z.string().nullable().optional(),
+    productLifetimeYears: z.coerce.number().nullable().optional(),
+    installationMethod: z.string().nullable().optional(),
+    serviceWeight: z.coerce.number().nullable().optional(),
+    operatingTemperature: z.coerce.number().nullable().optional(),
+    environmentType: z.string().nullable().optional(),
 
     // Performance & Efficiency
-    efficiencyRating: z.coerce.number().min(0).max(100),
-    energySavingsPercent: z.coerce.number().min(0).max(100),
-    averageAnnualEnergy: z.coerce.number().min(0),
-    copperLossDuringUse: z.coerce.number().min(0).max(100).optional(),
-    operatingHoursPerYear: z.coerce.number().min(0).optional(),
-    failureRatePercent: z.coerce.number().min(0).max(100).optional(),
-    replacementCycleYears: z.coerce.number().min(0).optional(),
+    efficiencyRating: z.coerce.number().nullable().optional(),
+    energySavingsPercent: z.coerce.number().nullable().optional(),
+    averageAnnualEnergy: z.coerce.number().nullable().optional(),
+    copperLossDuringUse: z.coerce.number().nullable().optional(),
+    operatingHoursPerYear: z.coerce.number().nullable().optional(),
+    failureRatePercent: z.coerce.number().nullable().optional(),
+    replacementCycleYears: z.coerce.number().nullable().optional(),
 
     // Maintenance & Resource Use
-    maintenanceFrequency: z.coerce.number().min(0),
-    maintenanceMaterialUse: z.coerce.number().min(0).optional(),
-    lubricantUseLiters: z.coerce.number().min(0).optional(),
-    downtimeHoursPerYear: z.coerce.number().min(0).optional(),
+    maintenanceFrequency: z.coerce.number().nullable().optional(),
+    maintenanceMaterialUse: z.coerce.number().nullable().optional(),
+    lubricantUseLiters: z.coerce.number().nullable().optional(),
+    downtimeHoursPerYear: z.coerce.number().nullable().optional(),
 
     // Transport & Installation
-    transportationDistance: z.coerce.number().min(0).optional(),
-    transportationMode: z.string().optional(),
-    packagingMaterialPerUnit: z.coerce.number().min(0).optional(),
+    transportationDistance: z.coerce.number().nullable().optional(),
+    transportationMode: z.string().nullable().optional(),
+    packagingMaterialPerUnit: z.coerce.number().nullable().optional(),
 
     // Environmental Impacts / Benefits
-    ghgAvoidedPerUnit: z.coerce.number().min(0).optional(),
-    reusePotentialPercent: z.coerce.number().min(0).max(100).optional(),
-    energyReturnOnInvestment: z.coerce.number().min(0).optional(),
-    usePhaseWaterConsumption: z.coerce.number().min(0).optional(),
+    ghgAvoidedPerUnit: z.coerce.number().nullable().optional(),
+    reusePotentialPercent: z.coerce.number().nullable().optional(),
+    energyReturnOnInvestment: z.coerce.number().nullable().optional(),
+    usePhaseWaterConsumption: z.coerce.number().nullable().optional(),
     followingSustainableRules: z.boolean().optional(),
     sustainabilityParameters: z.object({
-      lifetimeExtensionYears: z.coerce.number().min(0).optional(),
-      reusePotentialPercent: z.coerce.number().min(0).max(100).optional(),
-      reducedMaintenanceMaterialsPercent: z.coerce.number().min(0).max(100).optional(),
+      lifetimeExtensionYears: z.coerce.number().nullable().optional(),
+      reusePotentialPercent: z.coerce.number().nullable().optional(),
+      reducedMaintenanceMaterialsPercent: z.coerce.number().nullable().optional(),
     }).optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || {},
-    mode: "onChange",
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, setValue, formState: { isValid, errors } } = form;
 
-  const onSubmit = (data) => {
-    onSave?.(data);
-    onNext?.();
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [UsePhase Form] Syncing with initial values');
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
+      });
+      console.log('✅ [UsePhase Form] Form synced');
+    }
+  }, [JSON.stringify(initialValues), setValue]);
+
+  const onSubmit = async (data) => {
+    console.log('🎯 [UsePhase Form] FORM SUBMISSION');
+    try {
+      if (!onSave) return;
+      await onSave(data);
+      console.log('✅ [UsePhase Form] Saved');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (onNext) onNext();
+    } catch (e) {
+      console.error('❌ [UsePhase Form] Failed:', e);
+    }
   };
 
   const productTypeOptions = [
@@ -2413,26 +2322,28 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
     { value: "rail", label: "Rail" },
   ];
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={false}
+      showLca={true}
+    />
+  );
+
   return (
     <FormProvider {...form}>
-      <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <StepSection
-            stepNumber={5}
-            badgeLabel="Use Phase"
-            title="In-Use Performance"
-            description="Capture how copper performs during service life"
-            onPredict={() => onGenerateAIPrediction?.(form.getValues())}
-            predicting={predicting}
-            footer={
-              <StepFooterActions
-                onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
-                showLca={true}
-              />
-            }
-          >
+      <StepSection
+        stepNumber={5}
+        badgeLabel="Use Phase"
+        title="In-Use Performance"
+        description="Capture how copper performs during service life"
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-10">
               {/* Product & Application Data */}
               <div>
@@ -2778,7 +2689,8 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
                 </div>
               </div>
 
-              {/* Sustainability Parameters Section */}
+              {/* Sustainability Parameters Section - COMMENTED OUT */}
+              {/*
               <section className="space-y-6 mt-8">
                 <FormField
                   control={control}
@@ -2858,10 +2770,11 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
                   </div>
                 )}
               </section>
+              */}
             </div>
-          </StepSection>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   );
 }
@@ -2870,86 +2783,106 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
 function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Feed and Material Characteristics
-    productType: z.string().min(1, "Product type is required"),
-    inputCathodePurity: z.coerce.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100"),
-    scrapInput: z.coerce.number().min(0).max(100).optional(),
-    alloyingMetalType: z.string().optional(),
-    alloyingMetalContent: z.coerce.number().min(0).max(100).optional(),
-    moistureContent: z.coerce.number().min(0).max(100).optional(),
+    productType: z.string().nullable().optional(),
+    inputCathodePurity: z.coerce.number().nullable().optional(),
+    scrapInput: z.coerce.number().nullable().optional(),
+    alloyingMetalType: z.string().nullable().optional(),
+    alloyingMetalContent: z.coerce.number().nullable().optional(),
+    moistureContent: z.coerce.number().nullable().optional(),
 
     // Process and Equipment
-    castingMethod: z.string().min(1, "Casting method is required"),
-    furnaceType: z.string().min(1, "Furnace type is required"),
-    meltingEnergy: z.coerce.number().min(0, "Must be ≥ 0"),
-    rollingEnergy: z.coerce.number().min(0, "Must be ≥ 0"),
-    extrusionEnergy: z.coerce.number().min(0).optional(),
-    drawingEnergy: z.coerce.number().min(0).optional(),
-    electricityMixRenewable: z.coerce.number().min(0).max(100),
-    electricityMixFossil: z.coerce.number().min(0).max(100),
-    coolingMethod: z.string().optional(),
-    annealingFrequency: z.coerce.number().min(0).max(100).optional(),
-    surfaceTreatmentType: z.string().optional(),
-    surfaceTreatmentChemicalUse: z.coerce.number().min(0).optional(),
+    castingMethod: z.string().nullable().optional(),
+    furnaceType: z.string().nullable().optional(),
+    meltingEnergy: z.coerce.number().nullable().optional(),
+    rollingEnergy: z.coerce.number().nullable().optional(),
+    extrusionEnergy: z.coerce.number().nullable().optional(),
+    drawingEnergy: z.coerce.number().nullable().optional(),
+    electricityMixRenewable: z.coerce.number().nullable().optional(),
+    electricityMixFossil: z.coerce.number().nullable().optional(),
+    coolingMethod: z.string().nullable().optional(),
+    annealingFrequency: z.coerce.number().nullable().optional(),
+    surfaceTreatmentType: z.string().nullable().optional(),
+    surfaceTreatmentChemicalUse: z.coerce.number().nullable().optional(),
 
     // Water and Environmental Data
-    processWaterConsumption: z.coerce.number().min(0, "Must be ≥ 0"),
-    coolingWaterReused: z.coerce.number().min(0).max(100).optional(),
-    wasteWaterPH: z.coerce.number().min(0).max(14).optional(),
-    airEmissionsPM: z.coerce.number().min(0).optional(),
-    ghgEmissions: z.coerce.number().min(0).optional(),
-    wasteHeatRecovered: z.coerce.number().min(0).max(100).optional(),
-    solidWasteGenerated: z.coerce.number().min(0).optional(),
+    processWaterConsumption: z.coerce.number().nullable().optional(),
+    coolingWaterReused: z.coerce.number().nullable().optional(),
+    wasteWaterPH: z.coerce.number().nullable().optional(),
+    airEmissionsPM: z.coerce.number().nullable().optional(),
+    ghgEmissions: z.coerce.number().nullable().optional(),
+    wasteHeatRecovered: z.coerce.number().nullable().optional(),
+    solidWasteGenerated: z.coerce.number().nullable().optional(),
 
     // Production and Efficiency
-    scrapGenerated: z.coerce.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100"),
-    scrapRecycledOnsite: z.coerce.number().min(0).max(100).optional(),
-    productYield: z.coerce.number().min(0).max(100).optional(),
-    operatingHours: z.coerce.number().min(0).max(24).optional(),
-    plantCapacity: z.coerce.number().min(0).optional(),
-    maintenanceCost: z.coerce.number().min(0).optional(),
+    scrapGenerated: z.coerce.number().nullable().optional(),
+    scrapRecycledOnsite: z.coerce.number().nullable().optional(),
+    productYield: z.coerce.number().nullable().optional(),
+    operatingHours: z.coerce.number().nullable().optional(),
+    plantCapacity: z.coerce.number().nullable().optional(),
+    maintenanceCost: z.coerce.number().nullable().optional(),
     followingSustainableRules: z.boolean().optional(),
     sustainabilityParameters: z.object({
-      designForRecycling: z.boolean().optional(),
-      surfaceTreatmentType: z.string().optional(),
-      wasteHeatRecoveryPercent: z.coerce.number().min(0).max(100).optional(),
-      renewableEnergySharePercent: z.coerce.number().min(0).max(100).optional(),
-      productLifetimeExtensionYears: z.coerce.number().min(0).optional(),
+      designForRecycling: z.boolean().nullable().optional(),
+      surfaceTreatmentType: z.string().nullable().optional(),
+      wasteHeatRecoveryPercent: z.coerce.number().nullable().optional(),
+      renewableEnergySharePercent: z.coerce.number().nullable().optional(),
+      productLifetimeExtensionYears: z.coerce.number().nullable().optional(),
     }).optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || {},
-    mode: "onChange",
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, watch, formState: { isValid } } = form;
+  const { control, handleSubmit, setValue, formState: { isValid, errors } } = form;
 
-  const onSubmit = (data) => {
-    onSave?.(data);
-    onNext?.();
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Manufacturing Form] Syncing with initial values');
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
+      });
+      console.log('✅ [Manufacturing Form] Form synced');
+    }
+  }, [JSON.stringify(initialValues), setValue]);
+
+  const onSubmit = async (data) => {
+    console.log('🎯 [Manufacturing Form] FORM SUBMISSION');
+    try {
+      if (!onSave) return;
+      await onSave(data);
+      console.log('✅ [Manufacturing Form] Saved');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (onNext) onNext();
+    } catch (e) {
+      console.error('❌ [Manufacturing Form] Failed:', e);
+    }
   };
+
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={false}
+      showLca={true}
+    />
+  );
 
   return (
     <FormProvider {...form}>
-      <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <StepSection
-            stepNumber={4}
-            badgeLabel="Manufacturing"
-            title="Manufacturing Process"
-            description="Transform refined copper into final products"
-            onPredict={() => onGenerateAIPrediction?.(form.getValues())}
-            predicting={predicting}
-            footer={
-              <StepFooterActions
-                onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
-                showLca={true}
-              />
-            }
-          >
+      <StepSection
+        stepNumber={4}
+        badgeLabel="Manufacturing"
+        title="Manufacturing Process"
+        description="Transform refined copper into final products"
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-10">
               {/* Feed and Material Characteristics */}
               <div>
@@ -3752,7 +3685,8 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
                 </div>
               </div>
 
-              {/* Sustainability Parameters Section */}
+              {/* Sustainability Parameters Section - COMMENTED OUT */}
+              {/*
               <section className="space-y-6 mt-8">
                 <FormField
                   control={control}
@@ -3872,10 +3806,11 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
                   </div>
                 )}
               </section>
+              */}
             </div>
-          </StepSection>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   );
 }
@@ -3884,69 +3819,87 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
 function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Scrap Collection & Source
-    scrapType: z.string().min(1, "Scrap type is required"),
-    collectionRate: z.coerce.number().min(0, "Collection rate is required").max(100, "Must be ≤ 100"),
-    collectionArea: z.string().optional(),
-    averageScrapQualityGrade: z.string().optional(),
-    productSectorSource: z.string().optional(),
+    scrapType: z.string().nullable().optional(),
+    collectionRate: z.coerce.number().nullable().optional(),
+    collectionArea: z.string().nullable().optional(),
+    averageScrapQualityGrade: z.string().nullable().optional(),
+    productSectorSource: z.string().nullable().optional(),
 
     // Sorting and Pre-Treatment
-    sortingTechnology: z.string().min(1, "Sorting technology is required"),
-    sortingEfficiency: z.coerce.number().min(0).max(100).optional(),
-    contaminationLevel: z.coerce.number().min(0, "Contamination level is required").max(100, "Must be ≤ 100"),
-    preTreatmentProcess: z.string().optional(),
-    preTreatmentEnergy: z.coerce.number().min(0).optional(),
-    laborIntensity: z.coerce.number().min(0).optional(),
+    sortingTechnology: z.string().nullable().optional(),
+    sortingEfficiency: z.coerce.number().nullable().optional(),
+    contaminationLevel: z.coerce.number().nullable().optional(),
+    preTreatmentProcess: z.string().nullable().optional(),
+    preTreatmentEnergy: z.coerce.number().nullable().optional(),
+    laborIntensity: z.coerce.number().nullable().optional(),
 
     // Remelting and Refining
-    remeltingEnergy: z.coerce.number().min(0, "Remelting energy is required"),
-    refiningEnergy: z.coerce.number().min(0).optional(),
-    furnaceType: z.string().optional(),
-    meltingTemperature: z.coerce.number().min(0).optional(),
-    metalLossInSlag: z.coerce.number().min(0).max(100).optional(),
-    slagGeneration: z.coerce.number().min(0).optional(),
-    recoveredCopperPurity: z.coerce.number().min(0).max(100).optional(),
+    remeltingEnergy: z.coerce.number().nullable().optional(),
+    refiningEnergy: z.coerce.number().nullable().optional(),
+    furnaceType: z.string().nullable().optional(),
+    meltingTemperature: z.coerce.number().nullable().optional(),
+    metalLossInSlag: z.coerce.number().nullable().optional(),
+    slagGeneration: z.coerce.number().nullable().optional(),
+    recoveredCopperPurity: z.coerce.number().nullable().optional(),
 
     // Output & Circularity
-    recoveryYield: z.coerce.number().min(0, "Recovery yield is required").max(100, "Must be ≤ 100"),
-    recycledContent: z.coerce.number().min(0, "Recycled content is required").max(100, "Must be ≤ 100"),
-    recycledOutputForm: z.string().optional(),
-    slagRecycled: z.coerce.number().min(0).max(100).optional(),
-    byProductRecovery: z.coerce.number().min(0).optional(),
+    recoveryYield: z.coerce.number().nullable().optional(),
+    recycledContent: z.coerce.number().nullable().optional(),
+    recycledOutputForm: z.string().nullable().optional(),
+    slagRecycled: z.coerce.number().nullable().optional(),
+    byProductRecovery: z.coerce.number().nullable().optional(),
 
     // Water, Energy & Emissions
-    waterConsumption: z.coerce.number().min(0).optional(),
-    recycledWater: z.coerce.number().min(0).max(100).optional(),
-    ghgEmissions: z.coerce.number().min(0).optional(),
-    dustEmissions: z.coerce.number().min(0).optional(),
-    residueDisposal: z.coerce.number().min(0).optional(),
-    energySourceMix: z.string().optional(),
+    waterConsumption: z.coerce.number().nullable().optional(),
+    recycledWater: z.coerce.number().nullable().optional(),
+    ghgEmissions: z.coerce.number().nullable().optional(),
+    dustEmissions: z.coerce.number().nullable().optional(),
+    residueDisposal: z.coerce.number().nullable().optional(),
+    energySourceMix: z.string().nullable().optional(),
 
     // Logistics & Economic Data
-    transportationDistance: z.coerce.number().min(0).optional(),
-    transportMode: z.string().optional(),
-    scrapPrice: z.coerce.number().min(0).optional(),
-    recycledProductValue: z.coerce.number().min(0).optional(),
+    transportationDistance: z.coerce.number().nullable().optional(),
+    transportMode: z.string().nullable().optional(),
+    scrapPrice: z.coerce.number().nullable().optional(),
+    recycledProductValue: z.coerce.number().nullable().optional(),
     followingSustainableRules: z.boolean().optional(),
     sustainabilityParameters: z.object({
-      advancedCleaningSystems: z.boolean().optional(),
-      alloySortingCapability: z.string().optional(),
-      renewableEnergySharePercent: z.coerce.number().min(0).max(100).optional(),
-      slagRecycledPercent: z.coerce.number().min(0).max(100).optional(),
+      advancedCleaningSystems: z.boolean().nullable().optional(),
+      alloySortingCapability: z.string().nullable().optional(),
+      renewableEnergySharePercent: z.coerce.number().nullable().optional(),
+      slagRecycledPercent: z.coerce.number().nullable().optional(),
     }).optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || {},
-    mode: "onChange",
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, setValue, formState: { isValid, errors } } = form;
 
-  const onSubmit = (data) => {
-    onSave?.(data);
-    onNext?.();
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Recycling Form] Syncing with initial values');
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
+      });
+      console.log('✅ [Recycling Form] Form synced');
+    }
+  }, [JSON.stringify(initialValues), setValue]);
+
+  const onSubmit = async (data) => {
+    console.log('🎯 [Recycling Form] FORM SUBMISSION');
+    try {
+      if (!onSave) return;
+      await onSave(data);
+      console.log('✅ [Recycling Form] Saved');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (onNext) onNext();
+    } catch (e) {
+      console.error('❌ [Recycling Form] Failed:', e);
+    }
   };
 
   const scrapTypeOptions = [
@@ -3997,26 +3950,28 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
     { value: "fossil", label: "Fossil" },
   ];
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={false}
+      showLCA={true}
+    />
+  );
+
   return (
     <FormProvider {...form}>
-      <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <StepSection
-            stepNumber={6}
-            badgeLabel="Recycling"
-            title="Copper Recycling Process"
-            description="Recover and reprocess copper waste"
-            onPredict={() => onGenerateAIPrediction?.(form.getValues())}
-            predicting={predicting}
-            footer={
-              <StepFooterActions
-                onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
-                showLCA={true}
-              />
-            }
-          >
+      <StepSection
+        stepNumber={6}
+        badgeLabel="Recycling"
+        title="Copper Recycling Process"
+        description="Recover and reprocess copper waste"
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-10">
               {/* Scrap Collection & Source */}
               <div>
@@ -4521,7 +4476,8 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
                 </div>
               </div>
 
-              {/* Sustainability Parameters Section */}
+              {/* Sustainability Parameters Section - COMMENTED OUT */}
+              {/*
               <section className="space-y-6 mt-8">
                 <FormField
                   control={control}
@@ -4628,10 +4584,11 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
                   </div>
                 )}
               </section>
+              */}
             </div>
-          </StepSection>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   );
 }
@@ -4640,57 +4597,70 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
 function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Waste and By-Product Characteristics
-    wasteType: z.string().min(1, "Waste type is required"),
-    wasteGeneration: z.coerce.number().min(0).optional(),
-    metalContentInWaste: z.coerce.number().min(0).max(100).optional(),
-    chemicalCompositionFeO: z.coerce.number().min(0).max(100).optional(),
-    chemicalCompositionSiO2: z.coerce.number().min(0).max(100).optional(),
-    chemicalCompositionCuO: z.coerce.number().min(0).max(100).optional(),
-    moistureContent: z.coerce.number().min(0).max(100).optional(),
+    wasteType: z.string().nullable().optional(),
+    wasteGeneration: z.coerce.number().nullable().optional(),
+    metalContentInWaste: z.coerce.number().nullable().optional(),
+    chemicalCompositionFeO: z.coerce.number().nullable().optional(),
+    chemicalCompositionSiO2: z.coerce.number().nullable().optional(),
+    chemicalCompositionCuO: z.coerce.number().nullable().optional(),
+    moistureContent: z.coerce.number().nullable().optional(),
 
     // Valorization / Treatment Process
-    valorizationMethod: z.string().min(1, "Valorization method is required"),
-    valorizationRate: z.coerce.number().min(0, "Valorization rate is required").max(100, "Must be ≤ 100"),
-    metalRecoveryRate: z.coerce.number().min(0, "Metal recovery rate is required").max(100, "Must be ≤ 100"),
-    sulfurCaptureEfficiency: z.coerce.number().min(0).max(100).optional(),
-    furnaceGasSO2Concentration: z.coerce.number().min(0).optional(),
-    acidPlantCapacity: z.coerce.number().min(0).optional(),
-    energyForValorization: z.coerce.number().min(0).optional(),
-    waterUsedInTreatment: z.coerce.number().min(0).optional(),
+    valorizationMethod: z.string().nullable().optional(),
+    valorizationRate: z.coerce.number().nullable().optional(),
+    metalRecoveryRate: z.coerce.number().nullable().optional(),
+    sulfurCaptureEfficiency: z.coerce.number().nullable().optional(),
+    furnaceGasSO2Concentration: z.coerce.number().nullable().optional(),
+    acidPlantCapacity: z.coerce.number().nullable().optional(),
+    energyForValorization: z.coerce.number().nullable().optional(),
+    waterUsedInTreatment: z.coerce.number().nullable().optional(),
 
     // Outputs and Residuals
-    residueAfterTreatment: z.coerce.number().min(0).optional(),
-    leachateToxicityIndex: z.coerce.number().min(0).optional(),
-    heavyMetalResidue: z.coerce.number().min(0).optional(),
-    slagReuseAsConstruction: z.coerce.number().min(0).max(100).optional(),
-    acidProduced: z.coerce.number().min(0).optional(),
-    ghgEmissions: z.coerce.number().min(0).optional(),
+    residueAfterTreatment: z.coerce.number().nullable().optional(),
+    leachateToxicityIndex: z.coerce.number().nullable().optional(),
+    heavyMetalResidue: z.coerce.number().nullable().optional(),
+    slagReuseAsConstruction: z.coerce.number().nullable().optional(),
+    acidProduced: z.coerce.number().nullable().optional(),
+    ghgEmissions: z.coerce.number().nullable().optional(),
 
     // Economic / Circular Value
-    revenueFromByProducts: z.coerce.number().min(0).optional(),
-    marketPriceAcid: z.coerce.number().min(0).optional(),
+    revenueFromByProducts: z.coerce.number().nullable().optional(),
+    marketPriceAcid: z.coerce.number().nullable().optional(),
     followingSustainableRules: z.boolean().optional(),
     sustainabilityParameters: z.object({
-      circularEconomyPartnerships: z.boolean().optional(),
-      wasteToProductInnovationLevel: z.string().optional(),
-      sulfurCaptureEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
+      circularEconomyPartnerships: z.boolean().nullable().optional(),
+      wasteToProductInnovationLevel: z.string().nullable().optional(),
+      sulfurCaptureEfficiencyPercent: z.coerce.number().nullable().optional(),
     }).optional(),
   });
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: initialValues || {},
-    mode: "onChange",
+    mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { isValid } } = form;
+  const { control, handleSubmit, setValue, formState: { isValid, errors } } = form;
+
+  useEffect(() => {
+    if (initialValues) {
+      console.log('🔄 [Valorization Form] Syncing with initial values');
+      Object.keys(initialValues).forEach((key) => {
+        setValue(key, initialValues[key], { shouldValidate: true, shouldDirty: false });
+      });
+      console.log('✅ [Valorization Form] Form synced');
+    }
+  }, [JSON.stringify(initialValues), setValue]);
 
   const onSubmit = async (data) => {
+    console.log('🎯 [Valorization Form] FORM SUBMISSION');
     try {
-      await onSave?.(data);
-      onSubmitSuccess?.();
+      if (!onSave) return;
+      await onSave(data);
+      console.log('✅ [Valorization Form] Saved');
+      if (onSubmitSuccess) onSubmitSuccess();
     } catch (e) {
-      console.error('❌ Valorization submission failed:', e);
+      console.error('❌ [Valorization Form] Failed:', e);
     }
   };
 
@@ -4708,27 +4678,29 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
     { value: "dispose", label: "Dispose" },
   ];
 
+  const footerContent = (
+    <StepFooterActions
+      onBack={onBack}
+      onForward={handleSubmit(onSubmit)}
+      forwardDisabled={false}
+      forwardLabel="Submit"
+      showLca={true}
+    />
+  );
+
   return (
     <FormProvider {...form}>
-      <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <StepSection
-            stepNumber={7}
-            badgeLabel="Valorization"
-            title="Waste Valorization & By-Product Recovery"
-            description="Create value from copper by-products and waste"
-            onPredict={() => onGenerateAIPrediction?.(form.getValues())}
-            predicting={predicting}
-            footer={
-              <StepFooterActions
-                onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
-                forwardLabel="Submit"
-                showLca={true}
-              />
-            }
-          >
+      <StepSection
+        stepNumber={7}
+        badgeLabel="Valorization"
+        title="Waste Valorization & By-Product Recovery"
+        description="Create value from copper by-products and waste"
+        onPredict={() => onGenerateAIPrediction?.(form.getValues())}
+        predicting={predicting}
+        footer={footerContent}
+      >
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-10">
               {/* Waste and By-Product Characteristics */}
               <div>
@@ -5044,7 +5016,8 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
                 </div>
               </div>
 
-              {/* Sustainability Parameters Section */}
+              {/* Sustainability Parameters Section - COMMENTED OUT */}
+              {/*
               <section className="space-y-6 mt-8">
                 <FormField
                   control={control}
@@ -5137,10 +5110,11 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
                   </div>
                 )}
               </section>
+              */}
             </div>
-          </StepSection>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </StepSection>
     </FormProvider>
   );
 }
