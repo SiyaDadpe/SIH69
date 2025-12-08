@@ -1,0 +1,393 @@
+r"""Continuous Copper LCA Calculator for Workflows
+
+This script runs continuously in a loop, processing ALL copper workflows from
+wizardworkflowoutputs and writing LCA results to LCA.calculatelca collection.
+It repeats the processing cycle indefinitely.
+
+IMPORTANT: This writes to LCA.calculatelca (same collection as aluminum)
+with metalType="Copper" to maintain consistent output format.
+
+Usage (PowerShell):
+    cd C:\Users\Hp\Desktop\SIH69\lcaEng
+    conda activate lca
+    $env:MONGO_URI="<uri>"; python -m scripts.calculate_lca_fresh_workflows_copper --llm
+
+    # With custom interval between cycles
+    $env:MONGO_URI="<uri>"; python -m scripts.calculate_lca_fresh_workflows_copper --interval 30
+
+Flags:
+  --db                Mongo DB name (default: LCA)
+  --source            Source collection (default: wizardworkflowoutputs)
+  --target            Target collection (default: calculatelca)
+  --mongo-uri         MongoDB connection URI (overrides env/.env)
+  --llm               Include Gemini-based recommendations when GEMINI_API_KEY set
+  --interval N        Seconds to wait between processing cycles (default: 10)
+  --dry-run           Do not write to DB; just print summary counts
+"""
+
+from __future__ import annotations
+
+import argparse
+import time
+from datetime import datetime
+from typing import Any, Dict, List
+
+from bson import ObjectId
+
+from src.utils.mongo_client import get_mongo_client
+from src.engine.main_engine import AluminumLCAEngine
+from src.utils.copper_field_mapper import map_copper_fields_to_engine
+from src.engine.circularity import (
+    extract_sustainability_parameters,
+    compute_circularity_indices,
+    build_sankey_data,
+)
+from scripts.calculate_lca_by_id import _trim_recommendations  # reuse
+
+
+def _now_ms() -> int:
+    """Get current timestamp in milliseconds."""
+    return int(datetime.utcnow().timestamp() * 1000)
+
+
+def build_lca_output_doc(
+    source: Dict[str, Any],
+    compact: Dict[str, Any],
+    llm_block: Dict[str, Any] | None,
+    use_llm: bool
+) -> Dict[str, Any]:
+    """Build structured LCA output document with general info + stage-specific objects.
+    
+    Args:
+        source: Source workflow document from wizardworkflowoutputs
+        compact: Compact LCA calculation result
+        llm_block: LLM recommendations block (if available)
+        use_llm: Whether to include LLM recommendations
+    
+    Returns:
+        Structured document ready for insertion into calculatelca collection
+    """
+    # Use workflowId if present, otherwise use _id
+    workflow_id = source.get("workflowId") or source.get("_id")
+    if not workflow_id:
+        raise ValueError("Source doc missing both workflowId and _id")
+    
+    now_ms = _now_ms()
+    
+    # ========== GENERAL PROJECT INFORMATION ==========
+    doc = {
+        "_id": workflow_id,  # Use workflowId as primary key
+        "workflowId": workflow_id,
+        "userId": source.get("userId"),
+        "projectName": source.get("name", f"Workflow-{workflow_id}"),
+        "metalType": "Copper",
+        "location": source.get("location", "Not specified"),
+        "analysisDate": {"$date": {"$numberLong": str(now_ms)}},
+        "createdAt": {"$date": {"$numberLong": str(now_ms)}},
+        "updatedAt": {"$date": {"$numberLong": str(now_ms)}},
+        "status": "completed",
+        
+        # ========== OVERALL LCA METRICS ==========
+        "totalEnergyConsumption": compact.get("totalEnergyConsumption", {"value": 0, "unit": "kWh"}),
+        "totalCO2Emissions": compact.get("totalCO2Emissions", {"value": 0, "unit": "kg CO2-eq"}),
+        "totalWaterUsage": compact.get("totalWaterUsage", {"value": 0, "unit": "m³"}),
+        "totalWasteGeneration": compact.get("totalWasteGeneration", {"value": 0, "unit": "kg"}),
+        "totalAirQualityImpact": compact.get("totalAirQualityImpact", {"value": 0, "unit": "kg PM2.5-eq"}),
+        
+        # Intensity metrics
+        "energyIntensity": compact.get("energyIntensity", {"value": 0, "unit": "kWh/tonne"}),
+        "carbonIntensity": compact.get("carbonIntensity", {"value": 0, "unit": "kg CO2-eq/tonne"}),
+        
+        # Circularity metrics
+        "circularityScore": compact.get("circularityScore", {"value": 0, "unit": "score (0-100)"}),
+        "circularityRating": _get_circularity_rating(compact.get("circularityScore", {}).get("value", 0) if isinstance(compact.get("circularityScore"), dict) else compact.get("circularityScore", 0)),
+        "materialRecoveryRate": compact.get("materialRecoveryRate", {"value": 0, "unit": "%"}),
+        
+        # ========== STAGE-SPECIFIC LCA PARAMETERS ==========
+        # Each stage has its own object with relevant LCA metrics
+        "lcaStages": {}
+    }
+    
+    # Extract stage-specific data from compact output
+    stage_data_list = compact.get("stageData", [])
+    for stage_info in stage_data_list:
+        stage_name = stage_info.get("stageName")
+        if stage_name:
+            doc["lcaStages"][stage_name] = {
+                "energyConsumption": stage_info.get("energyConsumption", {"value": 0, "unit": "kWh"}),
+                "co2Emissions": stage_info.get("co2Emissions", {"value": 0, "unit": "kg CO2-eq"}),
+                "waterUsage": stage_info.get("waterUsage", {"value": 0, "unit": "m³"}),
+                "wasteGeneration": stage_info.get("wasteGeneration", {"value": 0, "unit": "kg"}),
+                "airQualityImpact": stage_info.get("airQualityImpact", {"value": 0, "unit": "kg PM2.5-eq"}),
+                "completed": stage_info.get("completed", False),
+                # Include stage-specific parameters from source
+                "parameters": source.get(stage_name, {})
+            }
+
+    # Ensure all known stages exist so frontend analytics never see missing keys
+    default_stage_template = {
+        "energyConsumption": {"value": 0, "unit": "kWh"},
+        "co2Emissions": {"value": 0, "unit": "kg CO2-eq"},
+        "waterUsage": {"value": 0, "unit": "m³"},
+        "wasteGeneration": {"value": 0, "unit": "kg"},
+        "airQualityImpact": {"value": 0, "unit": "kg PM2.5-eq"},
+        "completed": False,
+        "parameters": {},
+    }
+    for stage_name in [
+        "mining",
+        "beneficiation",
+        "refining",
+        "smelting",
+        "manufacturing",
+        "recycling",
+        "valorization",
+    ]:
+        if stage_name not in doc["lcaStages"]:
+            # Merge defaults with any raw parameters present in the source doc
+            stage_block = default_stage_template.copy()
+            stage_block["parameters"] = source.get(stage_name, {}) or {}
+            doc["lcaStages"][stage_name] = stage_block
+    
+    # ========== IMPACT BREAKDOWN ==========
+    impact_breakdown = compact.get("impactBreakdown", [])
+    if impact_breakdown:
+        doc["impactBreakdown"] = impact_breakdown
+
+    # ========== SUSTAINABILITY PARAMETERS (UNIONED) ==========
+    sust = extract_sustainability_parameters(source)
+    if sust:
+        doc["sustainabilityParameters"] = sust
+
+    # ========== CIRCULARITY & LINEARITY INDICES ==========
+    circ = compute_circularity_indices(source)
+    circ_index_val = circ.get("circularityIndex", 0.0)
+    doc["circularityIndex"] = {"value": circ_index_val, "unit": "index (0-1)"}
+    doc["linearityIndex"] = {"value": circ.get("linearityIndex", 1.0 - circ_index_val), "unit": "index (0-1)"}
+    components = circ.get("components")
+    if isinstance(components, dict):
+        doc["circularityComponents"] = components
+
+    # ========== SANKEY DATA FOR CIRCULARITY FLOWS ==========
+    sankey = build_sankey_data(source)
+    if isinstance(sankey, dict):
+        # Ensure minimum shape expected by frontend (nodes/links arrays)
+        nodes = sankey.get("nodes") if isinstance(sankey.get("nodes"), list) else []
+        links = sankey.get("links") if isinstance(sankey.get("links"), list) else []
+        normalized = dict(sankey)
+        normalized["nodes"] = nodes
+        normalized["links"] = links
+        doc["sankeyData"] = normalized
+    else:
+        # Provide empty structure so consumers can safely render/fallback
+        doc["sankeyData"] = {"nodes": [], "links": []}
+
+    # ========== RECOMMENDATIONS ==========
+    if use_llm and llm_block and llm_block.get("success") and isinstance(llm_block.get("recommendations"), list):
+        doc["recommendations"] = _trim_recommendations(llm_block["recommendations"])
+    else:
+        # Use recommendations from compact output or empty list
+        recommendations = compact.get("recommendations", [])
+        if isinstance(recommendations, list):
+            doc["recommendations"] = _trim_recommendations(recommendations)
+        else:
+            doc["recommendations"] = []
+    
+    # ========== METADATA ==========
+    doc["metadata"] = {
+        "calculationEngine": "Copper LCA Engine v1.0",
+        "calculationTimestamp": datetime.utcnow().isoformat() + 'Z',
+        "sourceCollection": "wizardworkflowoutputs",
+        "lcaMethodology": "Brightway2",
+        "impactCategories": ["GWP", "Water Use", "Land Use"]
+    }
+    
+    return doc
+
+
+def _get_circularity_rating(score: float) -> str:
+    """Convert circularity score to rating."""
+    if score >= 80:
+        return 'Excellent'
+    elif score >= 65:
+        return 'Good'
+    elif score >= 45:
+        return 'Fair'
+    elif score >= 25:
+        return 'Poor'
+    else:
+        return 'Very Poor'
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Continuously calculate LCA for all copper workflows"
+    )
+    parser.add_argument("--db", default="LCA", help="Mongo DB name (default: LCA)")
+    parser.add_argument(
+        "--source", default="wizardworkflowoutputs", help="Source collection"
+    )
+    parser.add_argument(
+        "--target", default="calculatelca", help="Target collection"
+    )
+    parser.add_argument(
+        "--mongo-uri",
+        dest="mongo_uri",
+        default=None,
+        help="MongoDB URI (overrides env/.env)",
+    )
+    parser.add_argument(
+        "--llm", action="store_true", help="Include LLM recommendations"
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=10,
+        help="Seconds to wait between processing cycles (default: 10)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Do not write to DB; just show summary",
+    )
+    args = parser.parse_args()
+
+    # Connect to MongoDB
+    client = get_mongo_client(uri=args.mongo_uri)
+    db = client[args.db]
+    src = db[args.source]
+    tgt = db[args.target]
+
+    # Initialize LCA engine
+    engine = AluminumLCAEngine()
+    
+    print(f"\n{'='*70}")
+    print(f"🔶 CONTINUOUS COPPER LCA PROCESSING - Running indefinitely")
+    print(f"{'='*70}")
+    print(f"Metal Type: Copper")
+    print(f"Database: {args.db}")
+    print(f"Source: {args.source} → Target: {args.target}")
+    print(f"Interval: {args.interval} seconds between cycles")
+    print(f"{'='*70}\n")
+    
+    cycle_number = 0
+    
+    # Run continuously
+    while True:
+        cycle_number += 1
+        cycle_start = datetime.utcnow()
+        
+        print(f"\n{'='*70}")
+        print(f"CYCLE #{cycle_number} - {cycle_start.strftime('%Y-%m-%d %H:%M:%S')} UTC")
+        print(f"{'='*70}\n")
+        
+        # Query for ALL copper workflows - get latest document for each workflowId (or _id if workflowId missing)
+        pipeline = [
+            {
+                "$match": {"metalType": {"$regex": "^copper$", "$options": "i"}}
+            },
+            {
+                "$addFields": {
+                    "effectiveWorkflowId": {"$ifNull": ["$workflowId", "$_id"]}
+                }
+            },
+            {
+                "$sort": {"updatedAt": -1}
+            },
+            {
+                "$group": {
+                    "_id": "$effectiveWorkflowId",
+                    "latestDoc": {"$first": "$$ROOT"}
+                }
+            }
+        ]
+
+        try:
+            workflows = list(src.aggregate(pipeline))
+            
+            if not workflows:
+                print("No copper workflows found in collection.")
+            else:
+                print(f"Found {len(workflows)} copper workflow(s) to process\n")
+                
+                processed = 0
+                failures = 0
+
+                # Process each workflow
+                for item in workflows:
+                    doc = item["latestDoc"]
+                    wf_id = item["_id"]
+                    name = doc.get("name") or f"Copper-Workflow-{wf_id}"
+                    
+                    print(f"Processing: {name} (ID: {wf_id})")
+                    
+                    try:
+                        # Map copper-specific parameters to engine format
+                        engine_params = map_copper_fields_to_engine(doc)
+                        
+                        # Calculate LCA with optional LLM recommendations
+                        if args.llm:
+                            wrapper = engine.compact_wizard_with_llm(engine_params, scenario_name=name)
+                            compact = wrapper.get("compact", {})
+                            llm_block = wrapper.get("llm")
+                        else:
+                            compact = engine.compact_wizard_document(engine_params, scenario_name=name)
+                            llm_block = None
+                        
+                        # Build structured output document
+                        lca_output = build_lca_output_doc(doc, compact, llm_block, use_llm=args.llm)
+                        
+                        # Write to target collection (upsert by workflowId)
+                        if not args.dry_run:
+                            tgt.replace_one({"_id": wf_id}, lca_output, upsert=True)
+                            print(f"  ✓ LCA calculated and saved")
+                        else:
+                            print(f"  ✓ LCA calculated (dry-run, not saved)")
+                        
+                        processed += 1
+                        
+                        # Print key metrics
+                        energy_val = lca_output['totalEnergyConsumption'].get('value', 0) if isinstance(lca_output['totalEnergyConsumption'], dict) else lca_output['totalEnergyConsumption']
+                        co2_val = lca_output['totalCO2Emissions'].get('value', 0) if isinstance(lca_output['totalCO2Emissions'], dict) else lca_output['totalCO2Emissions']
+                        circ_val = lca_output['circularityScore'].get('value', 0) if isinstance(lca_output['circularityScore'], dict) else lca_output['circularityScore']
+                        print(f"  📊 Total Energy: {energy_val:.2f} kWh")
+                        print(f"  📊 Total CO2: {co2_val:.2f} kg CO2-eq")
+                        print(f"  📊 Circularity Score: {circ_val:.1f}/100")
+                        print(f"  📊 Stages: {len(lca_output['lcaStages'])}")
+                        print()
+                        
+                    except Exception as e:
+                        print(f"  ✗ Failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        failures += 1
+                        print()
+
+                # Print cycle summary
+                cycle_duration = (datetime.utcnow() - cycle_start).total_seconds()
+                print(f"{'='*70}")
+                print(f"CYCLE #{cycle_number} COMPLETE")
+                print(f"{'='*70}")
+                print(f"  Workflows processed: {processed}")
+                print(f"  Failures: {failures}")
+                print(f"  Cycle duration: {cycle_duration:.2f} seconds")
+                if args.dry_run:
+                    print("  (Dry run - no writes performed)")
+                else:
+                    print(f"  Results written to: {args.db}.{args.target}")
+                print(f"{'='*70}\n")
+                
+        except Exception as e:
+            print(f"ERROR in cycle #{cycle_number}: {e}\n")
+            import traceback
+            traceback.print_exc()
+        
+        # Wait before next cycle
+        print(f"⏳ Waiting {args.interval} seconds before next cycle...\n")
+        time.sleep(args.interval)
+    
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

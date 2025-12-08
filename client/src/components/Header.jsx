@@ -28,15 +28,14 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    logout();
     toast.success('Logged out successfully', {
-      description: 'You have been logged out. Redirecting to login page...',
-      duration: 3000
+      description: 'You have been logged out successfully.',
+      duration: 2000
     });
     
     setTimeout(() => {
-      navigate('/signup', { replace: true });
-    }, 1500);
+      logout();
+    }, 500);
   };
 
   return (

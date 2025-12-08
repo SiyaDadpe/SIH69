@@ -13,6 +13,7 @@ const Reports = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [lcaReports, setLcaReports] = useState([]);
     const [loadingReports, setLoadingReports] = useState(true);
+    const [initialLoad, setInitialLoad] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalReports, setTotalReports] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
@@ -45,12 +46,23 @@ const Reports = () => {
                 setTotalPages(1);
                 toast.error('Failed to load LCA reports');
             })
-            .finally(() => setLoadingReports(false));
+            .finally(() => {
+                setLoadingReports(false);
+                setInitialLoad(false);
+            });
     }, [searchTerm, currentPage]);
 
     return (
         <div className="min-h-screen bg-[#F8F6F3] p-6">
-            <div className="max-w-7xl mx-auto">
+            {initialLoad ? (
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#BA7967] mx-auto mb-4"></div>
+                        <p className="text-[#6b5b59]">Loading reports...</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-[#181814] mb-2">LCA Reports</h1>
@@ -139,6 +151,8 @@ const Reports = () => {
                 )}
             </div>
             <FloatingChatbot />
+                </div>
+            )}
         </div>
     );
 };
