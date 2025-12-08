@@ -6,6 +6,7 @@ import { Github } from 'lucide-react';
 import ScrollStack, { ScrollStackItem } from '../components/animations/scroll';
 import Plasma from '../components/animations/plasma';
 import ScrambledText from '../components/animations/scrolltext';
+import FloatingChatbot from '../components/FloatingChatbot';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -560,6 +561,7 @@ export default function Landing() {
         {/* Accent bar */}
         <div className="w-full h-1 bg-gradient-to-r from-[#BA7967] via-[#D4956F] to-[#6B5B59] mt-8 rounded-full" />
       </footer>
+      <FloatingChatbot />
     </div>
   );
 }
