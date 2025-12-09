@@ -1892,6 +1892,187 @@ const getPredictions = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc    Update circular flow logic for a workflow
+ * @route   POST /api/wizard/workflows/:id/circular-update
+ * @access  Private
+ * 
+ * Updates manufacturing iteration with recycled scrap data, calculates blended composition,
+ * and maintains circular flow history
+ */
+const updateCircularFlow = asyncHandler(async (req, res) => {
+  const workflowId = req.params.id;
+  const userId = req.user._id;
+
+  try {
+    // ============================================================================
+    // STEP 1: Validate workflow ID
+    // ============================================================================
+    if (!mongoose.Types.ObjectId.isValid(workflowId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid workflow ID format'
+      });
+    }
+
+    // ============================================================================
+    // STEP 2: Extract and validate iteration data from request body
+    // ============================================================================
+    const {
+      recycledScrapComposition,
+      recycledScrapProportion,
+      scrapQualityGrade,
+      energyUsed,
+      emissionsGenerated,
+      notes
+    } = req.body;
+
+    // Validate required fields
+    if (recycledScrapProportion == null) {
+      return res.status(400).json({
+        success: false,
+        message: 'recycledScrapProportion is required'
+      });
+    }
+
+    if (typeof recycledScrapProportion !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: 'recycledScrapProportion must be a number'
+      });
+    }
+
+    if (recycledScrapProportion < 0 || recycledScrapProportion > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'recycledScrapProportion must be between 0 and 100'
+      });
+    }
+
+    // Validate scrapQualityGrade if provided
+    const validGrades = ['A', 'B', 'C', 'mixed', 'unknown'];
+    if (scrapQualityGrade && !validGrades.includes(scrapQualityGrade)) {
+      return res.status(400).json({
+        success: false,
+        message: `scrapQualityGrade must be one of: ${validGrades.join(', ')}`
+      });
+    }
+
+    // Validate numeric fields if provided
+    if (energyUsed != null && (typeof energyUsed !== 'number' || energyUsed < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'energyUsed must be a non-negative number'
+      });
+    }
+
+    if (emissionsGenerated != null && (typeof emissionsGenerated !== 'number' || emissionsGenerated < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'emissionsGenerated must be a non-negative number'
+      });
+    }
+
+    // ============================================================================
+    // STEP 3: Find workflow and verify ownership
+    // ============================================================================
+    const workflow = await WizardWorkflow.findById(workflowId);
+
+    if (!workflow) {
+      return res.status(404).json({
+        success: false,
+        message: 'Workflow not found'
+      });
+    }
+
+    // Verify user owns this workflow
+    if (workflow.userId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this workflow'
+      });
+    }
+
+    // ============================================================================
+    // STEP 4: Prepare iteration data for the model method
+    // ============================================================================
+    const iterationData = {
+      recycledScrapComposition: recycledScrapComposition || {},
+      recycledScrapProportion,
+      scrapQualityGrade: scrapQualityGrade || 'unknown',
+      energyUsed: energyUsed ?? 0,
+      emissionsGenerated: emissionsGenerated ?? 0,
+      notes: notes || ''
+    };
+
+    // ============================================================================
+    // STEP 5: Call the updateCircularFlow method on the workflow document
+    // ============================================================================
+    const updatedWorkflow = await workflow.updateCircularFlow(iterationData);
+
+    // Clear cache for this workflow
+    clearCache(`wizard-workflow-${workflowId}`);
+    clearCache(`user-workflows-${userId}`);
+
+    // ============================================================================
+    // STEP 6: Return success response with updated workflow
+    // ============================================================================
+const circularFlow = {
+  circularIterationNumber: updatedWorkflow.manufacturing.circularIterationNumber,
+  recycledScrapProportion: updatedWorkflow.manufacturing.recycledScrapProportion,
+  primarySourceProportion: updatedWorkflow.manufacturing.primarySourceProportion,
+  blendedComposition: updatedWorkflow.manufacturing.blendedCompositionObj,
+  isCircularInput: updatedWorkflow.manufacturing.isCircularInput
+};
+
+res.status(200).json({
+  success: true,
+  message: 'Circular flow updated successfully',
+  data: {
+    workflow: updatedWorkflow,
+    iteration: {
+      number: circularFlow.circularIterationNumber,
+      recycledScrapProportion: circularFlow.recycledScrapProportion,
+      primarySourceProportion: circularFlow.primarySourceProportion,
+      blendedComposition: circularFlow.blendedComposition,
+      isCircularInput: circularFlow.isCircularInput
+    },
+    circularFlow
+  }
+});
+
+  } catch (error) {
+    console.error('Error updating circular flow:', error);
+
+    // Handle specific validation errors from the model
+    if (error.message.includes('proportions must sum to 100') ||
+        error.message.includes('must be between') ||
+        error.message.includes('is required')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: validationErrors
+      });
+    }
+
+    // Handle generic errors
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while updating circular flow',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = {
   createWorkflow,
   getWorkflows,
@@ -1907,5 +2088,6 @@ module.exports = {
   getStatistics,
   generateAndSaveReport,
   generateStepPrediction,
-  getPredictions
+  getPredictions,
+  updateCircularFlow
 };

@@ -388,6 +388,142 @@ const wizardWorkflowSchema = new mongoose.Schema(
       manufacturing_recycled_content_percent: { type: Number, default: null },
       manufacturing_transport_emissions_kgCO2e_per_t: { type: Number, default: null },
       
+      // ============================================================================
+      // CIRCULAR FLOW FIELDS - Input from Recycling
+      // ============================================================================
+      
+      // Current recycled scrap composition being used
+      recycledScrapComposition: {
+        type: Map,
+        of: Number,
+        default: () => new Map() // Empty map if no recycled content
+      },
+      
+      // Alternative object-based composition for easier frontend use
+      recycledScrapCompositionObj: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {} // Empty object if no recycled content
+      },
+      
+      // Proportion of total input coming from recycled scrap (percentage)
+      // Must sum to 100 with primarySourceProportion (validated in pre-save hook)
+      recycledScrapProportion: {
+        type: Number,
+        default: 0,
+        min: [0, 'Recycled scrap proportion cannot be negative'],
+        max: [100, 'Recycled scrap proportion cannot exceed 100%'],
+        validate: {
+          validator: function(value) {
+            // Allow null/undefined during partial updates
+            if (value == null) return true;
+            return value >= 0 && value <= 100;
+          },
+          message: 'Recycled scrap proportion must be between 0 and 100'
+        }
+      },
+      
+      // Proportion of total input coming from primary sources (percentage)
+      // Must sum to 100 with recycledScrapProportion (validated in pre-save hook)
+      primarySourceProportion: {
+        type: Number,
+        default: 100,
+        min: [0, 'Primary source proportion cannot be negative'],
+        max: [100, 'Primary source proportion cannot exceed 100%'],
+        validate: {
+          validator: function(value) {
+            // Allow null/undefined during partial updates
+            if (value == null) return true;
+            return value >= 0 && value <= 100;
+          },
+          message: 'Primary source proportion must be between 0 and 100'
+        }
+      },
+      
+      // History of recycled batches used in manufacturing iterations
+      // Each entry tracks one circular iteration with composition and impact data
+      recyclingHistory: {
+        type: [{
+          iterationNumber: {
+            type: Number,
+            required: [true, 'Iteration number is required for recycling history']
+          },
+          timestamp: {
+            type: Date,
+            default: Date.now
+          },
+          scrapComposition: {
+            type: Map,
+            of: Number,
+            default: () => new Map()
+          },
+          scrapCompositionObj: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {}
+          },
+          // Percentage of scrap in this iteration (must be ≤ 100)
+          scrapProportion: {
+            type: Number,
+            default: 0,
+            min: [0, 'Scrap proportion cannot be negative'],
+            max: [100, 'Scrap proportion cannot exceed 100%'],
+            validate: {
+              validator: function(value) {
+                if (value == null) return true;
+                return value >= 0 && value <= 100;
+              },
+              message: 'Scrap proportion in history must be between 0 and 100'
+            }
+          },
+          scrapQualityGrade: {
+            type: String,
+            enum: {
+              values: ['A', 'B', 'C', 'mixed', 'unknown'],
+              message: '{VALUE} is not a valid scrap quality grade'
+            },
+            default: 'unknown'
+          },
+          // Energy consumed in this iteration (default: 0)
+          energyUsed: {
+            type: Number,
+            default: 0,
+            min: [0, 'Energy used cannot be negative']
+          },
+          // Emissions generated in this iteration (default: 0)
+          emissionsGenerated: {
+            type: Number,
+            default: 0,
+            min: [0, 'Emissions generated cannot be negative']
+          },
+          notes: String
+        }],
+        default: []
+      },
+      
+      // Blended composition (primary + recycled)
+      blendedComposition: {
+        type: Map,
+        of: Number,
+        default: () => new Map([['Al', 100]]) // Default: 100% primary Aluminium
+      },
+      
+      // Alternative object-based blended composition
+      blendedCompositionObj: {
+        type: mongoose.Schema.Types.Mixed,
+        default: { Al: 100 }
+      },
+      
+      // Track if manufacturing is using circular input
+      isCircularInput: {
+        type: Boolean,
+        default: false
+      },
+      
+      // Current iteration number in circular workflow
+      circularIterationNumber: {
+        type: Number,
+        default: 0
+      },
+      
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
       sustainabilityParameters: {
@@ -453,6 +589,46 @@ const wizardWorkflowSchema = new mongoose.Schema(
       recycling_collection_rate_percent: { type: Number, default: null },
       recycling_closed_loop_percent: { type: Number, default: null },
       recycling_open_loop_percent: { type: Number, default: null },
+      
+      // ============================================================================
+      // CIRCULAR FLOW FIELDS
+      // ============================================================================
+      
+      // Scrap composition by metal content (percentages)
+      scrapComposition: {
+        type: Map,
+        of: Number,
+        default: () => new Map([['Al', 100]]) // Default: 100% Aluminium
+      },
+      
+      // Alternative object-based scrap composition for easier frontend use
+      scrapCompositionObj: {
+        type: mongoose.Schema.Types.Mixed,
+        default: { Al: 100 } // Default: 100% Aluminium
+      },
+      
+      // Percentage of recycled scrap returned to manufacturing (closed-loop)
+      returnedToManufacturingPercent: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+      },
+      
+      // Scrap quality grade affecting reuse (A, B, C grades)
+      scrapQualityGrade: {
+        type: String,
+        enum: ['A', 'B', 'C', 'mixed', 'unknown'],
+        default: 'unknown'
+      },
+      
+      // Contamination level affecting composition
+      contaminationLevel: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100 // Percentage
+      },
       
       // Sustainability Parameters (Optional - shown when followingSustainableRules = true)
       followingSustainableRules: { type: Boolean, default: null },
@@ -658,6 +834,66 @@ const wizardWorkflowSchema = new mongoose.Schema(
     }],
 
     // ============================================================================
+    // CIRCULAR WORKFLOW TRACKING
+    // ============================================================================
+    
+    // Enable circular workflow mode
+    isCircularWorkflow: {
+      type: Boolean,
+      default: false
+    },
+    
+    // Current circular iteration (0 = linear/initial pass, 1+ = circular iterations)
+    currentCircularIteration: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    
+    // Maximum iterations to prevent infinite loops
+    maxCircularIterations: {
+      type: Number,
+      default: 10,
+      min: 1,
+      max: 50
+    },
+    
+    // Convergence criteria: stop when composition change is below this threshold
+    convergenceThreshold: {
+      type: Number,
+      default: 1.0, // 1% change in composition
+      min: 0.1,
+      max: 10
+    },
+    
+    // Track whether circular workflow has converged
+    hasConverged: {
+      type: Boolean,
+      default: false
+    },
+    
+    // History of all circular iterations
+    circularIterationHistory: {
+      type: [{
+        iterationNumber: Number,
+        timestamp: Date,
+        manufacturingComposition: {
+          type: Map,
+          of: Number
+        },
+        recyclingComposition: {
+          type: Map,
+          of: Number
+        },
+        recycledScrapReturned: Number, // Percentage
+        compositionChange: Number, // % change from previous iteration
+        totalGWP: Number,
+        totalEnergy: Number
+      }],
+      default: []
+    },
+
+    // ============================================================================
     // Calculated Results (Optional - can be calculated later)
     // ============================================================================
     calculatedResults: {
@@ -781,6 +1017,167 @@ wizardWorkflowSchema.pre('save', function(next) {
   }
   
   next();
+});
+
+/**
+ * Pre-save hook to validate circular flow data integrity
+ * Ensures manufacturing proportions sum to 100% and recycling history is valid
+ */
+wizardWorkflowSchema.pre('save', function(next) {
+  // Skip validation if manufacturing is not defined or empty
+  if (!this.manufacturing || Object.keys(this.manufacturing).length === 0) {
+    return next();
+  }
+
+  try {
+    // ============================================================================
+    // VALIDATION 1: Ensure recycledScrapProportion + primarySourceProportion = 100
+    // ============================================================================
+    const recycledProp = this.manufacturing.recycledScrapProportion;
+    const primaryProp = this.manufacturing.primarySourceProportion;
+
+    // Only validate if both values are defined (allow partial updates)
+    if (recycledProp != null && primaryProp != null) {
+      const total = recycledProp + primaryProp;
+      
+      // Allow small floating-point tolerance (0.01%)
+      if (Math.abs(total - 100) > 0.01) {
+        return next(new Error(
+          `Manufacturing proportions must sum to 100%. ` +
+          `Current: recycledScrapProportion (${recycledProp}%) + ` +
+          `primarySourceProportion (${primaryProp}%) = ${total}%`
+        ));
+      }
+    }
+    // Auto-calculate missing proportion if only one is provided
+    else if (recycledProp != null && primaryProp == null) {
+      this.manufacturing.primarySourceProportion = 100 - recycledProp;
+    }
+    else if (primaryProp != null && recycledProp == null) {
+      this.manufacturing.recycledScrapProportion = 100 - primaryProp;
+    }
+
+    // ============================================================================
+    // VALIDATION 2: Validate recyclingHistory entries
+    // ============================================================================
+    if (this.manufacturing.recyclingHistory && Array.isArray(this.manufacturing.recyclingHistory)) {
+      this.manufacturing.recyclingHistory.forEach((entry, index) => {
+        // Ensure scrapProportion is within bounds
+        if (entry.scrapProportion != null) {
+          if (entry.scrapProportion < 0 || entry.scrapProportion > 100) {
+            throw new Error(
+              `Recycling history entry ${index}: scrapProportion (${entry.scrapProportion}%) ` +
+              `must be between 0 and 100`
+            );
+          }
+        } else {
+          // Set default if missing
+          entry.scrapProportion = 0;
+        }
+
+        // Set default values for energyUsed and emissionsGenerated if not provided
+        if (entry.energyUsed == null) {
+          entry.energyUsed = 0;
+        }
+        if (entry.emissionsGenerated == null) {
+          entry.emissionsGenerated = 0;
+        }
+
+        // Ensure negative values are prevented
+        if (entry.energyUsed < 0) {
+          throw new Error(
+            `Recycling history entry ${index}: energyUsed cannot be negative (${entry.energyUsed})`
+          );
+        }
+        if (entry.emissionsGenerated < 0) {
+          throw new Error(
+            `Recycling history entry ${index}: emissionsGenerated cannot be negative (${entry.emissionsGenerated})`
+          );
+        }
+
+        // Set default timestamp if missing
+        if (!entry.timestamp) {
+          entry.timestamp = new Date();
+        }
+
+        // Set default scrapQualityGrade if missing
+        if (!entry.scrapQualityGrade) {
+          entry.scrapQualityGrade = 'unknown';
+        }
+      });
+    }
+
+    // ============================================================================
+    // VALIDATION 3: Sync Map and Object representations for consistency
+    // ============================================================================
+    
+    // Sync recycledScrapComposition Map <-> Obj
+    if (this.manufacturing.recycledScrapComposition && this.manufacturing.recycledScrapComposition.size > 0) {
+      // Convert Map to Object for easier frontend use
+      this.manufacturing.recycledScrapCompositionObj = Object.fromEntries(
+        this.manufacturing.recycledScrapComposition
+      );
+    } else if (this.manufacturing.recycledScrapCompositionObj && 
+               Object.keys(this.manufacturing.recycledScrapCompositionObj).length > 0) {
+      // Convert Object to Map for consistency
+      this.manufacturing.recycledScrapComposition = new Map(
+        Object.entries(this.manufacturing.recycledScrapCompositionObj)
+      );
+    }
+
+    // Sync blendedComposition Map <-> Obj
+    if (this.manufacturing.blendedComposition && this.manufacturing.blendedComposition.size > 0) {
+      this.manufacturing.blendedCompositionObj = Object.fromEntries(
+        this.manufacturing.blendedComposition
+      );
+    } else if (this.manufacturing.blendedCompositionObj && 
+               Object.keys(this.manufacturing.blendedCompositionObj).length > 0) {
+      this.manufacturing.blendedComposition = new Map(
+        Object.entries(this.manufacturing.blendedCompositionObj)
+      );
+    }
+
+    // ============================================================================
+    // VALIDATION 4: Validate recycling scrap composition if present
+    // ============================================================================
+    if (this.recycling && this.recycling.scrapComposition) {
+      // Sync recycling scrapComposition Map <-> Obj
+      if (this.recycling.scrapComposition.size > 0) {
+        this.recycling.scrapCompositionObj = Object.fromEntries(
+          this.recycling.scrapComposition
+        );
+      } else if (this.recycling.scrapCompositionObj && 
+                 Object.keys(this.recycling.scrapCompositionObj).length > 0) {
+        this.recycling.scrapComposition = new Map(
+          Object.entries(this.recycling.scrapCompositionObj)
+        );
+      }
+
+      // Validate returnedToManufacturingPercent bounds
+      if (this.recycling.returnedToManufacturingPercent != null) {
+        if (this.recycling.returnedToManufacturingPercent < 0 || 
+            this.recycling.returnedToManufacturingPercent > 100) {
+          throw new Error(
+            `Recycling returnedToManufacturingPercent (${this.recycling.returnedToManufacturingPercent}%) ` +
+            `must be between 0 and 100`
+          );
+        }
+      }
+
+      // Validate contaminationLevel bounds
+      if (this.recycling.contaminationLevel != null) {
+        if (this.recycling.contaminationLevel < 0 || this.recycling.contaminationLevel > 100) {
+          throw new Error(
+            `Recycling contaminationLevel (${this.recycling.contaminationLevel}%) must be between 0 and 100`
+          );
+        }
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ============================================================================
@@ -934,6 +1331,152 @@ wizardWorkflowSchema.methods.submit = function() {
   return this.save();
 };
 
+/**
+ * Update circular flow logic during a manufacturing iteration
+ * 
+ * @param {Object} iterationData - Data for the current circular iteration
+ * @param {Map|Object} iterationData.recycledScrapComposition - Composition of recycled scrap (Map or Object)
+ * @param {Number} iterationData.recycledScrapProportion - Percentage of recycled scrap (0-100)
+ * @param {String} iterationData.scrapQualityGrade - Quality grade (A, B, C, mixed, unknown)
+ * @param {Number} [iterationData.energyUsed=0] - Energy consumed in this iteration
+ * @param {Number} [iterationData.emissionsGenerated=0] - Emissions generated in this iteration
+ * @param {String} [iterationData.notes] - Optional notes for this iteration
+ * @returns {Promise<Document>} Updated workflow document
+ */
+wizardWorkflowSchema.methods.updateCircularFlow = async function(iterationData) {
+  // Validate required parameters
+  if (!iterationData || typeof iterationData !== 'object') {
+    throw new Error('iterationData is required and must be an object');
+  }
+
+  if (iterationData.recycledScrapProportion == null) {
+    throw new Error('recycledScrapProportion is required');
+  }
+
+  if (iterationData.recycledScrapProportion < 0 || iterationData.recycledScrapProportion > 100) {
+    throw new Error('recycledScrapProportion must be between 0 and 100');
+  }
+
+  // Initialize manufacturing if not exists
+  if (!this.manufacturing) {
+    this.manufacturing = {};
+  }
+
+  // ============================================================================
+  // STEP 1: Increment circular iteration number
+  // ============================================================================
+  this.manufacturing.circularIterationNumber = (this.manufacturing.circularIterationNumber || 0) + 1;
+
+  // ============================================================================
+  // STEP 2: Update recycled scrap composition (Map and Object formats)
+  // ============================================================================
+  const scrapComposition = iterationData.recycledScrapComposition;
+  
+  if (scrapComposition) {
+    // Handle Map input
+    if (scrapComposition instanceof Map) {
+      this.manufacturing.recycledScrapComposition = new Map(scrapComposition);
+      this.manufacturing.recycledScrapCompositionObj = Object.fromEntries(scrapComposition);
+    }
+    // Handle Object input
+    else if (typeof scrapComposition === 'object') {
+      this.manufacturing.recycledScrapCompositionObj = { ...scrapComposition };
+      this.manufacturing.recycledScrapComposition = new Map(Object.entries(scrapComposition));
+    }
+  } else {
+    // Set empty composition if not provided
+    this.manufacturing.recycledScrapComposition = new Map();
+    this.manufacturing.recycledScrapCompositionObj = {};
+  }
+
+  // ============================================================================
+  // STEP 3: Update recycled and primary proportions
+  // ============================================================================
+  this.manufacturing.recycledScrapProportion = iterationData.recycledScrapProportion;
+  this.manufacturing.primarySourceProportion = 100 - iterationData.recycledScrapProportion;
+
+  // ============================================================================
+  // STEP 4: Calculate blended composition (primary + recycled)
+  // ============================================================================
+  const primaryFraction = this.manufacturing.primarySourceProportion / 100;
+  const recycledFraction = this.manufacturing.recycledScrapProportion / 100;
+
+  // Get primary composition (assume 100% primary metal if not specified)
+  const metalType = this.metalType || 'Al';
+  const primaryComposition = new Map([[metalType, 100]]);
+
+  // Get recycled composition
+  const recycledComposition = this.manufacturing.recycledScrapComposition || new Map();
+
+  // Calculate blended composition
+  const blendedComposition = new Map();
+
+  // Add all metals from primary composition
+  for (const [metal, value] of primaryComposition.entries()) {
+    const recycledValue = recycledComposition.get(metal) || 0;
+    const blendedValue = primaryFraction * value + recycledFraction * recycledValue;
+    if (blendedValue > 0) {
+      blendedComposition.set(metal, blendedValue);
+    }
+  }
+
+  // Add metals that exist only in recycled composition
+  for (const [metal, value] of recycledComposition.entries()) {
+    if (!blendedComposition.has(metal)) {
+      const blendedValue = recycledFraction * value;
+      if (blendedValue > 0) {
+        blendedComposition.set(metal, blendedValue);
+      }
+    }
+  }
+
+  // Normalize to 100% (handle rounding errors)
+  const total = Array.from(blendedComposition.values()).reduce((sum, val) => sum + val, 0);
+  if (total > 0 && Math.abs(total - 100) > 0.01) {
+    for (const [metal, value] of blendedComposition.entries()) {
+      blendedComposition.set(metal, (value / total) * 100);
+    }
+  }
+
+  // Update blended composition in both formats
+  this.manufacturing.blendedComposition = blendedComposition;
+  this.manufacturing.blendedCompositionObj = Object.fromEntries(blendedComposition);
+
+  // ============================================================================
+  // STEP 5: Add entry to recycling history
+  // ============================================================================
+  if (!this.manufacturing.recyclingHistory) {
+    this.manufacturing.recyclingHistory = [];
+  }
+
+  const historyEntry = {
+    iterationNumber: this.manufacturing.circularIterationNumber,
+    timestamp: new Date(),
+    scrapComposition: new Map(this.manufacturing.recycledScrapComposition),
+    scrapCompositionObj: { ...this.manufacturing.recycledScrapCompositionObj },
+    scrapProportion: iterationData.recycledScrapProportion,
+    scrapQualityGrade: iterationData.scrapQualityGrade || 'unknown',
+    energyUsed: iterationData.energyUsed ?? 0,
+    emissionsGenerated: iterationData.emissionsGenerated ?? 0,
+    notes: iterationData.notes || ''
+  };
+
+  this.manufacturing.recyclingHistory.push(historyEntry);
+
+  // ============================================================================
+  // STEP 6: Set circular input flag
+  // ============================================================================
+  this.manufacturing.isCircularInput = iterationData.recycledScrapProportion > 0;
+
+  // Mark manufacturing as modified to ensure Mongoose saves nested changes
+  this.markModified('manufacturing');
+
+  // ============================================================================
+  // STEP 7: Save the document
+  // ============================================================================
+  return await this.save();
+};
+
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
@@ -961,6 +1504,27 @@ wizardWorkflowSchema.pre('save', function(next) {
   
   next();
 });
+
+
+
+// ===================== pre-save hook here =====================
+wizardWorkflowSchema.pre('save', function(next) {
+  if (!this.manufacturing || Object.keys(this.manufacturing).length === 0) {
+    return next();
+  }
+
+  const recycledProp = this.manufacturing.recycledScrapProportion;
+  const primaryProp = this.manufacturing.primarySourceProportion;
+
+  if (recycledProp != null && primaryProp != null) {
+    if (recycledProp + primaryProp !== 100) {
+      return next(new Error('Recycled + Primary proportions must sum to 100'));
+    }
+  }
+
+  next();
+});
+// ===================================================================
 
 // ============================================================================
 // MODEL EXPORT

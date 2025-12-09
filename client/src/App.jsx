@@ -10,11 +10,13 @@ import Docs from './pages/Docs';
 import Analytics from './pages/Analytics';
 import ProcessCanvas from './pages/ProcessCanvas';
 import Playground from './pages/playground';
+import AlchemyLab from './pages/alchemyLab';
 import MainLayout from './layouts/MainLayout';
 import RouteError from './components/RouteError';
 import ProtectedRoute from './components/ProtectedRoute';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
+import WizardSteel from './pages/WizardSteel';
 
 function App() {
   const router = createBrowserRouter([
@@ -39,7 +41,6 @@ function App() {
       element: <Docs />,
       errorElement: <RouteError />
     },
-    
     // Routes with sidebar - wrapped in MainLayout (Protected)
     {
       path: "/",
@@ -62,6 +63,11 @@ function App() {
           errorElement: <RouteError />
         },
         {
+          path: "wizard-steel",
+          element: <WizardSteel />,
+          errorElement: <RouteError />
+        },
+        {
           path: "reports",
           element: <Reports />,
           errorElement: <RouteError />
@@ -79,6 +85,11 @@ function App() {
         {
           path: "playground",
           element: <Playground />,
+          errorElement: <RouteError />
+        },
+        {
+          path: "alchemy-lab",
+          element: <AlchemyLab />,
           errorElement: <RouteError />
         }
       ]

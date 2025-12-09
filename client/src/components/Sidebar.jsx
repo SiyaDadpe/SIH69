@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2, ChevronLeft, ChevronRight, BrainCircuitIcon, Sparkles } from "lucide-react"
+import { LayoutDashboard, Folder, Paintbrush, Wand2, FileBarChart, LogOut, ChevronsUpDown, User2, ChevronLeft, ChevronRight, BrainCircuitIcon, Sparkles, Beaker } from "lucide-react"
 import { useSidebar } from "@/contexts/SidebarContext"
 import { getCurrentUser, logout } from "@/services/authService"
 import { toast } from "sonner"
@@ -174,6 +174,26 @@ export default function Sidebar() {
                     <>
                       <Sparkles className={cn("size-4 flex-shrink-0", active || isActive("/playground") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
                       {sidebarOpen && <span>Playground</span>}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/alchemy-lab"
+                  className={({ isActive: active }) =>
+                    cn(
+                      baseItemClass,
+                      (active || isActive("/alchemy-lab")) && activeItemClass,
+                      !sidebarOpen && "justify-center"
+                    )
+                  }
+                  title={!sidebarOpen ? "Alchemy Lab" : undefined}
+                >
+                  {({ isActive: active }) => (
+                    <>
+                      <Beaker className={cn("size-4 flex-shrink-0", active || isActive("/alchemy-lab") ? "opacity-100" : "opacity-80 group-hover:opacity-100")} />
+                      {sidebarOpen && <span>Alchemy Lab</span>}
                     </>
                   )}
                 </NavLink>
