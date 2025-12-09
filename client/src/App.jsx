@@ -18,6 +18,7 @@ import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
 import WizardSteel from './pages/WizardSteel';
 import WizardLead from './pages/WizardLead';
+import WizardZinc from './pages/Wizard-zn';
 
 function App() {
   const router = createBrowserRouter([
@@ -68,11 +69,6 @@ function App() {
           element: <WizardSteel />,
           errorElement: <RouteError />
         },
-        {
-          path: "wizard-lead",
-          element: <WizardLead />,
-          errorElement: <RouteError />
-        },
         {
           path: "reports",
           element: <Reports />,
