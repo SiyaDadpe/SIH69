@@ -24,7 +24,8 @@ const {
   getStatistics,
   generateAndSaveReport,
   generateStepPrediction,
-  getPredictions
+  getPredictions,
+  updateCircularFlow
 } = require('../controllers/wizardController');
 
 // ============================================================================
@@ -100,6 +101,21 @@ router.post('/workflows/:id/save-draft', authenticate, saveDraftReport);
  * @access  Private
  */
 router.post('/workflows/:id/generate-report', authenticate, generateAndSaveReport);
+
+/**
+ * @route   POST /api/wizard/workflows/:id/circular-update
+ * @desc    Update circular flow logic for a workflow (manufacturing iteration)
+ * @access  Private
+ * @body    {
+ *            recycledScrapComposition: Object|Map,
+ *            recycledScrapProportion: Number (0-100),
+ *            scrapQualityGrade: String (A|B|C|mixed|unknown),
+ *            energyUsed?: Number,
+ *            emissionsGenerated?: Number,
+ *            notes?: String
+ *          }
+ */
+router.post('/workflows/:id/circular-update', authenticate, updateCircularFlow);
 
 // ============================================================================
 // STEP ROUTES

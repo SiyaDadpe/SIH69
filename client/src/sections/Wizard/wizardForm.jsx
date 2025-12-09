@@ -40,106 +40,14 @@ import SustainableSolutionsModal from "@/components/SustainableSolutionsModal";
 import { GuidedModeToggle } from "@/components/GuidedModeToggle";
 import { AdvancedOptionsSection } from "@/components/AdvancedOptionsSection";
 import { GUIDED_MODE_DEFAULTS } from "@/constants/guidedModeDefaults";
-
-// Inline metal composition calculation utilities
-const getDefaultPrimaryComposition = (grade) => {
-  const compositions = {
-    'P1020': { Al: 99.7, Cu: 0.05, Mg: 0.05, Si: 0.1, Others: 0.1 },
-    'P1050': { Al: 99.5, Cu: 0.05, Mg: 0.05, Si: 0.25, Others: 0.15 },
-    'P1060': { Al: 99.6, Cu: 0.05, Mg: 0.03, Si: 0.25, Others: 0.07 },
-  };
-  return compositions[grade] || compositions['P1020'];
-};
-
-const computeManufacturingOutput = (productMass, scrapRatePercent) => {
-  const scrapRate = Math.max(0, Math.min(100, scrapRatePercent)) / 100;
-  const internalScrapMass = productMass * scrapRate;
-  return { productMass, internalScrapMass };
-};
-
-const computeMeltComposition = (streams) => {
-  let totalMass = 0;
-  const totalComp = { Al: 0, Cu: 0, Mg: 0, Si: 0, Others: 0 };
-  
-  streams.forEach(stream => {
-    totalMass += stream.mass;
-    Object.keys(totalComp).forEach(element => {
-      totalComp[element] += stream.mass * (stream.composition[element] || 0) / 100;
-    });
-  });
-  
-  const composition = {};
-  if (totalMass > 0) {
-    Object.keys(totalComp).forEach(element => {
-      composition[element] = (totalComp[element] / totalMass) * 100;
-    });
-  } else {
-    Object.keys(totalComp).forEach(element => {
-      composition[element] = 0;
-    });
-  }
-  
-  return { totalMass, composition };
-};
-
-const computeMakeupAdditions = (target, currentMelt) => {
-  const targetComp = target.composition;
-  const currentComp = currentMelt.composition;
-  const mass = currentMelt.totalMass;
-  const tolerance = target.tolerance || {};
-  
-  const additionsArray = [];
-  const elements = ['Al', 'Cu', 'Mg', 'Si', 'Others'];
-  
-  if (mass === 0) return additionsArray;
-  
-  elements.forEach(element => {
-    const targetPct = targetComp[element] || 0;
-    const currentPct = currentComp[element] || 0;
-    const allowedTolerance = tolerance[element] || 0;
-    
-    // Calculate deficit: if current is less than target (accounting for tolerance)
-    const deficit = targetPct - currentPct - allowedTolerance;
-    
-    if (deficit > 0.01) { // Only show if deficit is significant (> 0.01%)
-      const requiredMass = (mass * deficit) / 100;
-      additionsArray.push({
-        element,
-        deficit: deficit.toFixed(2),
-        requiredMass,
-        targetPct,
-        currentPct
-      });
-    }
-  });
-  
-  return additionsArray;
-};
-
-const computeRecyclingResult = (scrapStream, yieldPercent, slagPercent) => {
-  const yieldFraction = Math.max(0, Math.min(100, yieldPercent)) / 100;
-  const slagFraction = Math.max(0, Math.min(100, slagPercent)) / 100;
-  
-  const recoveredMass = scrapStream.mass * yieldFraction;
-  const slagMass = scrapStream.mass * slagFraction;
-  const lostMass = scrapStream.mass - recoveredMass - slagMass;
-  
-  return {
-    recoveredMass,
-    slagMass,
-    lostMass,
-    composition: scrapStream.composition
-  };
-};
-
-const computeValorizationResult = (slagMass, valorizationRatePercent) => {
-  const rate = Math.max(0, Math.min(100, valorizationRatePercent)) / 100;
-  return {
-    slagMass,
-    valorizedMass: slagMass * rate,
-    wastedMass: slagMass * (1 - rate)
-  };
-};
+import {
+  computeMeltComposition,
+  computeMakeupAdditions,
+  computeManufacturingOutput,
+  computeRecyclingResult,
+  computeValorizationResult,
+  getDefaultPrimaryComposition,
+} from "@/utils/metalStreams";
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -245,6 +153,151 @@ function CardRadio({ id, label, selected, onSelect }) {
       </div>
     </div>
   )
+}
+
+// AI Prediction Review Component
+function AIPredictionReview({ predictions, acceptedPredictions, onAcceptanceChange, stepName }) {
+  const hasPredictions = predictions && Object.keys(predictions).length > 0;
+  
+  if (!hasPredictions) {
+    return (
+      <div className="mt-6 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+        <div className="flex items-center gap-3 text-gray-500">
+          <div className="flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full">
+            <span className="text-sm font-semibold">🤖</span>
+          </div>
+          <p className="text-sm">
+            No AI predictions yet. Click <strong>"Generate AI Predictions"</strong> button above to get predictions for empty fields.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const getFieldDisplayName = (fieldName) => {
+    const displayNames = {
+      // Mining fields
+      mining_energy_MJ_per_t_ore: "Energy (MJ per tonne)",
+      mining_co2_kg_per_t_ore: "CO₂ Emissions (kg per tonne)",
+      mining_sox_kg_per_t_ore: "SOx Emissions (kg per tonne)",
+      mining_nox_kg_per_t_ore: "NOx Emissions (kg per tonne)",
+      mining_pm_kg_per_t_ore: "Particulate Matter (kg per tonne)",
+      // Beneficiation fields
+      beneficiation_water_m3_per_t_ore: "Water Usage (m³ per tonne)",
+      beneficiation_electricity_kWh_per_t_ore: "Electricity Usage (kWh per tonne)",
+      beneficiation_tailings_management: "Tailings Management",
+      beneficiation_noise_pollution: "Noise Pollution Level",
+      beneficiation_dust_pollution: "Dust Pollution Level",
+      // Add more field mappings as needed
+    };
+    return displayNames[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
+  const formatValue = (fieldName, value) => {
+    if (typeof value === 'number') {
+      return value.toFixed(2);
+    }
+    return String(value);
+  };
+
+  return (
+    <div className="mt-8 p-6 bg-linear-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
+            <span className="text-white text-sm font-semibold">🤖</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">AI Predicted Fields</h3>
+          <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+            {Object.keys(predictions).length} predictions
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              Object.keys(predictions).forEach(fieldName => {
+                onAcceptanceChange(fieldName, true);
+              });
+            }}
+            className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+          >
+            Accept All
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              Object.keys(predictions).forEach(fieldName => {
+                onAcceptanceChange(fieldName, false);
+              });
+            }}
+            className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+          >
+            Reject All
+          </button>
+        </div>
+      </div>
+      
+      <p className="text-sm text-gray-600 mb-4">
+        Review and accept the AI predictions below. Accepted values will be applied to your form.
+      </p>
+
+      <div className="space-y-3">
+        {Object.entries(predictions).map(([fieldName, predictionData]) => (
+          <div
+            key={fieldName}
+            className={`p-4 rounded-xl border transition-all duration-200 ${
+              acceptedPredictions.has(fieldName)
+                ? 'bg-green-50 border-green-200 shadow-sm'
+                : 'bg-white border-gray-200 hover:border-blue-300'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-sm font-medium text-gray-900">
+                    {getFieldDisplayName(fieldName)}
+                  </label>
+                  {predictionData.confidence && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      {Math.round(predictionData.confidence * 100)}% confidence
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-gray-700">
+                  Predicted value: <span className="font-mono font-medium text-blue-600">
+                    {formatValue(fieldName, predictionData.value)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPredictions.has(fieldName)}
+                    onChange={(e) => onAcceptanceChange(fieldName, e.target.checked)}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                  />
+                  <span className={`text-sm font-medium ${
+                    acceptedPredictions.has(fieldName) ? 'text-green-700' : 'text-gray-600'
+                  }`}>
+                    {acceptedPredictions.has(fieldName) ? 'Accepted' : 'Accept'}
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+        <p className="text-xs text-blue-800">
+          💡 <strong>Tip:</strong> You can modify accepted values in the form fields above at any time.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function StepSection({
@@ -541,7 +594,7 @@ const formSchema = z.object({
   }).nullable().optional(),
 });
 
-function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1563,6 +1616,13 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
               </div>
             </AdvancedOptionsSection>
           </form>
+          
+          <AIPredictionReview
+            predictions={predictions}
+            acceptedPredictions={acceptedPredictions}
+            onAcceptanceChange={onPredictionAcceptance}
+            stepName="mining"
+          />
       </StepSection>
     </FormProvider>
   );
@@ -1570,7 +1630,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
 
 
 // Step 2: Beneficiation
-function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), predictionMetadata = {}, onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -2396,6 +2456,13 @@ function BeneficiationDetails({ onNext, onBack, onSave, initialValues, onGenerat
               </div>
             </AdvancedOptionsSection>
           </form>
+          
+          <AIPredictionReview
+            predictions={predictions}
+            acceptedPredictions={acceptedPredictions}
+            onAcceptanceChange={onPredictionAcceptance}
+            stepName="beneficiation"
+          />
       </StepSection>
     </FormProvider>
   )
@@ -2425,6 +2492,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [aiPredictions, setAiPredictions] = useState({})  // Stores all predictions by step
   const [predictionMetadata, setPredictionMetadata] = useState({})  // Stores metadata for each step
   const [aiPopulatedFields, setAiPopulatedFields] = useState({})  // Tracks which fields were populated by AI (for styling)
+  const [acceptedPredictions, setAcceptedPredictions] = useState({})  // Tracks which predictions are accepted per step
   
   // Sustainable Solutions Modal state
   const [showSustainableSolutions, setShowSustainableSolutions] = useState(false)
@@ -2492,20 +2560,31 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           console.log('🤖 [Wizard] Loaded workflow data:', response.data.predictions);
           console.log('📊 [Wizard] Prediction metadata:', response.data.predictionMetadata);
           
-          // Extract aiPredictions from each step
+          // Extract aiPredictions from each step in the correct format
           const extractedPredictions = {};
-          const extractedMetadata = response.data.predictionMetadata || {}; // Use step-level metadata from backend
+          const extractedMetadata = response.data.predictionMetadata || {};
+          const extractedAccepted = {};
           
           Object.keys(response.data.predictions).forEach(stepName => {
             const stepData = response.data.predictions[stepName];
             if (stepData && stepData.aiPredictions) {
               extractedPredictions[stepName] = {};
+              extractedAccepted[stepName] = new Set();
               
-              // Extract each prediction value
+              // Extract each prediction in the format expected by AIPredictionReview
               Object.keys(stepData.aiPredictions).forEach(fieldName => {
                 const predData = stepData.aiPredictions[fieldName];
                 if (predData && predData.prediction !== undefined) {
-                  extractedPredictions[stepName][fieldName] = predData.prediction;
+                  // Store in the format expected by AIPredictionReview
+                  extractedPredictions[stepName][fieldName] = {
+                    value: predData.prediction,
+                    confidence: predData.confidence || null,
+                    interval: predData.interval,
+                    rmse: predData.rmse,
+                    mae: predData.mae
+                  };
+                  // Mark as accepted since it was previously saved
+                  extractedAccepted[stepName].add(fieldName);
                 }
               });
             }
@@ -2516,6 +2595,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           
           setAiPredictions(extractedPredictions);
           setPredictionMetadata(extractedMetadata);
+          setAcceptedPredictions(extractedAccepted);
           
           // Auto-populate predictions into formValues and track for blue tint
           const updatedFormValues = { ...values };
@@ -2524,10 +2604,15 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           Object.keys(extractedPredictions).forEach(stepName => {
             const stepPredictions = extractedPredictions[stepName];
             if (Object.keys(stepPredictions).length > 0) {
-              // Merge predictions into form values
+              // Merge prediction VALUES into form values
+              const stepValues = {};
+              Object.entries(stepPredictions).forEach(([fieldName, predObj]) => {
+                stepValues[fieldName] = predObj.value;
+              });
+              
               updatedFormValues[stepName] = {
                 ...updatedFormValues[stepName],
-                ...stepPredictions
+                ...stepValues
               };
               
               // Track which fields were populated by AI
@@ -2946,40 +3031,40 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           throw new Error(`No aiPredictions found for step: ${stepName}`);
         }
         
-        // Extract prediction values from nested aiPredictions structure
-        const processedPredictions = {};
+        // Extract prediction values and format for AIPredictionReview component
+        const predictionsForReview = {}; // Format for AIPredictionReview component
         Object.entries(stepPredictions.aiPredictions).forEach(([fieldName, predData]) => {
           if (predData && typeof predData === 'object' && 'prediction' in predData) {
-            processedPredictions[fieldName] = predData.prediction;
+            // Store in format expected by AIPredictionReview
+            predictionsForReview[fieldName] = {
+              value: predData.prediction,
+              confidence: predData.confidence || null,
+              interval: predData.interval,
+              rmse: predData.rmse,
+              mae: predData.mae
+            };
             console.log(`✅ [AI Prediction] Extracted ${fieldName} = ${predData.prediction}`);
           }
         });
         
-        if (Object.keys(processedPredictions).length === 0) {
+        if (Object.keys(predictionsForReview).length === 0) {
           throw new Error('No valid predictions found in aiPredictions');
         }
         
-        // Step 5: Auto-populate predictions directly into form and track with blue tint
-        const mergedData = { ...currentFormData, ...processedPredictions };
-        console.log('🔄 [AI Prediction] Auto-populating predictions into form:', mergedData);
+        // Step 5: Store predictions for review (DO NOT auto-populate yet)
+        // User will review and accept/reject in the AIPredictionReview component
+        console.log('🔄 [AI Prediction] Storing predictions for review:', predictionsForReview);
         
-        // Update form values immediately with predictions
-        setFormValues((prev) => ({
-          ...prev,
-          [stepName]: mergedData
-        }));
-        
-        // Track all predicted fields for blue tint styling (override any existing values)
-        const predictedFieldNames = new Set(Object.keys(processedPredictions));
-        setAiPopulatedFields(prev => ({
-          ...prev,
-          [stepName]: predictedFieldNames
-        }));
-        
-        // Store predictions and metadata for reference
+        // Store predictions in the format expected by AIPredictionReview
         setAiPredictions(prev => ({
           ...prev,
-          [stepName]: processedPredictions
+          [stepName]: predictionsForReview
+        }));
+        
+        // Initialize accepted predictions as empty Set (user will accept manually)
+        setAcceptedPredictions(prev => ({
+          ...prev,
+          [stepName]: new Set()
         }));
         
         const stepMetadata = pollResponse.data.predictionMetadata?.[stepName];
@@ -2990,21 +3075,21 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
           }));
         }
         
-        console.log('✅ [AI Prediction] Auto-populated fields:', Array.from(predictedFieldNames));
+        console.log('✅ [AI Prediction] Predictions ready for review. User can now accept/reject.');
 
         
         // Show success message
-        const predictedCount = Object.keys(processedPredictions).length;
+        const predictedCount = Object.keys(predictionsForReview).length;
         const confidence = pollResponse.data.predictionMetadata?.[stepName]?.confidence 
           ? (pollResponse.data.predictionMetadata[stepName].confidence * 100).toFixed(1)
           : 'N/A';
         
         setPredictionSuccess(
-          `🎉 Successfully loaded ${predictedCount} AI predictions from ML model (Confidence: ${confidence}%)`
+          `🎉 Successfully loaded ${predictedCount} AI predictions. Review and accept them below! (Confidence: ${confidence}%)`
         );
         
         console.log(`📊 [AI Prediction] Successfully processed ${predictedCount} predictions`);
-        setTimeout(() => setPredictionSuccess(null), 5000);
+        setTimeout(() => setPredictionSuccess(null), 8000);
         
         return {
           success: true,
@@ -3028,6 +3113,74 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
     } finally {
       setPredicting(false);
     }
+  };
+
+  // Handler for accepting/rejecting individual predictions
+  const handlePredictionAcceptance = (stepName, fieldName, accepted) => {
+    console.log(`🔄 [Prediction] ${accepted ? 'Accepting' : 'Rejecting'} prediction for ${stepName}.${fieldName}`);
+    
+    setAcceptedPredictions(prev => {
+      const stepAccepted = new Set(prev[stepName] || []);
+      
+      if (accepted) {
+        stepAccepted.add(fieldName);
+        
+        // Auto-populate the field value from predictions
+        const predictionData = aiPredictions[stepName]?.[fieldName];
+        if (predictionData !== undefined) {
+          const predictionValue = typeof predictionData === 'object' ? predictionData.value : predictionData;
+          
+          setFormValues(current => ({
+            ...current,
+            [stepName]: {
+              ...current[stepName],
+              [fieldName]: predictionValue
+            }
+          }));
+          
+          // Mark field as AI-populated for styling
+          setAiPopulatedFields(current => {
+            const stepFields = new Set(current[stepName] || []);
+            stepFields.add(fieldName);
+            return {
+              ...current,
+              [stepName]: stepFields
+            };
+          });
+          
+          console.log(`✅ [Prediction] Applied ${fieldName} = ${predictionValue}`);
+        }
+      } else {
+        stepAccepted.delete(fieldName);
+        
+        // Remove the field value
+        setFormValues(current => {
+          const stepData = { ...current[stepName] };
+          delete stepData[fieldName];
+          return {
+            ...current,
+            [stepName]: stepData
+          };
+        });
+        
+        // Remove AI-populated styling
+        setAiPopulatedFields(current => {
+          const stepFields = new Set(current[stepName] || []);
+          stepFields.delete(fieldName);
+          return {
+            ...current,
+            [stepName]: stepFields
+          };
+        });
+        
+        console.log(`❌ [Prediction] Removed ${fieldName}`);
+      }
+      
+      return {
+        ...prev,
+        [stepName]: stepAccepted
+      };
+    });
   };
 
   const renderStep = () => {
@@ -3065,6 +3218,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predicting={predicting}
             pollingProgress={pollingProgress}
             onOpenWorkflow={onOpenWorkflow}
+            predictions={aiPredictions['mining'] || {}}
+            acceptedPredictions={acceptedPredictions['mining'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('mining', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['mining'] || new Set()}
             predictionMetadata={predictionMetadata['mining'] || {}}
             onCalculateLCA={handleCalculateLCA}
@@ -3085,6 +3241,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             predicting={predicting}
             pollingProgress={pollingProgress}
             onOpenWorkflow={onOpenWorkflow}
+            predictions={aiPredictions['beneficiation'] || {}}
+            acceptedPredictions={acceptedPredictions['beneficiation'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('beneficiation', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['beneficiation'] || new Set()}
             predictionMetadata={predictionMetadata['beneficiation'] || {}}
             onCalculateLCA={handleCalculateLCA}
@@ -3104,6 +3263,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('refining', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
+            predictions={aiPredictions['refining'] || {}}
+            acceptedPredictions={acceptedPredictions['refining'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('refining', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['refining'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -3122,6 +3284,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('smelting', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
+            predictions={aiPredictions['smelting'] || {}}
+            acceptedPredictions={acceptedPredictions['smelting'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('smelting', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['smelting'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -3140,6 +3305,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('manufacturing', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
+            predictions={aiPredictions['manufacturing'] || {}}
+            acceptedPredictions={acceptedPredictions['manufacturing'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('manufacturing', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['manufacturing'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -3166,6 +3334,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('recycling', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
+            predictions={aiPredictions['recycling'] || {}}
+            acceptedPredictions={acceptedPredictions['recycling'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('recycling', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['recycling'] || new Set()}
             onCalculateLCA={handleCalculateLCA}
             isCalculatingLca={isCalculatingLca}
@@ -3184,6 +3355,9 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             onGenerateAIPrediction={(data) => handleGenerateAIPrediction('valorization', data)}
             predicting={predicting}
             pollingProgress={pollingProgress}
+            predictions={aiPredictions['valorization'] || {}}
+            acceptedPredictions={acceptedPredictions['valorization'] || new Set()}
+            onPredictionAcceptance={(fieldName, accepted) => handlePredictionAcceptance('valorization', fieldName, accepted)}
             aiPopulatedFields={aiPopulatedFields['valorization'] || new Set()}
             onSubmitSuccess={() => {
               setCompleted(true)
@@ -3456,7 +3630,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
 }
 
 // Step 3: Refining
-function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4016,13 +4190,20 @@ function RefiningDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
             </AdvancedOptionsSection>
           </form>
         </Form>
+        
+        <AIPredictionReview
+          predictions={predictions}
+          acceptedPredictions={acceptedPredictions}
+          onAcceptanceChange={onPredictionAcceptance}
+          stepName="refining"
+        />
       </StepSection>
     </FormProvider>
   )
 }
 
 // Step 4: Smelting
-function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -4551,6 +4732,13 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
             </AdvancedOptionsSection>
           </form>
         </Form>
+        
+        <AIPredictionReview
+          predictions={predictions}
+          acceptedPredictions={acceptedPredictions}
+          onAcceptanceChange={onPredictionAcceptance}
+          stepName="smelting"
+        />
       </StepSection>
     </FormProvider>
   )
@@ -4583,7 +4771,7 @@ const estimateMeasuredComposition = (targetComp, scrapQuality, scrapSource) => {
 };
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable, recyclingData, materialSourceInfo }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable, recyclingData, materialSourceInfo }) {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('custom');
   const [scrapQuality, setScrapQuality] = useState('medium');
@@ -5716,13 +5904,20 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
             </AdvancedOptionsSection>
           </form>
         </Form>
+        
+        <AIPredictionReview
+          predictions={predictions}
+          acceptedPredictions={acceptedPredictions}
+          onAcceptanceChange={onPredictionAcceptance}
+          stepName="manufacturing"
+        />
       </StepSection>
     </FormProvider>
   )
 }
 
 // Step 6: Recycling
-function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -6366,13 +6561,20 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
             </AdvancedOptionsSection>
           </form>
         </Form>
+        
+        <AIPredictionReview
+          predictions={predictions}
+          acceptedPredictions={acceptedPredictions}
+          onAcceptanceChange={onPredictionAcceptance}
+          stepName="recycling"
+        />
       </StepSection>
     </FormProvider>
   )
 }
 
 // Step 7: Valorization
-function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -7010,6 +7212,13 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
             </AdvancedOptionsSection>
           </form>
         </Form>
+        
+        <AIPredictionReview
+          predictions={predictions}
+          acceptedPredictions={acceptedPredictions}
+          onAcceptanceChange={onPredictionAcceptance}
+          stepName="valorization"
+        />
       </StepSection>
     </FormProvider>
   )
@@ -7128,4 +7337,3 @@ function StepForm({ stepKey, stepTitle, values, onChange, miningOptions }) {
     </Card>
   )
 }
-
