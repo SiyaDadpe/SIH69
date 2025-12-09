@@ -17,6 +17,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { Toaster } from '@/components/ui/sonner';
 import WizardSteel from './pages/WizardSteel';
+import WizardLead from './pages/WizardLead';
 
 function App() {
   const router = createBrowserRouter([
@@ -45,9 +46,9 @@ function App() {
     {
       path: "/",
       element: (
-        <ProtectedRoute>
+        // <ProtectedRoute>
           <MainLayout />
-          </ProtectedRoute>
+          // </ProtectedRoute>
       ),
       errorElement: <RouteError />,
       children: [
@@ -67,6 +68,11 @@ function App() {
           element: <WizardSteel />,
           errorElement: <RouteError />
         },
+        {
+          path: "wizard-lead",
+          element: <WizardLead />,
+          errorElement: <RouteError />
+        },
         {
           path: "reports",
           element: <Reports />,
