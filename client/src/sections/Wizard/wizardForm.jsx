@@ -40,6 +40,14 @@ import SustainableSolutionsModal from "@/components/SustainableSolutionsModal";
 import { GuidedModeToggle } from "@/components/GuidedModeToggle";
 import { AdvancedOptionsSection } from "@/components/AdvancedOptionsSection";
 import { GUIDED_MODE_DEFAULTS } from "@/constants/guidedModeDefaults";
+import {
+  computeMeltComposition,
+  computeMakeupAdditions,
+  computeManufacturingOutput,
+  computeRecyclingResult,
+  computeValorizationResult,
+  getDefaultPrimaryComposition,
+} from "@/utils/metalStreams";
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -432,7 +440,7 @@ const formSchema = z.object({
     water_usage_capped: z.coerce.number().nullable().optional(),
     rehabilitation_plan_in_place: z.boolean().nullable().optional(),
     overburden_restored_percent: z.coerce.number().nullable().optional(),
-    renewable_energy_percent: z.coerce.number().nullable().optional(),
+   
     biodiversity_offset_area_ha: z.coerce.number().nullable().optional(),
     water_recycling_rate: z.coerce.number().nullable().optional(),
     rehabilitation_progress_percent: z.coerce.number().nullable().optional(),
@@ -1282,19 +1290,7 @@ function MiningProcessDetails({ onNext, onSave, initialValues, onGenerateAIPredi
                         )}
                       />
                       
-                      <FormField
-                        control={control}
-                        name="sustainabilityParameters.renewable_energy_percent"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Renewable Energy (%)</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="number" placeholder="0-100" min="0" max="100" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                     
                       
                       <FormField
                         control={control}
@@ -2347,13 +2343,32 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
   const [materialSource, setMaterialSource] = useState('primary') // 'primary', 'secondary', or 'mixed'
   const [primaryPercentage, setPrimaryPercentage] = useState(100)
   const [secondaryPercentage, setSecondaryPercentage] = useState(0)
+  const [primaryGrade, setPrimaryGrade] = useState('P1020')
+  const [customPrimaryGrade, setCustomPrimaryGrade] = useState('')
+  const [hasLoopedToManufacturing, setHasLoopedToManufacturing] = useState(false)
   
   // Notify parent of material source changes (only when it actually changes)
   useEffect(() => {
+    const primaryGradeLabel = materialSource === 'secondary'
+      ? null
+      : (primaryGrade === 'Other' ? (customPrimaryGrade?.trim() || 'Other') : primaryGrade);
+
     if (onMaterialSourceChange) {
-      onMaterialSourceChange({ materialSource, primaryPercentage, secondaryPercentage });
+      onMaterialSourceChange({
+        materialSource,
+        primaryPercentage,
+        secondaryPercentage,
+        primaryGrade,
+        primaryGradeLabel,
+        customPrimaryGrade,
+      });
     }
-  }, [materialSource, primaryPercentage, secondaryPercentage]); // Removed onMaterialSourceChange from deps
+    }, [materialSource, primaryPercentage, secondaryPercentage, primaryGrade, customPrimaryGrade]); // Removed onMaterialSourceChange from deps
+
+    // Reset the recycling→manufacturing loop flag when source mix changes
+    useEffect(() => {
+      setHasLoopedToManufacturing(false);
+    }, [materialSource, primaryPercentage, secondaryPercentage]);
 
   // Auto-navigate to Manufacturing when 100% secondary is selected
   useEffect(() => {
@@ -2462,7 +2477,17 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       alert(`Please fill in the required fields for ${currentStep.label}:\n\n- ${validation.missingFields.join('\n- ')}`);
       return;
     }
-    
+
+    // Mixed route: when leaving Recycling, loop back to Manufacturing once to set alloy target/makeup
+    if (stepKey === 'recycling' && materialSource === 'mixed' && !hasLoopedToManufacturing) {
+      const manufacturingIndex = steps.findIndex((s) => s.key === 'manufacturing');
+      if (manufacturingIndex >= 0) {
+        setHasLoopedToManufacturing(true);
+        onStepChange(manufacturingIndex);
+        return;
+      }
+    }
+
     // Move to next step if validation passes
     if (activeStep < steps.length - 1) {
       onStepChange(activeStep + 1);
@@ -3029,6 +3054,14 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             setShowSustainableSolutions={setShowSustainableSolutions}
             setCurrentSustainableStage={setCurrentSustainableStage}
             setFormDataForSustainable={setFormDataForSustainable}
+            recyclingData={formValues.recycling}
+            materialSourceInfo={{
+              materialSource,
+              primaryPercentage,
+              secondaryPercentage,
+              primaryGrade,
+              customPrimaryGrade,
+            }}
           />
         );
       case 'recycling':
@@ -3117,6 +3150,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
                 setMaterialSource('primary');
                 setPrimaryPercentage(100);
                 setSecondaryPercentage(0);
+                setPrimaryGrade((prev) => prev || 'P1020');
               }}
               className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
             />
@@ -3136,6 +3170,8 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
                 setMaterialSource('secondary');
                 setPrimaryPercentage(0);
                 setSecondaryPercentage(100);
+                setPrimaryGrade(null);
+                setCustomPrimaryGrade('');
               }}
               className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
             />
@@ -3156,6 +3192,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
                   setMaterialSource('mixed');
                   setPrimaryPercentage(50);
                   setSecondaryPercentage(50);
+                  setPrimaryGrade((prev) => prev || 'P1020');
                 }}
                 className="w-5 h-5 text-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
               />
@@ -3202,6 +3239,34 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
             )}
           </div>
         </div>
+
+        {/* Primary grade selection (shown for Primary or Mixed routes) */}
+        {materialSource !== 'secondary' && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-[220px,1fr] items-center">
+            <div className="text-sm font-semibold text-gray-800">Primary aluminium grade</div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <select
+                value={primaryGrade || 'P1020'}
+                onChange={(e) => setPrimaryGrade(e.target.value)}
+                className="w-full sm:w-56 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+              >
+                <option value="P1020">P1020 (≈99.7% Al)</option>
+                <option value="Foundry">Foundry alloy (cast)</option>
+                <option value="WireRod">Wire rod (conductive)</option>
+                <option value="Other">Other / custom</option>
+              </select>
+              {primaryGrade === 'Other' && (
+                <input
+                  type="text"
+                  value={customPrimaryGrade}
+                  onChange={(e) => setCustomPrimaryGrade(e.target.value)}
+                  placeholder="Describe custom grade"
+                  className="w-full sm:flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#BA7967] focus:ring-2 focus:ring-[#BA7967]"
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Info message for secondary selection */}
         {materialSource === 'secondary' && (
@@ -4381,9 +4446,38 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
   )
 }
 
+// Alloy presets for common applications
+const ALLOY_PRESETS = {
+  automotive_casting: { name: 'Automotive Casting (A380)', Al: 85, Si: 8.5, Cu: 3.5, Fe: 1.3, Zn: 1, Others: 0.7 },
+  automotive_wrought: { name: 'Automotive Wrought (6061)', Al: 97.9, Mg: 1, Si: 0.6, Cu: 0.3, Cr: 0.2 },
+  aerospace: { name: 'Aerospace (7075)', Al: 90, Zn: 5.6, Mg: 2.5, Cu: 1.6, Others: 0.3 },
+  packaging: { name: 'Packaging (3004)', Al: 97.8, Mn: 1.2, Mg: 1, Others: 0 },
+  construction: { name: 'Construction (6063)', Al: 98.5, Mg: 0.7, Si: 0.4, Others: 0.4 },
+  custom: { name: 'Custom', Al: 95, Cu: 5, Mg: 0, Si: 0, Others: 0 },
+};
+
+// Estimated composition from scrap quality
+const estimateMeasuredComposition = (targetComp, scrapQuality, scrapSource) => {
+  // High-grade scrap is closer to target; low-grade has more impurities
+  const qualityFactor = scrapQuality === 'high' ? 0.98 : scrapQuality === 'medium' ? 0.92 : 0.85;
+  const estimatedAl = targetComp.Al * qualityFactor;
+  const impurityIncrease = targetComp.Al * (1 - qualityFactor);
+  
+  return {
+    Al: estimatedAl,
+    Cu: targetComp.Cu * 0.6, // Assume some Cu loss/dilution
+    Mg: targetComp.Mg * 0.7,
+    Si: targetComp.Si + impurityIncrease * 0.4, // Si often increases in scrap
+    Others: targetComp.Others + impurityIncrease * 0.6,
+  };
+};
+
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable, recyclingData, materialSourceInfo }) {
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState('custom');
+  const [scrapQuality, setScrapQuality] = useState('medium');
+  const [autoEstimateMeasured, setAutoEstimateMeasured] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const processOptions = [
@@ -4449,6 +4543,20 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     processes: z.array(z.string()).optional().default([]),
     processOthers: z.string().nullable().optional(),
     castingProcesses: z.array(z.string()).default([]),
+    // Alloy / mass balance inputs
+    finalProductMass: z.coerce.number().min(0.1).nullable().optional(),
+    targetAlPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    targetCuPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    targetMgPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    targetSiPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    targetOthersPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    // Measured composition toggle and fields
+    useMeasuredComposition: z.boolean().nullable().optional(),
+    measuredAlPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    measuredCuPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    measuredMgPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    measuredSiPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    measuredOthersPercent: z.coerce.number().min(0).max(100).nullable().optional(),
     scrapRate: requiredNumber(0, 100, 'Scrap rate must be between 0-100%').nullable().optional(),
     recycledContent: z.coerce.number().min(0).max(100).nullable().optional(),
     energyUsePerStep: z.coerce.number().min(0).nullable().optional(),
@@ -4469,9 +4577,25 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       surface_treatment_chemical_use_reduced: z.boolean().nullable().optional(),
       transport_mode_rail_or_sea_preferred: z.boolean().nullable().optional(),
       product_lifetime_years: z.coerce.number().nullable().optional(),
-      renewable_energy_percent: z.coerce.number().nullable().optional(),
+      
     }).nullable().optional(),
   }).superRefine((val, ctx) => {
+    // Alloy composition sanity check (sum within 0-101%)
+    const targetSum = [val.targetAlPercent, val.targetCuPercent, val.targetMgPercent, val.targetSiPercent, val.targetOthersPercent]
+      .map((v) => (typeof v === 'number' ? v : 0))
+      .reduce((a, b) => a + b, 0);
+    if (targetSum > 101) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Target alloy percentages should sum to ~100%', path: ['targetAlPercent'] });
+    }
+    // Measured composition sanity check
+    if (val.useMeasuredComposition) {
+      const measuredSum = [val.measuredAlPercent, val.measuredCuPercent, val.measuredMgPercent, val.measuredSiPercent, val.measuredOthersPercent]
+        .map((v) => (typeof v === 'number' ? v : 0))
+        .reduce((a, b) => a + b, 0);
+      if (measuredSum > 101) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Measured composition percentages should sum to ~100%', path: ['measuredAlPercent'] });
+      }
+    }
     // Casting sub-selection is required only if Casting is selected
     if (val.processes?.includes('casting') && (!val.castingProcesses || val.castingProcesses.length === 0)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select at least one casting process', path: ['castingProcesses'] })
@@ -4500,6 +4624,18 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       processes: [], 
       castingProcesses: [], 
       lightweightingSectors: [],
+      finalProductMass: 1000,
+      targetAlPercent: 95,
+      targetCuPercent: 5,
+      targetMgPercent: 0,
+      targetSiPercent: 0,
+      targetOthersPercent: 0,
+      useMeasuredComposition: false,
+      measuredAlPercent: 0,
+      measuredCuPercent: 0,
+      measuredMgPercent: 0,
+      measuredSiPercent: 0,
+      measuredOthersPercent: 0,
       scrapRate: 0,
       sustainabilityParameters: {},
       transportDistance: 0
@@ -4511,6 +4647,125 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
   const selectedProcesses = watch('processes')
   const selectedSectors = watch('lightweightingSectors')
   const transportMode = watch('transportMode')
+  const finalProductMass = watch('finalProductMass')
+  const scrapRatePercent = watch('scrapRate')
+  const targetAl = watch('targetAlPercent')
+  const targetCu = watch('targetCuPercent')
+  const targetMg = watch('targetMgPercent')
+  const targetSi = watch('targetSiPercent')
+  const targetOthers = watch('targetOthersPercent')
+  const useMeasuredComposition = watch('useMeasuredComposition')
+  const measuredAl = watch('measuredAlPercent')
+  const measuredCu = watch('measuredCuPercent')
+  const measuredMg = watch('measuredMgPercent')
+  const measuredSi = watch('measuredSiPercent')
+  const measuredOthers = watch('measuredOthersPercent')
+
+  const targetComposition = React.useMemo(() => ({
+    Al: Number(targetAl) || 0,
+    Cu: Number(targetCu) || 0,
+    Mg: Number(targetMg) || 0,
+    Si: Number(targetSi) || 0,
+    Others: Number(targetOthers) || 0,
+  }), [targetAl, targetCu, targetMg, targetSi, targetOthers])
+
+  const measuredComposition = React.useMemo(() => {
+    const raw = {
+      Al: Number(measuredAl) || 0,
+      Cu: Number(measuredCu) || 0,
+      Mg: Number(measuredMg) || 0,
+      Si: Number(measuredSi) || 0,
+      Others: Number(measuredOthers) || 0,
+    };
+    // Calculate sum for validation
+    const sum = raw.Al + raw.Cu + raw.Mg + raw.Si + raw.Others;
+    // If sum is non-zero, normalize to 100% to ensure mass balance
+    if (sum > 0 && Math.abs(sum - 100) > 0.01) {
+      return {
+        Al: (raw.Al / sum) * 100,
+        Cu: (raw.Cu / sum) * 100,
+        Mg: (raw.Mg / sum) * 100,
+        Si: (raw.Si / sum) * 100,
+        Others: (raw.Others / sum) * 100,
+        _rawSum: sum, // Store original sum for display
+      };
+    }
+    return { ...raw, _rawSum: sum };
+  }, [measuredAl, measuredCu, measuredMg, measuredSi, measuredOthers])
+
+  const alloyBalancePreview = React.useMemo(() => {
+    const productMass = Number(finalProductMass) > 0 ? Number(finalProductMass) : 0;
+    const scrapPct = Number(scrapRatePercent) || 0;
+
+    const manufacturingBalance = computeManufacturingOutput(productMass, scrapPct);
+    const totalCharge = manufacturingBalance.productMass + manufacturingBalance.internalScrapMass;
+
+    const primaryShare = materialSourceInfo?.materialSource === 'secondary'
+      ? 0
+      : Math.max(0, Math.min(1, (materialSourceInfo?.primaryPercentage ?? 100) / 100));
+    const secondaryShare = Math.max(0, 1 - primaryShare);
+
+    const primaryGrade = materialSourceInfo?.primaryGrade || 'P1020';
+    const primaryComposition = getDefaultPrimaryComposition(primaryGrade);
+
+    const secondaryComposition = (materialSourceInfo?.materialSource === 'primary')
+      ? targetComposition
+      : (recyclingData?.recoveredComposition || targetComposition || { Al: 95, Others: 5 });
+
+    const meltStreams = [];
+    if (totalCharge > 0 && primaryShare > 0) {
+      meltStreams.push({ id: 'primary_charge', mass: totalCharge * primaryShare, composition: primaryComposition, sourceType: 'primary' });
+    }
+    if (totalCharge > 0 && secondaryShare > 0) {
+      meltStreams.push({ id: 'secondary_charge', mass: totalCharge * secondaryShare, composition: secondaryComposition, sourceType: 'recycled' });
+    }
+
+    const melt = computeMeltComposition(meltStreams);
+    
+    // Use measured composition if toggle is on, otherwise use calculated melt
+    // Extract only composition properties (exclude _rawSum)
+    const pureComposition = useMeasuredComposition
+      ? { Al: measuredComposition.Al, Cu: measuredComposition.Cu, Mg: measuredComposition.Mg, Si: measuredComposition.Si, Others: measuredComposition.Others }
+      : null;
+    
+    // If totalCharge is 0 but using measured composition, use reference mass (1000 kg) for calculations
+    const effectiveMass = (useMeasuredComposition && melt.totalMass === 0) ? 1000 : melt.totalMass;
+    
+    const compositionForAdditions = useMeasuredComposition
+      ? { totalMass: effectiveMass, composition: pureComposition }
+      : melt;
+    
+    // When using measured composition, use zero tolerance to show exact additions needed
+    const targetWithTolerance = useMeasuredComposition
+      ? { name: 'Target', composition: targetComposition, tolerance: { Al: 0, Cu: 0, Mg: 0, Si: 0, Others: 0 } }
+      : { name: 'Target', composition: targetComposition };
+    
+    const additions = computeMakeupAdditions(targetWithTolerance, compositionForAdditions);
+
+    const recyclingYield = Number(recyclingData?.recoveryYieldPercent ?? recyclingData?.recycling_recovery_yield_percent ?? 0);
+    const slagPercent = Number(recyclingData?.slagPercent ?? 0);
+    const valorizationRate = Number(recyclingData?.valorizationRatePercent ?? 0);
+
+    const recyclingResult = computeRecyclingResult(
+      { id: 'internal_scrap', mass: manufacturingBalance.internalScrapMass, composition: targetComposition, sourceType: 'scrap' },
+      recyclingYield,
+      slagPercent
+    );
+
+    const valorization = computeValorizationResult(recyclingResult.slagMass, valorizationRate);
+
+    return {
+      manufacturingBalance,
+      totalCharge,
+      primaryMass: totalCharge * primaryShare,
+      secondaryMass: totalCharge * secondaryShare,
+      calculatedMelt: melt,
+      effectiveMelt: compositionForAdditions,
+      additions,
+      recyclingResult,
+      valorization,
+    };
+  }, [finalProductMass, scrapRatePercent, materialSourceInfo, recyclingData, targetComposition, useMeasuredComposition, measuredComposition]);
 
   // Trigger validation when component mounts with existing data
   React.useEffect(() => {
@@ -4800,6 +5055,250 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                   <FormMessage />
                 </FormItem>
               )} />
+
+              <FormField control={control} name="finalProductMass" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Final Product Mass (kg)</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="0" step="0.1" placeholder="e.g., 1000" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Target alloy and loop preview */}
+            <div className="rounded-3xl border border-[#e7dfd2] bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex-1">
+                  <h3 className={`${GROUP_HEADING_TEXT} font-semibold text-gray-900`}>Target Alloy Composition (Manufacturing ↔ Recycling)</h3>
+                  {/* Alloy preset selector */}
+                  <div className="mt-3 mb-3 p-3 rounded-lg border border-green-200 bg-green-50">
+                    <label className="block text-sm font-medium text-gray-800 mb-2">🎯 Choose Alloy Preset (or select Custom to enter manually)</label>
+                    <select value={selectedPreset} onChange={(e) => { const preset = e.target.value; setSelectedPreset(preset); if (preset !== 'custom' && ALLOY_PRESETS[preset]) { const comp = ALLOY_PRESETS[preset]; setValue('targetAlPercent', comp.Al); setValue('targetCuPercent', comp.Cu || 0); setValue('targetMgPercent', comp.Mg || 0); setValue('targetSiPercent', comp.Si || 0); setValue('targetOthersPercent', comp.Others || 0); }}} className="w-full rounded-lg border border-green-300 bg-white px-3 py-2 text-sm font-medium focus:border-[#BA7967] focus:ring-2 focus:ring-[#BA7967]">
+                      {Object.entries(ALLOY_PRESETS).map(([key, preset]) => (<option key={key} value={key}>{preset.name}</option>))}
+                    </select>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mt-1">Set the desired alloy; we’ll compare against the melt and show make-up additions plus the recycling loop back to manufacturing.</p>
+
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                    <FormField control={control} name="targetAlPercent" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Aluminium (%)</FormLabel>
+                        <FormControl><Input type="number" min="0" max="100" step="0.1" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setSelectedPreset('custom'); }} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={control} name="targetCuPercent" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Copper (%)</FormLabel>
+                        <FormControl><Input type="number" min="0" max="100" step="0.1" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setSelectedPreset('custom'); }} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={control} name="targetMgPercent" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Magnesium (%)</FormLabel>
+                        <FormControl><Input type="number" min="0" max="100" step="0.1" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setSelectedPreset('custom'); }} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={control} name="targetSiPercent" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Silicon (%)</FormLabel>
+                        <FormControl><Input type="number" min="0" max="100" step="0.1" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setSelectedPreset('custom'); }} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={control} name="targetOthersPercent" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Others (%)</FormLabel>
+                        <FormControl><Input type="number" min="0" max="100" step="0.1" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setSelectedPreset('custom'); }} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* Measured composition toggle and inputs */}
+                  <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                    <FormField control={control} name="useMeasuredComposition" render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0 mb-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value === true}
+                            onCheckedChange={(checked) => field.onChange(checked)}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-base font-semibold cursor-pointer">
+                            Use Measured Composition (After Melting)
+                          </FormLabel>
+                          <FormDescription className="text-sm">
+                            Check this if you have actual lab measurements after melting. We'll calculate make-up additions based on measured values instead of theoretical calculations.
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )} />
+
+                    {useMeasuredComposition && (
+                      <>
+                        {/* Auto-estimate option */}
+                        <div className="mb-4 p-3 rounded-lg border border-blue-200 bg-blue-50">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Checkbox
+                              checked={autoEstimateMeasured}
+                              onCheckedChange={(checked) => {
+                                setAutoEstimateMeasured(checked);
+                                if (checked) {
+                                  const estimated = estimateMeasuredComposition(targetComposition, scrapQuality, 'mixed');
+                                  setValue('measuredAlPercent', Number(estimated.Al.toFixed(2)));
+                                  setValue('measuredCuPercent', Number(estimated.Cu.toFixed(2)));
+                                  setValue('measuredMgPercent', Number(estimated.Mg.toFixed(2)));
+                                  setValue('measuredSiPercent', Number(estimated.Si.toFixed(2)));
+                                  setValue('measuredOthersPercent', Number(estimated.Others.toFixed(2)));
+                                }
+                              }}
+                            />
+                            <label className="text-sm font-medium text-blue-900">Auto-estimate from scrap quality (for non-metallurgists)</label>
+                          </div>
+                          {autoEstimateMeasured && (
+                            <div className="flex items-center gap-3">
+                              <label className="text-sm text-blue-800">Scrap Quality:</label>
+                              <select
+                                value={scrapQuality}
+                                onChange={(e) => {
+                                  setScrapQuality(e.target.value);
+                                  const estimated = estimateMeasuredComposition(targetComposition, e.target.value, 'mixed');
+                                  setValue('measuredAlPercent', Number(estimated.Al.toFixed(2)));
+                                  setValue('measuredCuPercent', Number(estimated.Cu.toFixed(2)));
+                                  setValue('measuredMgPercent', Number(estimated.Mg.toFixed(2)));
+                                  setValue('measuredSiPercent', Number(estimated.Si.toFixed(2)));
+                                  setValue('measuredOthersPercent', Number(estimated.Others.toFixed(2)));
+                                }}
+                                className="rounded border border-blue-300 px-2 py-1 text-sm"
+                              >
+                                <option value="high">High (post-consumer, sorted)</option>
+                                <option value="medium">Medium (mixed scrap)</option>
+                                <option value="low">Low (contaminated)</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                        <FormField control={control} name="measuredAlPercent" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Measured Al (%)</FormLabel>
+                            <FormControl><Input type="number" min="0" max="100" step="0.01" placeholder="e.g., 97" {...field} value={field.value ?? ''} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={control} name="measuredCuPercent" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Measured Cu (%)</FormLabel>
+                            <FormControl><Input type="number" min="0" max="100" step="0.01" placeholder="e.g., 3" {...field} value={field.value ?? ''} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={control} name="measuredMgPercent" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Measured Mg (%)</FormLabel>
+                            <FormControl><Input type="number" min="0" max="100" step="0.01" placeholder="0" {...field} value={field.value ?? ''} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={control} name="measuredSiPercent" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Measured Si (%)</FormLabel>
+                            <FormControl><Input type="number" min="0" max="100" step="0.01" placeholder="0" {...field} value={field.value ?? ''} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={control} name="measuredOthersPercent" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Measured Others (%)</FormLabel>
+                            <FormControl><Input type="number" min="0" max="100" step="0.01" placeholder="0" {...field} value={field.value ?? ''} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 md:mt-0 md:w-[320px] rounded-2xl border border-[#e3d4c8] bg-linear-to-br from-[#fbfaf7] via-[#f4f2ec] to-[#efe6dd] p-4 shadow-inner">
+                  <h4 className="font-semibold text-gray-900 mb-2">Alloy Balance Preview</h4>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex justify-between"><span>Total melt (kg)</span><span>{alloyBalancePreview.totalCharge?.toFixed(1) || '0.0'}</span></div>
+                    <div className="flex justify-between"><span>Primary charge (kg)</span><span>{alloyBalancePreview.primaryMass?.toFixed(1) || '0.0'}</span></div>
+                    <div className="flex justify-between"><span>Secondary/scrap (kg)</span><span>{alloyBalancePreview.secondaryMass?.toFixed(1) || '0.0'}</span></div>
+                    
+                    <div className="pt-2 text-xs font-semibold text-gray-600">
+                      {useMeasuredComposition ? '📊 Measured Composition:' : '🧪 Calculated Melt Composition:'}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-xs text-gray-800">
+                      {Object.entries(alloyBalancePreview.effectiveMelt?.composition || {}).map(([el, pct]) => (
+                        <div key={el} className="flex justify-between bg-white/60 px-2 py-1 rounded">
+                          <span>{el}</span><span>{pct.toFixed(2)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="pt-2 text-xs font-semibold text-gray-600">🎯 Target Composition:</div>
+                    <div className="grid grid-cols-2 gap-1 text-xs text-gray-800">
+                      {Object.entries(targetComposition).filter(([_, pct]) => pct > 0).map(([el, pct]) => (
+                        <div key={el} className="flex justify-between bg-green-50 px-2 py-1 rounded border border-green-200">
+                          <span>{el}</span><span>{pct.toFixed(2)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="pt-2 text-xs font-semibold text-amber-700">⚗️ Virgin Metal to Add:</div>
+                    {alloyBalancePreview.additions?.length ? (
+                      <>
+                        <ul className="space-y-1">
+                          {alloyBalancePreview.additions.map((add) => (
+                            <li key={add.element} className="flex items-center justify-between bg-amber-100 px-3 py-2 rounded-lg border border-amber-300">
+                              <span className="font-semibold text-amber-900">{add.element}</span>
+                              <span className="text-amber-800 font-mono">{add.requiredMass.toFixed(2)} kg</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {alloyBalancePreview.totalCharge === 0 && useMeasuredComposition && (
+                          <p className="text-[10px] text-amber-700 italic mt-1">* Based on 1000 kg reference mass. Enter Final Product Mass above for actual values.</p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-xs bg-green-100 px-3 py-2 rounded-lg border border-green-300 text-green-800 font-medium">
+                        ✓ Already within target window. No additions needed.
+                      </div>
+                    )}
+                    
+                    <div className="pt-2 text-xs text-gray-600">♻️ Scrap → Recycling → Back:</div>
+                    {alloyBalancePreview.totalCharge > 0 ? (
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between"><span>Internal scrap</span><span>{alloyBalancePreview.recyclingResult?.otherLossesMass !== undefined ? alloyBalancePreview.manufacturingBalance?.internalScrapMass?.toFixed(2) : '0.00'} kg</span></div>
+                        <div className="flex justify-between"><span>Recovered metal</span><span>{alloyBalancePreview.recyclingResult?.recoveredMetalMass?.toFixed(2) || '0.00'} kg</span></div>
+                        <div className="flex justify-between"><span>Slag/Dross</span><span>{alloyBalancePreview.recyclingResult?.slagMass?.toFixed(2) || '0.00'} kg</span></div>
+                        <div className="flex justify-between"><span>Valorized</span><span>{alloyBalancePreview.valorization?.valorizedMass?.toFixed(2) || '0.00'} kg</span></div>
+                        <div className="flex justify-between"><span>Landfilled</span><span>{alloyBalancePreview.valorization?.landfilledMass?.toFixed(2) || '0.00'} kg</span></div>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-gray-500 italic bg-gray-50 px-2 py-1 rounded">
+                        📝 <strong>Recycling Flow:</strong> Shows scrap generated during manufacturing → recovered in recycling stage → split into slag for valorization vs landfill. 
+                        Enter Final Product Mass above to see actual scrap flows.
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-3 text-[11px] text-gray-500">
+                    {useMeasuredComposition 
+                      ? 'Using measured post-melt composition to calculate virgin metal additions needed.'
+                      : 'Using calculated melt from primary/secondary mix. Enable measured composition for actual lab values.'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* 3. Logistics and Transport */}
@@ -5034,6 +5533,8 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
     recyclingMethod: z.enum(['closed-loop', 'open-loop', 'mixed']).nullable().optional(),
     recoveryYieldPercent: z.coerce.number().min(0).max(100).nullable().optional(),
     recyclingEfficiencyPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    slagPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+    valorizationRatePercent: z.coerce.number().min(0).max(100).nullable().optional(),
     closedLoopPercent: z.coerce.number().min(0).max(100).nullable().optional(),
     openLoopPercent: z.coerce.number().min(0).max(100).nullable().optional(),
     furnaceEnergyDemand: z.coerce.number().min(0).nullable().optional(),
@@ -5392,6 +5893,25 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
                 </FormItem>
               )} />
 
+              <FormField control={control} name="slagPercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Slag / Dross Generation (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <FormField control={control} name="recyclingEfficiencyPercent" render={({ field }) => (
                 <FormItem>
                   <FormLabel className={GROUP_HEADING_TEXT}>Recycling Efficiency (%)</FormLabel>
@@ -5433,6 +5953,25 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
               <FormField control={control} name="openLoopPercent" render={({ field }) => (
                 <FormItem>
                   <FormLabel className={GROUP_HEADING_TEXT}>Open-loop Recycling Percentage (%)</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Slider
+                        value={[typeof field.value === 'number' ? field.value : 0]}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        min={0}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="text-sm text-muted-foreground">{(field.value ?? 0)}%</div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={control} name="valorizationRatePercent" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={GROUP_HEADING_TEXT}>Valorization Rate for Slag/Dross (%)</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
                       <Slider

@@ -56,7 +56,12 @@ export default function Wizard() {
   const [success, setSuccess] = useState(null)
   
   // Material source state
-  const [materialSourceInfo, setMaterialSourceInfo] = useState({ materialSource: 'primary', primaryPercentage: 100, secondaryPercentage: 0 })
+  const [materialSourceInfo, setMaterialSourceInfo] = useState({
+    materialSource: 'primary',
+    primaryPercentage: 100,
+    secondaryPercentage: 0,
+    primaryGrade: 'P1020',
+  })
   
   const handleMaterialSourceChange = useCallback((info) => {
     setMaterialSourceInfo(info);
