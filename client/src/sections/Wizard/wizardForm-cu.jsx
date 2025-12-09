@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Typography scale
 const HEADING_TEXT = "text-[22px] sm:text-[24px] md:text-[26px]";
@@ -4660,6 +4661,227 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
   );
 }
 
+// Circular Combos Modal Component
+function CircularCombosModal() {
+  const [open, setOpen] = useState(false);
+
+  const copperCombos = [
+    {
+      id: 1,
+      name: "Zn + Fe → Anti-Corrosion Passivation Alloy",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "ISF/dust" },
+        { metal: "Fe", color: "bg-orange-700", source: "converter slag" }
+      ],
+      productIcon: "🛡️",
+      products: ["Passivation additives", "Galvanizing bath mini-ingots", "Anti-corrosion washers"],
+      whyCircular: "Both metals frequently co-exist in residues and bond well"
+    },
+    {
+      id: 2,
+      name: "Zn + Al → Zn–Al Coating Alloy",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "slag/dust" },
+        { metal: "Al", color: "bg-cyan-600", source: "electrolyte circuits" }
+      ],
+      productIcon: "🏭",
+      products: ["Zn–Al (5–55% Al) micro-pellets for steel coating"],
+      whyCircular: "This is literally how Galvalume® (55% Al–Zn) works",
+      industryReady: true
+    },
+    {
+      id: 3,
+      name: "Pb + Sn (+ Zn optional) → Solder Alloy",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "anode slime" },
+        { metal: "Sn", color: "bg-purple-600", source: "refinery" },
+        { metal: "Zn", color: "bg-blue-600", source: "optional" }
+      ],
+      productIcon: "🔗",
+      products: ["Low-temperature solder", "Casting babbitt metals"],
+      whyCircular: "Pb/Sn residues from Cu are high-value and fully recyclable"
+    },
+    {
+      id: 4,
+      name: "Pb + Zn → Free-Machining Microalloys",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "dust/dross" },
+        { metal: "Zn", color: "bg-blue-600", source: "dust/dross" }
+      ],
+      productIcon: "⚙️",
+      products: ["Tiny cast parts", "Bushings", "Low-load mechanical components"],
+      whyCircular: "Zn improves flowability; Pb improves machinability"
+    },
+    {
+      id: 5,
+      name: "Fe + Zn + Al (ternary) → Anti-Corrosion Additive Pellets",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "converter slag" },
+        { metal: "Zn", color: "bg-blue-600", source: "dust" },
+        { metal: "Al", color: "bg-cyan-600", source: "traces" }
+      ],
+      productIcon: "⚗️",
+      products: ["Alloying grain refiners", "Steel passivation compounds"],
+      whyCircular: "Plays into 'valorization' of Fe-rich slag from Cu smelting"
+    },
+    {
+      id: 6,
+      name: "Pb + Ag + Sn → High-Value Industry Solder",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "anode slime" },
+        { metal: "Ag", color: "bg-slate-600", source: "anode slime" },
+        { metal: "Sn", color: "bg-purple-600", source: "anode slime" }
+      ],
+      productIcon: "💎",
+      products: ["Solder for electronics"],
+      whyCircular: "Turns a hazardous mixture into a product with 99% EoL recovery rates",
+      note: "Only if Ag appears in anode slime — common condition"
+    },
+    {
+      id: 7,
+      name: "Zn + Sn → Hot-Dip Coating Additive",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "dust" },
+        { metal: "Sn", color: "bg-purple-600", source: "traces" }
+      ],
+      productIcon: "🎨",
+      products: ["Alloy pellets for specialized steel strip coating"],
+      whyCircular: "Converts dusts into high-purity pellets"
+    },
+    {
+      id: 8,
+      name: "Fe + Pb → Radiation Shielding & Counterweights",
+      emoji: "🌟",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "Fe-rich slag" },
+        { metal: "Pb", color: "bg-indigo-700", source: "Pb residue" }
+      ],
+      productIcon: "🛡️",
+      products: ["Dense blocks", "Balancing weights"],
+      whyCircular: "Pb locked in solid form - Safe circularity"
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="relative overflow-hidden border-2 border-[#BA7967] bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 text-[#BA7967] shadow-md transition-all duration-200 hover:from-amber-100 hover:to-orange-100 hover:shadow-lg"
+        >
+          <span className="mr-2 text-xl">♻️</span>
+          <span className="font-semibold">Circular Combos</span>
+          <span className="ml-2 text-xl">✨</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-2xl font-bold text-[#BA7967] flex items-center gap-2">
+            <span className="text-3xl">♻️</span>
+            Circular Reuse of Residual Metals – Copper Valorization
+            <span className="text-3xl">🔄</span>
+          </DialogTitle>
+          <DialogDescription className="text-base text-gray-700">
+            Based on your valorization stage, here's how even tiny residues (1–5%) can be looped back into products.
+            <span className="block mt-2 text-sm italic text-[#BA7967]">💡 Residues added together to ensure circularity throughout the metal stream</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {copperCombos.map((combo) => (
+            <motion.div
+              key={combo.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: combo.id * 0.08 }}
+              className="group rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm transition-all duration-300 hover:border-[#BA7967] hover:shadow-lg"
+            >
+              {/* Header with emoji and name */}
+              <div className="mb-4 flex items-start gap-3">
+                <span className="text-3xl">{combo.emoji}</span>
+                <h3 className="flex-1 text-base font-bold text-gray-800 leading-tight">
+                  {combo.name}
+                </h3>
+                <span className="text-3xl">{combo.productIcon}</span>
+              </div>
+
+              {/* Residuals visualization */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-600">Residuals:</span>
+                {combo.residuals.map((residual, idx) => (
+                  <React.Fragment key={idx}>
+                    <div className={`flex flex-col items-center rounded-lg ${residual.color} px-3 py-2 shadow-sm`}>
+                      <span className="text-xs font-bold text-white">{residual.metal}</span>
+                      <span className="text-[10px] text-white/80">{residual.source}</span>
+                    </div>
+                    {idx < combo.residuals.length - 1 && (
+                      <span className="text-xl font-bold text-[#BA7967]">+</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Products */}
+              <div className="mb-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-600">Products:</div>
+                <ul className="space-y-1">
+                  {combo.products.map((product, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-green-600">•</span>
+                      <span>{product}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Why Circular */}
+              <div className="rounded-lg bg-emerald-50 p-3 text-xs">
+                <span className="font-semibold text-emerald-800">♻️ Why Circular: </span>
+                <span className="text-emerald-700">{combo.whyCircular}</span>
+              </div>
+
+              {/* Industry Ready badge */}
+              {combo.industryReady && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                  <span>🏭</span> Industry-Ready
+                </div>
+              )}
+
+              {/* Note if exists */}
+              {combo.note && (
+                <div className="mt-2 rounded-md bg-amber-50 p-2 text-xs italic text-amber-800">
+                  <span className="font-semibold">Note: </span>
+                  {combo.note}
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Footer Message */}
+        <div className="mt-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-5 text-center">
+          <p className="text-sm font-semibold text-gray-700">
+            <span className="text-xl">🌍</span> Ensuring circularity throughout – every trace element finds purpose
+            <span className="text-xl ml-1">♻️</span>
+          </p>
+          <p className="mt-2 text-xs text-gray-600">
+            These combinations represent real industrial applications where residual metals are combined
+            to create valuable alloy products, closing the loop in sustainable metallurgy.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Step 7: Valorization
 function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
@@ -5080,28 +5302,35 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
 
               {/* Sustainability Parameters Section */}
               <section className="space-y-6 mt-8">
-                <FormField
-                  control={control}
-                  name="followingSustainableRules"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value || false}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Sustainability Focused
-                        </FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          Enable to provide sustainability parameters for this valorization stage
-                        </p>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <FormField
+                    control={control}
+                    name="followingSustainableRules"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#BA7967] p-4 flex-1">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Sustainability Focused
+                          </FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            Enable to provide sustainability parameters for this valorization stage
+                          </p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Circular Combos Button */}
+                  <div className="flex items-center">
+                    <CircularCombosModal />
+                  </div>
+                </div>
 
                 {form.watch("followingSustainableRules") && (
                   <div className="rounded-lg border border-[#BA7967] bg-white/50 p-6 space-y-6">
