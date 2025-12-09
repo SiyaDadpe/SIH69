@@ -189,34 +189,34 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
 // Step 1: Mining
 function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
-    miningMethod: z.string().min(1, "Mining method is required"),
-    oreType: z.string().min(1, "Ore type is required"),
-    oreGradePercentCu: z.coerce.number().min(0, "Ore grade is required"),
-    region: z.string().min(1, "Region or country is required"),
+    miningMethod: z.string().optional(),
+    oreType: z.string().optional(),
+    oreGradePercentCu: z.coerce.number().min(0).optional(),
+    region: z.string().optional(),
     depositDepth: z.coerce.number().min(0).optional(),
     benchHeight: z.coerce.number().min(0).optional(),
     rockHardnessIndex: z.coerce.number().min(0).optional(),
-    overburdenWasteRatio: z.coerce.number().min(0, "Overburden / waste ratio is required"),
+    overburdenWasteRatio: z.coerce.number().min(0).optional(),
     strippingRatio: z.coerce.number().min(0).optional(),
     tailingsGenerationRate: z.coerce.number().min(0).optional(),
-    mineProductionPerDay: z.coerce.number().min(0, "Mine production is required"),
-    averageHaulDistance: z.coerce.number().min(0, "Average haul distance is required"),
+    mineProductionPerDay: z.coerce.number().min(0).optional(),
+    averageHaulDistance: z.coerce.number().min(0).optional(),
     mineLifetimeYears: z.coerce.number().min(0).optional(),
     oreThroughputPerYear: z.coerce.number().min(0).optional(),
     shiftHoursPerDay: z.coerce.number().min(0).optional(),
     equipmentAvailabilityPercent: z.coerce.number().min(0).max(100).optional(),
-    equipmentType: z.string().min(1, "Equipment type is required"),
+    equipmentType: z.string().optional(),
     equipmentCount: z.coerce.number().min(0).optional(),
     equipmentCapacity: z.coerce.number().min(0).optional(),
     explosivesUsed: z.coerce.number().min(0).optional(),
-    fuelConsumption: z.coerce.number().min(0, "Fuel consumption is required"),
-    electricityConsumption: z.coerce.number().min(0, "Electricity consumption is required"),
+    fuelConsumption: z.coerce.number().min(0).optional(),
+    electricityConsumption: z.coerce.number().min(0).optional(),
     powerSourceMixRenewable: z.coerce.number().min(0).optional(),
     powerSourceMixFossil: z.coerce.number().min(0).optional(),
     powerSourceMixGrid: z.coerce.number().min(0).optional(),
     energyEfficiency: z.coerce.number().min(0).max(100).optional(),
-    waterConsumption: z.coerce.number().min(0, "Water consumption is required"),
-    waterSource: z.string().min(1, "Water source is required"),
+    waterConsumption: z.coerce.number().min(0).optional(),
+    waterSource: z.string().optional(),
     waterReuseRate: z.coerce.number().min(0).max(100).optional(),
     waterDischargePh: z.coerce.number().optional(),
     acidMineDrainageRisk: z.string().optional(),
@@ -910,15 +910,15 @@ function CopperMiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIP
 // Step 2: Beneficiation
 function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
-    oreType: z.string().min(1, "Ore type is required"),
-    oreGradePercentCu: z.coerce.number().min(0, "Ore grade is required"),
-    concentrateGradePercentCu: z.coerce.number().min(0, "Concentrate grade is required"),
+    oreType: z.string().optional(),
+    oreGradePercentCu: z.coerce.number().min(0).optional(),
+    concentrateGradePercentCu: z.coerce.number().min(0).optional(),
     mineralogyDetails: z.string().optional(),
     mineralogyDetailsOther: z.string().optional(),
     particleSizeAfterGrinding: z.coerce.number().min(0).optional(),
     moistureContentPercent: z.coerce.number().min(0).max(100).optional(),
-    grindingEnergyKwhPerTonne: z.coerce.number().min(0, "Grinding energy is required"),
-    reagentConsumptionKgPerTonne: z.coerce.number().min(0, "Reagent consumption is required"),
+    grindingEnergyKwhPerTonne: z.coerce.number().min(0).optional(),
+    reagentConsumptionKgPerTonne: z.coerce.number().min(0).optional(),
     reagentType: z.string().optional(),
     reagentMixRatioPercent: z.coerce.number().min(0).max(100).optional(),
     flotationCellType: z.string().optional(),
@@ -926,12 +926,12 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
     filtrationType: z.string().optional(),
     equipmentAgeYears: z.coerce.number().min(0).optional(),
     millLoadingPercent: z.coerce.number().min(0).max(100).optional(),
-    waterConsumptionM3PerTonne: z.coerce.number().min(0, "Water consumption is required"),
-    waterRecycledPercent: z.coerce.number().min(0, "Water recycled % is required"),
+    waterConsumptionM3PerTonne: z.coerce.number().min(0).optional(),
+    waterRecycledPercent: z.coerce.number().min(0).optional(),
     waterSource: z.string().optional(),
     processWaterTemperature: z.coerce.number().optional(),
     slurryPumpingDistanceKm: z.coerce.number().min(0).optional(),
-    recoveryEfficiencyPercent: z.coerce.number().min(0, "Recovery efficiency is required"),
+    recoveryEfficiencyPercent: z.coerce.number().min(0).optional(),
     tailingsProducedTonnePerTonne: z.coerce.number().min(0).optional(),
     tailingsSolidsContentPercent: z.coerce.number().min(0).max(100).optional(),
     tailingsStorageType: z.string().optional(),
@@ -1012,7 +1012,7 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
     <StepFooterActions
       onBack={onBack}
       onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
+      forwardDisabled={false}
     />
   );
 
@@ -1588,9 +1588,9 @@ function CopperBeneficiationStep({ onNext, onBack, onSave, initialValues, onGene
 // Step 3: Extraction (formerly Refining)
 function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
-    processRoute: z.string().min(1, "Process route is required"),
-    oreType: z.string().min(1, "Ore type is required"),
-    concentrateGradePercentCu: z.coerce.number().min(0, "Concentrate grade is required"),
+    processRoute: z.string().optional(),
+    oreType: z.string().optional(),
+    concentrateGradePercentCu: z.coerce.number().min(0).optional(),
     oreThroughputTPerDay: z.coerce.number().min(0).optional(),
     moistureContentPercent: z.coerce.number().min(0).max(100).optional(),
     impurityContentPercent: z.coerce.number().min(0).optional(),
@@ -1623,16 +1623,16 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
     heavyMetalResidueMgPerL: z.coerce.number().min(0).optional(),
     wasteSolutionPh: z.coerce.number().optional(),
     byProductRecoveryAuAgKgPerTonne: z.coerce.number().min(0).optional(),
-    followingSustainableRules: z.boolean().optional(),
+    followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
       pyro_renewablePowerPercent: z.coerce.number().min(0).max(100).optional(),
       pyro_slagRecyclingRate: z.coerce.number().min(0).max(100).optional(),
-      pyro_so2CaptureIntoSulfuricAcid: z.boolean().optional(),
+      pyro_so2CaptureIntoSulfuricAcid: z.boolean().nullable().optional(),
       pyro_flueGasCleaning: z.string().optional(),
       pyro_wasteHeatCapturePercent: z.coerce.number().min(0).max(100).optional(),
       hydro_acidRecoveryPercent: z.coerce.number().min(0).max(100).optional(),
-      hydro_organicSolventRecovery: z.boolean().optional(),
-      hydro_renewableElectricityUseInElectrowinning: z.boolean().optional(),
+      hydro_organicSolventRecovery: z.boolean().nullable().optional(),
+      hydro_renewableElectricityUseInElectrowinning: z.boolean().nullable().optional(),
       hydro_recycledWaterRate: z.coerce.number().min(0).max(100).optional(),
     }).optional(),
   });
@@ -1676,11 +1676,17 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
     { value: "agitated", label: "Agitated" },
   ];
 
+  const handleNext = () => {
+    const data = form.getValues();
+    onSave?.(data);
+    onNext?.();
+  };
+
   const footerContent = (
     <StepFooterActions
       onBack={onBack}
-      onForward={handleSubmit(onSubmit)}
-      forwardDisabled={!isValid}
+      onForward={handleNext}
+      forwardDisabled={false}
     />
   );
 
@@ -1689,7 +1695,7 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
       <StepSection
         stepNumber={3}
         badgeLabel="Extraction"
-        title="Copper Extraction Inputs"
+        title="Metallurgical Extraction (Pyro or Hydro Route)"
         description="Choose extraction route and provide process-specific parameters."
         onPredict={() => onGenerateAIPrediction?.(form.getValues())}
         predicting={predicting}
@@ -2327,8 +2333,8 @@ function CopperRefiningStep({ onNext, onBack, onSave, initialValues, onGenerateA
 function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Product & Application Data
-    productType: z.string().min(1, "Product type is required"),
-    applicationSector: z.string().min(1, "Application sector is required"),
+    productType: z.string().optional(),
+    applicationSector: z.string().optional(),
     productLifetimeYears: z.coerce.number().min(0).optional(),
     installationMethod: z.string().optional(),
     serviceWeight: z.coerce.number().min(0).optional(),
@@ -2360,7 +2366,7 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
     reusePotentialPercent: z.coerce.number().min(0).max(100).optional(),
     energyReturnOnInvestment: z.coerce.number().min(0).optional(),
     usePhaseWaterConsumption: z.coerce.number().min(0).optional(),
-    followingSustainableRules: z.boolean().optional(),
+    followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
       lifetimeExtensionYears: z.coerce.number().min(0).optional(),
       reusePotentialPercent: z.coerce.number().min(0).max(100).optional(),
@@ -2375,6 +2381,12 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
   });
 
   const { control, handleSubmit, formState: { isValid } } = form;
+
+  const handleNext = () => {
+    const data = form.getValues();
+    onSave?.(data);
+    onNext?.();
+  };
 
   const onSubmit = (data) => {
     onSave?.(data);
@@ -2427,8 +2439,8 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
             footer={
               <StepFooterActions
                 onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
+                onForward={handleNext}
+                forwardDisabled={false}
                 showLca={true}
               />
             }
@@ -2870,29 +2882,29 @@ function CopperUsePhaseStep({ onNext, onBack, onSave, initialValues, onGenerateA
 function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Feed and Material Characteristics
-    productType: z.string().min(1, "Product type is required"),
-    inputCathodePurity: z.coerce.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100"),
+    productType: z.string().optional(),
+    inputCathodePurity: z.coerce.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100").optional(),
     scrapInput: z.coerce.number().min(0).max(100).optional(),
     alloyingMetalType: z.string().optional(),
     alloyingMetalContent: z.coerce.number().min(0).max(100).optional(),
     moistureContent: z.coerce.number().min(0).max(100).optional(),
 
     // Process and Equipment
-    castingMethod: z.string().min(1, "Casting method is required"),
-    furnaceType: z.string().min(1, "Furnace type is required"),
-    meltingEnergy: z.coerce.number().min(0, "Must be ≥ 0"),
-    rollingEnergy: z.coerce.number().min(0, "Must be ≥ 0"),
+    castingMethod: z.string().optional(),
+    furnaceType: z.string().optional(),
+    meltingEnergy: z.coerce.number().min(0).optional(),
+    rollingEnergy: z.coerce.number().min(0).optional(),
     extrusionEnergy: z.coerce.number().min(0).optional(),
     drawingEnergy: z.coerce.number().min(0).optional(),
-    electricityMixRenewable: z.coerce.number().min(0).max(100),
-    electricityMixFossil: z.coerce.number().min(0).max(100),
+    electricityMixRenewable: z.coerce.number().min(0).max(100).optional(),
+    electricityMixFossil: z.coerce.number().min(0).max(100).optional(),
     coolingMethod: z.string().optional(),
     annealingFrequency: z.coerce.number().min(0).max(100).optional(),
     surfaceTreatmentType: z.string().optional(),
     surfaceTreatmentChemicalUse: z.coerce.number().min(0).optional(),
 
     // Water and Environmental Data
-    processWaterConsumption: z.coerce.number().min(0, "Must be ≥ 0"),
+    processWaterConsumption: z.coerce.number().min(0).optional(),
     coolingWaterReused: z.coerce.number().min(0).max(100).optional(),
     wasteWaterPH: z.coerce.number().min(0).max(14).optional(),
     airEmissionsPM: z.coerce.number().min(0).optional(),
@@ -2901,15 +2913,15 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
     solidWasteGenerated: z.coerce.number().min(0).optional(),
 
     // Production and Efficiency
-    scrapGenerated: z.coerce.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100"),
+    scrapGenerated: z.coerce.number().min(0).max(100).optional(),
     scrapRecycledOnsite: z.coerce.number().min(0).max(100).optional(),
     productYield: z.coerce.number().min(0).max(100).optional(),
     operatingHours: z.coerce.number().min(0).max(24).optional(),
     plantCapacity: z.coerce.number().min(0).optional(),
     maintenanceCost: z.coerce.number().min(0).optional(),
-    followingSustainableRules: z.boolean().optional(),
+    followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
-      designForRecycling: z.boolean().optional(),
+      designForRecycling: z.boolean().nullable().optional(),
       surfaceTreatmentType: z.string().optional(),
       wasteHeatRecoveryPercent: z.coerce.number().min(0).max(100).optional(),
       renewableEnergySharePercent: z.coerce.number().min(0).max(100).optional(),
@@ -2924,6 +2936,12 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
   });
 
   const { control, handleSubmit, watch, formState: { isValid } } = form;
+
+  const handleNext = () => {
+    const data = form.getValues();
+    onSave?.(data);
+    onNext?.();
+  };
 
   const onSubmit = (data) => {
     onSave?.(data);
@@ -2944,8 +2962,8 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
             footer={
               <StepFooterActions
                 onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
+                onForward={handleNext}
+                forwardDisabled={false}
                 showLca={true}
               />
             }
@@ -3884,22 +3902,22 @@ function CopperManufacturingStep({ onNext, onBack, onSave, initialValues, onGene
 function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Scrap Collection & Source
-    scrapType: z.string().min(1, "Scrap type is required"),
-    collectionRate: z.coerce.number().min(0, "Collection rate is required").max(100, "Must be ≤ 100"),
+    scrapType: z.string().optional(),
+    collectionRate: z.coerce.number().min(0).max(100).optional(),
     collectionArea: z.string().optional(),
     averageScrapQualityGrade: z.string().optional(),
     productSectorSource: z.string().optional(),
 
     // Sorting and Pre-Treatment
-    sortingTechnology: z.string().min(1, "Sorting technology is required"),
+    sortingTechnology: z.string().optional(),
     sortingEfficiency: z.coerce.number().min(0).max(100).optional(),
-    contaminationLevel: z.coerce.number().min(0, "Contamination level is required").max(100, "Must be ≤ 100"),
+    contaminationLevel: z.coerce.number().min(0).max(100).optional(),
     preTreatmentProcess: z.string().optional(),
     preTreatmentEnergy: z.coerce.number().min(0).optional(),
     laborIntensity: z.coerce.number().min(0).optional(),
 
     // Remelting and Refining
-    remeltingEnergy: z.coerce.number().min(0, "Remelting energy is required"),
+    remeltingEnergy: z.coerce.number().min(0).optional(),
     refiningEnergy: z.coerce.number().min(0).optional(),
     furnaceType: z.string().optional(),
     meltingTemperature: z.coerce.number().min(0).optional(),
@@ -3908,8 +3926,8 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
     recoveredCopperPurity: z.coerce.number().min(0).max(100).optional(),
 
     // Output & Circularity
-    recoveryYield: z.coerce.number().min(0, "Recovery yield is required").max(100, "Must be ≤ 100"),
-    recycledContent: z.coerce.number().min(0, "Recycled content is required").max(100, "Must be ≤ 100"),
+    recoveryYield: z.coerce.number().min(0).max(100).optional(),
+    recycledContent: z.coerce.number().min(0).max(100).optional(),
     recycledOutputForm: z.string().optional(),
     slagRecycled: z.coerce.number().min(0).max(100).optional(),
     byProductRecovery: z.coerce.number().min(0).optional(),
@@ -3927,9 +3945,9 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
     transportMode: z.string().optional(),
     scrapPrice: z.coerce.number().min(0).optional(),
     recycledProductValue: z.coerce.number().min(0).optional(),
-    followingSustainableRules: z.boolean().optional(),
+    followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
-      advancedCleaningSystems: z.boolean().optional(),
+      advancedCleaningSystems: z.boolean().nullable().optional(),
       alloySortingCapability: z.string().optional(),
       renewableEnergySharePercent: z.coerce.number().min(0).max(100).optional(),
       slagRecycledPercent: z.coerce.number().min(0).max(100).optional(),
@@ -3943,6 +3961,12 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
   });
 
   const { control, handleSubmit, formState: { isValid } } = form;
+
+  const handleNext = () => {
+    const data = form.getValues();
+    onSave?.(data);
+    onNext?.();
+  };
 
   const onSubmit = (data) => {
     onSave?.(data);
@@ -4011,8 +4035,8 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
             footer={
               <StepFooterActions
                 onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
+                onForward={handleNext}
+                forwardDisabled={false}
                 showLCA={true}
               />
             }
@@ -4640,7 +4664,7 @@ function CopperRecyclingStep({ onNext, onBack, onSave, initialValues, onGenerate
 function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting }) {
   const schema = z.object({
     // Waste and By-Product Characteristics
-    wasteType: z.string().min(1, "Waste type is required"),
+    wasteType: z.string().optional(),
     wasteGeneration: z.coerce.number().min(0).optional(),
     metalContentInWaste: z.coerce.number().min(0).max(100).optional(),
     chemicalCompositionFeO: z.coerce.number().min(0).max(100).optional(),
@@ -4649,9 +4673,9 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
     moistureContent: z.coerce.number().min(0).max(100).optional(),
 
     // Valorization / Treatment Process
-    valorizationMethod: z.string().min(1, "Valorization method is required"),
-    valorizationRate: z.coerce.number().min(0, "Valorization rate is required").max(100, "Must be ≤ 100"),
-    metalRecoveryRate: z.coerce.number().min(0, "Metal recovery rate is required").max(100, "Must be ≤ 100"),
+    valorizationMethod: z.string().optional(),
+    valorizationRate: z.coerce.number().min(0).max(100).optional(),
+    metalRecoveryRate: z.coerce.number().min(0).max(100).optional(),
     sulfurCaptureEfficiency: z.coerce.number().min(0).max(100).optional(),
     furnaceGasSO2Concentration: z.coerce.number().min(0).optional(),
     acidPlantCapacity: z.coerce.number().min(0).optional(),
@@ -4669,9 +4693,9 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
     // Economic / Circular Value
     revenueFromByProducts: z.coerce.number().min(0).optional(),
     marketPriceAcid: z.coerce.number().min(0).optional(),
-    followingSustainableRules: z.boolean().optional(),
+    followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
-      circularEconomyPartnerships: z.boolean().optional(),
+      circularEconomyPartnerships: z.boolean().nullable().optional(),
       wasteToProductInnovationLevel: z.string().optional(),
       sulfurCaptureEfficiencyPercent: z.coerce.number().min(0).max(100).optional(),
     }).optional(),
@@ -4684,6 +4708,16 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
   });
 
   const { control, handleSubmit, formState: { isValid } } = form;
+
+  const handleNext = async () => {
+    try {
+      const data = form.getValues();
+      await onSave?.(data);
+      onSubmitSuccess?.();
+    } catch (e) {
+      console.error('❌ Valorization submission failed:', e);
+    }
+  };
 
   const onSubmit = async (data) => {
     try {
@@ -4722,8 +4756,8 @@ function CopperValorizationStep({ onNext, onBack, onSave, initialValues, onSubmi
             footer={
               <StepFooterActions
                 onBack={onBack}
-                onForward={handleSubmit(onSubmit)}
-                forwardDisabled={!isValid}
+                onForward={handleNext}
+                forwardDisabled={false}
                 forwardLabel="Submit"
                 showLca={true}
               />
@@ -5199,9 +5233,16 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
       stepComponents.forEach(({ key, backendKey }) => {
         if (workflowData[backendKey]) {
           loadedData[key] = workflowData[backendKey];
+          console.log(`📥 [Copper] Loading ${backendKey} → ${key}`, workflowData[backendKey]);
         }
       });
-      setStepData(loadedData);
+      console.log('📥 [Copper] All loaded data:', loadedData);
+      // Merge with existing stepData instead of replacing it
+      setStepData(prev => {
+        const merged = { ...prev, ...loadedData };
+        console.log('📥 [Copper] Merged stepData:', merged);
+        return merged;
+      });
     }
   }, [workflowData]);
 
@@ -5218,7 +5259,7 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
   };
 
   const handleSave = async (data) => {
-    const stepKey = steps[activeStep].key;
+    const stepKey = stepComponents[activeStep].key;  // Use stepComponents key, not steps key
     const backendKey = stepComponents[activeStep].backendKey;
     
     console.log(`💾 [Copper] Saving ${stepKey} → ${backendKey}`, data);
@@ -5231,10 +5272,15 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
       setSaving(true);
       try {
         const api = await import('@/services/api').then(m => m.default);
-        const response = await api.put(`/wizard/workflows/${workflowId}/steps/${backendKey}`, data);
+        // Add markCompleted flag to mark this step as completed
+        const response = await api.put(`/wizard/workflows/${workflowId}/steps/${backendKey}`, {
+          ...data,
+          markCompleted: true
+        });
         
         if (response.data.success && response.data.data?.workflow) {
           console.log(`✅ [Copper] ${backendKey} saved successfully`);
+          console.log(`✅ [Copper] Completed steps:`, response.data.data.workflow.completedSteps);
           onWorkflowUpdate?.(response.data.data.workflow);
         }
       } catch (error) {
@@ -5262,6 +5308,15 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
   const { Component } = stepComponents[activeStep];
   const currentStep = steps[activeStep];
   const currentStepKey = stepComponents[activeStep].key;
+
+  // Debug logging
+  console.log('🔍 [Copper Debug] Current step:', {
+    activeStep,
+    currentStepKey,
+    stepData: stepData,
+    currentStepData: stepData[currentStepKey],
+    allKeys: Object.keys(stepData)
+  });
 
   // If 100% secondary copper is selected, skip first 3 stages
   const renderStepContent = () => {
@@ -5424,7 +5479,7 @@ export default function CopperWizardForm({ steps, activeStep, onStepChange, work
         {/* Info message for secondary selection */}
         {materialSource === 'secondary' && (
           <div className="mt-4 p-3 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-amber-50 to-orange-50 text-sm text-gray-700">
-            ℹ️ With 100% Secondary Copper, the first 3 stages (Mining, Beneficiation, Refining) are skipped. 
+            ℹ️ With 100% Secondary Copper, the first 3 stages (Mining, Beneficiation, Metallurgical Extraction (Pyro or Hydro Route)) are skipped. 
             The workflow starts from Manufacturing stage.
           </div>
         )}

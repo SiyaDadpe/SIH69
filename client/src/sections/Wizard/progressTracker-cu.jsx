@@ -3,12 +3,12 @@ import { CheckCircle2 } from "lucide-react"
 
 export default function ProgressTrackerCopper({ steps, currentStep = 0, onStepClick, completedSteps = [], completionPercentage = 0 }) {
   const defaultSteps = [
-    { title: "Mining", description: "Extract raw materials from ore deposits" },
-    { title: "Beneficiation", description: "Process and concentrate the ore" },
-    { title: "Extraction", description: "Extract copper from concentrated ore" },
-    { title: "Manufacturing", description: "Transform refined copper into products" },
+    { title: "Mining", description: "Extract copper ore from deposits" },
+    { title: "Beneficiation", description: "Concentrate copper ore" },
+    { title: "Refining", description: "Purify copper to required standards" },
+    { title: "Manufacturing", description: "Transform copper into products" },
     { title: "Use Phase", description: "Track product performance during use" },
-    { title: "Recycling", description: "Recover and reprocess metal waste" },
+    { title: "Recycling", description: "Recover and reprocess copper waste" },
     { title: "Valorization", description: "Create value from by-products and waste" },
   ]
 

@@ -3,9 +3,9 @@ import { useSearchParams, useNavigate } from "react-router-dom"
 import WizardForm from "@/sections/Wizard/wizardForm"
 import CopperWizardForm from "@/sections/Wizard/wizardForm-cu"
 import ProgressTracker from "@/sections/Wizard/progressTracker"
+import ProgressTrackerCopper from "@/sections/Wizard/progressTracker-cu"
 import MetalSelection from "@/components/MetalSelection"
 import { Button } from "@/components/ui/button"
-import FloatingChatbot from '../components/FloatingChatbot';
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react"
 import {
   createWizardWorkflow,
@@ -23,8 +23,8 @@ export default function Wizard() {
   const aluminumSteps = useMemo(() => [
     { title: "Mining", description: "Extract raw materials from ore deposits", key: "mining" },
     { title: "Beneficiation", description: "Process and concentrate the ore", key: "beneficiation" },
-    { title: "Refining", description: "Purify the metal to required standards", key: "refining" },
-    { title: "Smelting", description: "Extract metal from concentrated ore", key: "smelting" },
+    { title: "Bayer Process (Alumina Production)", description: "Refine bauxite to produce alumina", key: "refining" },
+    { title: "Hall–Héroult Process (Aluminium Smelting)", description: "Smelt alumina to produce aluminium", key: "smelting" },
     { title: "Manufacturing", description: "Transform refined metal into products", key: "manufacturing" },
     { title: "Recycling", description: "Recover and reprocess metal waste", key: "recycling" },
     { title: "Valorization", description: "Create value from by-products and waste", key: "valorization" },
@@ -33,7 +33,7 @@ export default function Wizard() {
   const copperSteps = useMemo(() => [
     { title: "Mining", description: "Extract copper ore from deposits", key: "mining" },
     { title: "Beneficiation", description: "Concentrate copper ore", key: "beneficiation" },
-    { title: "Refining", description: "Purify copper to required standards", key: "refining" },
+    { title: "Metallurgical Extraction (Pyro or Hydro Route)", description: "Purify copper to required standards", key: "refining" },
     { title: "Manufacturing", description: "Transform copper into products", key: "manufacturing" },
     { title: "Use Phase", description: "Product application and performance", key: "usePhase" },
     { title: "Recycling", description: "Recover and reprocess copper waste", key: "recycling" },
@@ -107,7 +107,12 @@ export default function Wizard() {
       return;
     }
     
-    console.log('🆕 Creating new wizard workflow for:', metalType);
+    // Ensure metalType is valid, default to Aluminium if not
+    const validMetalType = metalType && metalType !== 'null' && metalType !== 'undefined' 
+      ? metalType 
+      : 'Aluminium';
+    
+    console.log('🆕 Creating new wizard workflow for:', validMetalType);
     setLoading(true)
     setError(null)
     try {
@@ -116,9 +121,9 @@ export default function Wizard() {
       const projectDescription = projectMeta?.projectDescription?.trim()
       
       const response = await createWizardWorkflow({
-        name: projectName || `LCA Wizard - ${metalType} - ${new Date().toLocaleDateString()}`,
-        metalType: metalType,
-        description: projectDescription || `Wizard-based lifecycle assessment for ${metalType}`,
+        name: projectName || `LCA Wizard - ${validMetalType} - ${new Date().toLocaleDateString()}`,
+        metalType: validMetalType,
+        description: projectDescription || `Wizard-based lifecycle assessment for ${validMetalType}`,
       })
 
       if (response.success && response.data?.workflow) {
@@ -172,6 +177,10 @@ export default function Wizard() {
                                 metalType.toLowerCase() === 'copper' ? 'copper' : 'aluminum';
           setSelectedMetal(workflowMetal);
           console.log('🎯 Metal type from workflow:', workflowMetal);
+        } else {
+          // Default to aluminum if no metalType in workflow
+          setSelectedMetal('aluminum');
+          console.log('⚠️ No metalType in workflow, defaulting to aluminum');
         }
         
         // Save valid workflow to localStorage
@@ -289,7 +298,12 @@ export default function Wizard() {
   // On Create Wizard
   const handleMetalSelection = (selection) => {
     const metalType = typeof selection === 'string' ? selection : selection?.metal;
-    if (!metalType) return;
+    if (!metalType) {
+      console.warn('⚠️ No metal type provided, defaulting to aluminum');
+      setSelectedMetal('aluminum');
+      initializeWorkflow('Aluminium', null);
+      return;
+    }
 
     console.log('🎯 Metal selected:', metalType, selection);
 
@@ -477,17 +491,26 @@ export default function Wizard() {
               onMaterialSourceChange={handleMaterialSourceChange}
             />
           )}
-          <ProgressTracker 
-            steps={steps} 
-            currentStep={activeStep} 
-            onStepClick={setActiveStep}
-            completedSteps={workflowData?.completedSteps || []}
-            completionPercentage={completionPercentage}
-            materialSource={materialSourceInfo.materialSource}
-          />
+          {selectedMetal === 'copper' ? (
+            <ProgressTrackerCopper 
+              steps={steps} 
+              currentStep={activeStep} 
+              onStepClick={setActiveStep}
+              completedSteps={workflowData?.completedSteps || []}
+              completionPercentage={completionPercentage}
+            />
+          ) : (
+            <ProgressTracker 
+              steps={steps} 
+              currentStep={activeStep} 
+              onStepClick={setActiveStep}
+              completedSteps={workflowData?.completedSteps || []}
+              completionPercentage={completionPercentage}
+              materialSource={materialSourceInfo.materialSource}
+            />
+          )}
         </>
       )}
-      <FloatingChatbot />
     </div>
   )
 }

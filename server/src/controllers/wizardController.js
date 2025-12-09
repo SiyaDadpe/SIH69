@@ -6,9 +6,16 @@
  */
 
 const asyncHandler = require('express-async-handler');
-const { WizardWorkflow, User, Report, Project } = require('../models');
+const { WizardWorkflow, CopperWorkflow, User, Report, Project } = require('../models');
 const mongoose = require('mongoose');
 const { clearCache, clearAllCache } = require('../utils/localCache');
+
+/**
+ * Helper function to get the appropriate model based on metal type
+ */
+const getWorkflowModel = (metalType) => {
+  return metalType === 'Copper' ? CopperWorkflow : WizardWorkflow;
+};
 
 
 /**
@@ -373,22 +380,49 @@ async function generateReportFromWizard(workflow, project) {
  * @access  Public
  */
 const createWorkflow = asyncHandler(async (req, res) => {
-  const { name, metalType, description } = req.body;
+  let { name, metalType, description } = req.body;
 
-  if (!metalType) {
+  // Default to Aluminium if metalType not provided (for backward compatibility)
+  if (!metalType || metalType === 'null' || metalType === 'undefined') {
+    console.log('[INFO] No metalType provided, defaulting to Aluminium');
+    metalType = 'Aluminium';
+  }
+
+  // Validate metalType is one of the supported values
+  const validMetalTypes = ['Aluminium', 'Copper', 'Steel'];
+  if (!validMetalTypes.includes(metalType)) {
     return res.status(400).json({
       success: false,
-      message: 'Metal type is required'
+      message: `Invalid metal type. Must be one of: ${validMetalTypes.join(', ')}`
     });
   }
 
   // Use authenticated user's ID
   const userId = req.user._id;
 
-  const workflow = await WizardWorkflow.createEmpty(userId, metalType, name);
+  // Select the appropriate model based on metalType
+  const WorkflowModel = getWorkflowModel(metalType);
   
+  // Create workflow with appropriate parameters
+  // For Copper: createEmpty(userId, name)
+  // For Aluminium/Steel: createEmpty(userId, metalType, name)
+  const workflow = metalType === 'Copper' 
+    ? await WorkflowModel.createEmpty(userId, name)
+    : await WorkflowModel.createEmpty(userId, metalType, name);
+  
+  // Set description if provided (name and metalType already set by createEmpty)
+  if (metalType !== 'Copper') {
+    // Ensure metalType is set (redundant but safe)
+    workflow.metalType = metalType;
+  }
+  
+  // Set description for both copper and non-copper workflows
   if (description) {
     workflow.description = description;
+  }
+  
+  // Save if any modifications were made after createEmpty
+  if (description || (metalType !== 'Copper' && name)) {
     await workflow.save();
   }
 
@@ -396,6 +430,8 @@ const createWorkflow = asyncHandler(async (req, res) => {
     workflowId: workflow._id,
     userId,
     metalType,
+    name: workflow.name,
+    description: workflow.description,
     userEmail: req.user.email
   });
 
@@ -449,28 +485,89 @@ const getWorkflows = asyncHandler(async (req, res) => {
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const [workflows, total] = await Promise.all([
-    WizardWorkflow.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .populate('userId', 'name email organization'),
-    WizardWorkflow.countDocuments(query)
-  ]);
+  // Query both models if no metalType specified, otherwise query specific model
+  let workflows, total;
+  
+  if (!metalType) {
+    // Query both models
+    const [aluminiumWorkflows, copperWorkflows] = await Promise.all([
+      WizardWorkflow.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('userId', 'name email organization'),
+      CopperWorkflow.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('userId', 'name email organization')
+    ]);
+    
+    // Combine and sort results
+    workflows = [...aluminiumWorkflows, ...copperWorkflows]
+      .sort((a, b) => {
+        if (sort === '-updatedAt') return b.updatedAt - a.updatedAt;
+        if (sort === 'updatedAt') return a.updatedAt - b.updatedAt;
+        if (sort === '-createdAt') return b.createdAt - a.createdAt;
+        return a.createdAt - b.createdAt;
+      })
+      .slice(0, parseInt(limit));
+    
+    const [aluminiumTotal, copperTotal] = await Promise.all([
+      WizardWorkflow.countDocuments(query),
+      CopperWorkflow.countDocuments(query)
+    ]);
+    total = aluminiumTotal + copperTotal;
+  } else if (metalType === 'Copper') {
+    // Query only CopperWorkflow
+    [workflows, total] = await Promise.all([
+      CopperWorkflow.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('userId', 'name email organization'),
+      CopperWorkflow.countDocuments(query)
+    ]);
+  } else {
+    // Query only WizardWorkflow for other metals
+    [workflows, total] = await Promise.all([
+      WizardWorkflow.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('userId', 'name email organization'),
+      WizardWorkflow.countDocuments(query)
+    ]);
+  }
 
   console.log('[DEBUG] Query results:', {
     workflowsFound: workflows.length,
     totalCount: total,
-    workflowIds: workflows.map(w => w._id)
+    workflowIds: workflows.map(w => w._id),
+    metalTypeFilter: metalType
   });
 
-  // Let's also check if there are ANY workflows for this user (without filters)
-  const allUserWorkflows = await WizardWorkflow.countDocuments({ userId: req.user._id });
-  console.log('[DEBUG] Total workflows for user (no filters):', allUserWorkflows);
+  // Debug: check if there are ANY workflows for this user (without filters)
+  const [allUserAlWorkflows, allUserCuWorkflows] = await Promise.all([
+    WizardWorkflow.countDocuments({ userId: req.user._id }),
+    CopperWorkflow.countDocuments({ userId: req.user._id })
+  ]);
+  console.log('[DEBUG] Total workflows for user:', {
+    aluminium: allUserAlWorkflows,
+    copper: allUserCuWorkflows,
+    combined: allUserAlWorkflows + allUserCuWorkflows
+  });
 
   // Check all workflows in the system
-  const totalSystemWorkflows = await WizardWorkflow.countDocuments({});
-  console.log('[DEBUG] Total workflows in system:', totalSystemWorkflows);
+  const [totalSystemAlWorkflows, totalSystemCuWorkflows] = await Promise.all([
+    WizardWorkflow.countDocuments({}),
+    CopperWorkflow.countDocuments({})
+  ]);
+  console.log('[DEBUG] Total workflows in system:', {
+    aluminium: totalSystemAlWorkflows,
+    copper: totalSystemCuWorkflows,
+    combined: totalSystemAlWorkflows + totalSystemCuWorkflows
+  });
 
   res.status(200).json({
     success: true,
@@ -480,11 +577,6 @@ const getWorkflows = asyncHandler(async (req, res) => {
     pages: Math.ceil(total / parseInt(limit)),
     data: {
       workflows
-    },
-    debug: {
-      allUserWorkflows,
-      totalSystemWorkflows,
-      query
     }
   });
 });
@@ -504,10 +596,18 @@ const getWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findOne({
+  // Try to find in both models
+  let workflow = await WizardWorkflow.findOne({
     _id: id,
-    userId: req.user._id // Only find if belongs to user
+    userId: req.user._id
   }).populate('userId', 'name email organization');
+
+  if (!workflow) {
+    workflow = await CopperWorkflow.findOne({
+      _id: id,
+      userId: req.user._id
+    }).populate('userId', 'name email organization');
+  }
 
   if (!workflow) {
     return res.status(404).json({
@@ -540,10 +640,18 @@ const updateWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findOne({
+  // Try to find in both models
+  let workflow = await WizardWorkflow.findOne({
     _id: id,
-    userId: req.user._id // Only find if belongs to user
+    userId: req.user._id
   });
+
+  if (!workflow) {
+    workflow = await CopperWorkflow.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+  }
 
   if (!workflow) {
     return res.status(404).json({
@@ -619,10 +727,19 @@ const updateStep = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findOne({
-    _id: id,
-    userId: req.user._id // Only find if belongs to user
-  });
+  // Try to find in both models based on step type
+  let workflow;
+  if (isCopperStep) {
+    workflow = await CopperWorkflow.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+  } else {
+    workflow = await WizardWorkflow.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+  }
 
   if (!workflow) {
     return res.status(404).json({
@@ -653,17 +770,26 @@ const updateStep = asyncHandler(async (req, res) => {
   // Mark step as completed if markCompleted flag is true
   if (stepData.markCompleted === true) {
     const stepNumbers = {
+      // Aluminum steps
       mining: 0,
       beneficiation: 1,
       refining: 2,
       smelting: 3,
       manufacturing: 4,
       recycling: 5,
-      valorization: 6
+      valorization: 6,
+      // Copper steps
+      copperMining: 0,
+      copperBeneficiation: 1,
+      copperRefining: 2,
+      copperManufacturing: 3,
+      copperUsePhase: 4,
+      copperRecycling: 5,
+      copperValorization: 6
     };
     try {
       await workflow.markStepCompleted(stepNumbers[stepName]);
-      console.log('[INFO] Step marked as completed');
+      console.log('[INFO] Step marked as completed:', stepName, 'step number:', stepNumbers[stepName]);
     } catch (saveError) {
       console.error('[ERROR] Failed to mark step as completed:', saveError);
       throw saveError;
@@ -678,14 +804,19 @@ const updateStep = asyncHandler(async (req, res) => {
     }
   }
 
-  // Verify the save
-  const updatedWorkflow = await WizardWorkflow.findById(id);
+  // Verify the save - use the correct model based on workflow type
+  const WorkflowModel = isCopperStep ? CopperWorkflow : WizardWorkflow;
+  const updatedWorkflow = await WorkflowModel.findById(id);
   console.log('[DEBUG] Verified saved data:', JSON.stringify(updatedWorkflow[stepName], null, 2));
 
   console.log('[INFO] Wizard step updated:', {
     workflowId: workflow._id,
     stepName,
-    completed: workflow.completedSteps.includes(validSteps.indexOf(stepName)),
+    stepIndex: isCopperStep ? validCopperSteps.indexOf(stepName) : validSteps.indexOf(stepName),
+    completed: updatedWorkflow.completedSteps.includes(
+      isCopperStep ? validCopperSteps.indexOf(stepName) : validSteps.indexOf(stepName)
+    ),
+    completedSteps: updatedWorkflow.completedSteps,
     fieldsSaved: Object.keys(updatedWorkflow[stepName] || {}).length
   });
 
@@ -780,10 +911,18 @@ const submitWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findOne({
+  // Try to find in both models
+  let workflow = await WizardWorkflow.findOne({
     _id: id,
-    userId: req.user._id // Only find if belongs to user
+    userId: req.user._id
   });
+
+  if (!workflow) {
+    workflow = await CopperWorkflow.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+  }
 
   if (!workflow) {
     return res.status(404).json({
@@ -898,10 +1037,18 @@ const deleteWorkflow = asyncHandler(async (req, res) => {
     });
   }
 
-  const workflow = await WizardWorkflow.findOne({
+  // Try to find in both models
+  let workflow = await WizardWorkflow.findOne({
     _id: id,
-    userId: req.user._id // Only find if belongs to user
+    userId: req.user._id
   });
+
+  if (!workflow) {
+    workflow = await CopperWorkflow.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+  }
 
   if (!workflow) {
     return res.status(404).json({

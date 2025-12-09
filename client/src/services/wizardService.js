@@ -152,6 +152,38 @@ export const updateSmeltingStep = async (id, data) => {
 };
 
 /**
+ * Update Ironmaking Step (Step 3 - Steel)
+ * @param {string} id - Workflow ID
+ * @param {Object} data - Ironmaking step data
+ * @returns {Promise} Response with updated workflow
+ */
+export const updateIronmakingStep = async (id, data) => {
+  try {
+    const response = await api.put(`/wizard/workflows/${id}/steps/ironmaking`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating ironmaking step:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update Steelmaking Step (Step 4 - Steel)
+ * @param {string} id - Workflow ID
+ * @param {Object} data - Steelmaking step data
+ * @returns {Promise} Response with updated workflow
+ */
+export const updateSteelmakingStep = async (id, data) => {
+  try {
+    const response = await api.put(`/wizard/workflows/${id}/steps/steelmaking`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating steelmaking step:', error);
+    throw error;
+  }
+};
+
+/**
  * Update Manufacturing Step (Step 4)
  * @param {string} id - Workflow ID
  * @param {Object} data - Manufacturing step data
@@ -364,6 +396,8 @@ export default {
   updateBeneficiationStep,
   updateRefiningStep,
   updateSmeltingStep,
+  updateIronmakingStep,
+  updateSteelmakingStep,
   updateManufacturingStep,
   updateRecyclingStep,
   updateValorizationStep,
