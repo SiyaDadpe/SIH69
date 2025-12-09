@@ -53,7 +53,7 @@ const wizardWorkflowSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Metal type is required'],
       enum: {
-        values: ['Aluminium', 'Copper', 'Steel', 'Titanium', 'Lithium', 'Nickel', 'Gold', 'Zinc'],
+        values: ['Aluminium', 'Copper', 'Steel', 'Titanium', 'Lithium', 'Nickel', 'Gold', 'Zinc', 'Lead'],
         message: '{VALUE} is not a valid metal type'
       }
       // Index defined separately below
