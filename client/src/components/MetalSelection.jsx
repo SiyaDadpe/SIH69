@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { getCurrentUser } from '../services/authService';
 import { getWizardWorkflows, getPublicWizardWorkflows } from '../services/wizardService';
 
 export default function MetalSelection({ onSelect }) {
+  const navigate = useNavigate();
   const { sidebarOpen } = useSidebar();
   const containerRef = useRef(null);
   const cardRefs = useRef([]);
@@ -148,7 +150,7 @@ export default function MetalSelection({ onSelect }) {
   };
 
   const handleMetalSelect = (metalType) => {
-    if (metalType !== 'aluminum' && metalType !== 'steel' && metalType !== 'copper') return;
+    if (metalType !== 'aluminum' && metalType !== 'steel' && metalType !== 'copper' && metalType !== 'zinc') return;
     setSelectedMetal(metalType);
     setStage('action');
     setTimeout(() => {
@@ -209,6 +211,7 @@ export default function MetalSelection({ onSelect }) {
     if (workflowMetalType === 'Copper') metal = 'copper';
     else if (workflowMetalType === 'Aluminium') metal = 'aluminum';
     else if (workflowMetalType === 'Steel') metal = 'steel';
+    else if (workflowMetalType === 'Zinc') metal = 'zinc';
     
     const payload = {
       metal: metal,
@@ -232,6 +235,12 @@ export default function MetalSelection({ onSelect }) {
         label: 'Copper',
         description: 'copper workflows',
         wizardLabel: 'Launch copper wizard',
+      },
+      zinc: {
+        color: 'brass',
+        label: 'Zinc',
+        description: 'zinc workflows',
+        wizardLabel: 'Launch zinc wizard',
       },
     };
 
@@ -291,6 +300,34 @@ export default function MetalSelection({ onSelect }) {
         drawerDashed: 'border-[#E4C5B4] bg-[#F9EFEA]',
         drawerButton: 'border-[#E4C5B4] text-[#B07260]',
         drawerFooter: 'text-[#A26956]',
+      },
+      brass: {
+        badge: 'bg-[#F7F4E9] text-[#B8A87A]',
+        text: 'text-[#B8A87A]',
+        cardBorder: 'border-[#E8E5D9] shadow-[0_12px_28px_rgba(184,168,122,0.12)]',
+        iconBg: 'bg-[#F5F3E8] text-[#A69968]',
+        buttonBg: 'bg-[#B8A87A] hover:bg-[#A69968]',
+        focusBorder: 'focus:border-[#B8A87A] focus:ring-[#B8A87A]/15',
+        infoBox: 'bg-[#F9F7ED] border-[#E8E5D9] text-[#7A6E4A]',
+        drawerBg: 'from-[#F9F7ED] via-[#FBFAF5] to-white',
+        drawerGradient: 'from-[#EDE9D9]/60',
+        drawerIconBg: 'bg-white/80 text-[#B8A87A]',
+        drawerText: 'text-[#B8A87A]',
+        drawerTitle: 'text-[#7A6E4A]',
+        drawerPill: 'text-[#A69968]',
+        drawerInfoBox: 'bg-white/80 border-[#E8E5D9]',
+        drawerInfoText: 'text-[#7A6E4A]',
+        drawerInfoSubtext: 'text-[#9A8E68]',
+        drawerCardBg: 'bg-white/85 border-[#E8E5D9]',
+        drawerHandle: 'bg-[#D4C9A9]',
+        drawerHandleText: 'text-[#A69968]',
+        drawerBorder: 'border-[#E8E5D9]',
+        drawerContentText: 'text-[#7A6E4A]',
+        drawerChevron: 'text-[#B8A87A]',
+        drawerContentSubtext: 'text-[#9A8E68]',
+        drawerDashed: 'border-[#E8E5D9] bg-[#F9F7ED]',
+        drawerButton: 'border-[#E8E5D9] text-[#B8A87A]',
+        drawerFooter: 'text-[#9A8E68]',
       },
     };
 
@@ -514,7 +551,7 @@ export default function MetalSelection({ onSelect }) {
 
       {/* Aluminium */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl w-full">
         <div
           ref={(el) => (cardRefs.current[0] = el)}
           onMouseEnter={() => handleCardHover(0, true)}
@@ -784,10 +821,152 @@ export default function MetalSelection({ onSelect }) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Zinc Card */}
+        <div
+          ref={(el) => (cardRefs.current[2] = el)}
+          onClick={() => navigate('/wizard-zinc')}
+          onMouseEnter={() => handleCardHover(2, true)}
+          onMouseLeave={() => handleCardHover(2, false)}
+          className="cursor-pointer"
+        >
+          <Card className="bg-white border-[#E8E5D9] hover:border-[#B8A87A] hover:shadow-xl transition-all duration-300 h-full group">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-[#F5F3E8] via-[#F9F7ED] to-[#EDE9D9] border-2 border-[#D4C9A9] flex items-center justify-center shadow-md relative overflow-hidden">
+                  <div className="absolute inset-0 bg-linear-to-br from-transparent via-white/40 to-transparent"></div>
+                  <Zap className="w-7 h-7 text-[#B8A87A] relative z-10" strokeWidth={2.5} />
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F7F4E9] border border-[#E8E5D9] rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#B8A87A]" />
+                  <span className="text-xs font-medium text-[#B8A87A]">Available</span>
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-gray-900 mb-1">Zinc</CardTitle>
+              <CardDescription className="text-gray-600 text-sm">
+                Complete lifecycle assessment for zinc production and recycling
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-2">
+              <div className="space-y-2 text-gray-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">Mining and ore extraction analysis</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">Beneficiation and refining processes</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">Manufacturing and recycling workflows</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#B8A87A] mt-1.5" />
+                  <p className="flex-1">AI-powered predictions and insights</p>
+                </div>
+              </div>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/wizard-zinc');
+                }}
+                className="w-full bg-linear-to-r from-[#B8A87A] to-[#A69968] hover:from-[#A69968] hover:to-[#948756] text-white font-semibold py-6 text-lg shadow-md group-hover:shadow-lg transition-all mb-4"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Start with Zinc
+              </Button>
+              
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#E8E5D9] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F9F7ED] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#B8A87A]" />
+                      <span className="text-sm font-medium text-[#B8A87A]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Zinc').length > 0 && (
+                        <span className="text-xs bg-[#F7F4E9] text-[#B8A87A] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Zinc').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#B8A87A] group-hover:text-[#A69968]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#B8A87A] group-hover:text-[#A69968]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#B8A87A] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#B8A87A] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Zinc').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Zinc').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#E8E5D9] hover:border-[#B8A87A] hover:bg-[#F9F7ED] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#B8A87A]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent zinc projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="mt-6 text-center">
-        <p className="text-gray-500 text-xs">More metals will be available soon. Stay tuned!</p>
+        <p className="text-gray-500 text-xs">More metals coming soon. Stay tuned!</p>
       </div>
     </>
   );
