@@ -1,0 +1,126 @@
+{
+  "model_type": "random_forest",
+  "feature_names": [
+    "nominal__location_state_Andhra Pradesh",
+    "nominal__location_state_Jharkhand",
+    "nominal__location_state_Karnataka",
+    "nominal__location_state_Madhya Pradesh",
+    "nominal__location_state_Maharashtra",
+    "nominal__location_state_Rajasthan",
+    "num__year",
+    "num__grid_carbon_intensity_kgCO2_per_kWh",
+    "nominal__mining_method_In-situ Leaching",
+    "nominal__mining_method_Mixed Open-Pit/Underground",
+    "nominal__mining_method_Open-Pit Mining",
+    "nominal__mining_method_Underground Mining",
+    "nominal__mining_ore_type_Mixed",
+    "nominal__mining_ore_type_Oxide",
+    "nominal__mining_ore_type_Sulfide",
+    "num__mining_ore_grade_%Cu",
+    "nominal__mining_equipment_type_Diesel",
+    "nominal__mining_equipment_type_Electric",
+    "nominal__mining_equipment_type_Hybrid",
+    "nominal__mining_equipment_type_Mixed",
+    "num__mining_mine_production_t_per_day",
+    "nominal__mining_water_source_Groundwater",
+    "nominal__mining_water_source_Mixed",
+    "nominal__mining_water_source_Recycled",
+    "nominal__mining_water_source_Surface",
+    "ordinal__mining_amd_risk"
+  ],
+  "target_names": [
+    "num__mining_overburden_waste_rock_ratio_m3_per_t_ore",
+    "num__mining_average_haul_distance_km",
+    "num__mining_water_consumption_m3_per_t_ore",
+    "num__mining_fuel_consumption_L_diesel_per_t_ore",
+    "num__mining_electricity_consumption_kWh_per_t_ore",
+    "num__mining_dust_emissions_PM10_kg_per_t_ore",
+    "num__mining_land_disturbed_m2_per_t_ore",
+    "num__mining_explosives_used_kg_ANFO_per_t_ore",
+    "num__mining_tailings_and_waste_t_per_t_Cu",
+    "num__mining_ghg_kgCO2e_per_t_ore",
+    "num__mining_ghg_kgCO2e_per_t_ore_min",
+    "num__mining_ghg_kgCO2e_per_t_ore_max",
+    "num__mining_ghg_confidence"
+  ],
+  "n_features": 26,
+  "n_targets": 13,
+  "metrics": {
+    "overall": {
+      "mae": 0.5821539778808777,
+      "rmse": 0.7610458425741667,
+      "r2": 0.4019447351573081
+    },
+    "per_target": {
+      "num__mining_overburden_waste_rock_ratio_m3_per_t_ore": {
+        "mae": 0.3989246647623766,
+        "rmse": 0.5303862440317829,
+        "r2": 0.723879331566064
+      },
+      "num__mining_average_haul_distance_km": {
+        "mae": 0.5223929907500371,
+        "rmse": 0.6723243554962391,
+        "r2": 0.5648828060141282
+      },
+      "num__mining_water_consumption_m3_per_t_ore": {
+        "mae": 0.6922761185635034,
+        "rmse": 0.8626282971274655,
+        "r2": 0.29965684735637854
+      },
+      "num__mining_fuel_consumption_L_diesel_per_t_ore": {
+        "mae": 0.4352514627536948,
+        "rmse": 0.5819676699720066,
+        "r2": 0.6664505106383011
+      },
+      "num__mining_electricity_consumption_kWh_per_t_ore": {
+        "mae": 0.7532229922726441,
+        "rmse": 0.9202829118152496,
+        "r2": 0.033654215734588044
+      },
+      "num__mining_dust_emissions_PM10_kg_per_t_ore": {
+        "mae": 0.8526092839077393,
+        "rmse": 1.0293353320170702,
+        "r2": -0.09495729457470814
+      },
+      "num__mining_land_disturbed_m2_per_t_ore": {
+        "mae": 0.4433672930178308,
+        "rmse": 0.5991658445708901,
+        "r2": 0.6474917286934834
+      },
+      "num__mining_explosives_used_kg_ANFO_per_t_ore": {
+        "mae": 0.49382097295112387,
+        "rmse": 0.6469788533959254,
+        "r2": 0.558439863603768
+      },
+      "num__mining_tailings_and_waste_t_per_t_Cu": {
+        "mae": 0.1941357711851002,
+        "rmse": 0.2637649059495138,
+        "r2": 0.9287687034528055
+      },
+      "num__mining_ghg_kgCO2e_per_t_ore": {
+        "mae": 0.6160560949463322,
+        "rmse": 0.7726447041825523,
+        "r2": 0.3383288257076539
+      },
+      "num__mining_ghg_kgCO2e_per_t_ore_min": {
+        "mae": 0.6387069028119784,
+        "rmse": 0.7864450509389633,
+        "r2": 0.3139805027691408
+      },
+      "num__mining_ghg_kgCO2e_per_t_ore_max": {
+        "mae": 0.6022442392841174,
+        "rmse": 0.7625341866939472,
+        "r2": 0.342308849128812
+      },
+      "num__mining_ghg_confidence": {
+        "mae": 0.9249929252449332,
+        "rmse": 1.0783308099318423,
+        "r2": -0.09760333304540914
+      }
+    }
+  },
+  "training_info": {
+    "description": "Multi-output regression model for mining parameter prediction",
+    "approach": "Predicts missing mining outputs from core input features. Trained on preprocessed (scaled/encoded) features."
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "description": "Mining stage preprocessing for copper LCA - predicting missing parameters",
+  "approach": "All mining parameters can be inputs OR outputs depending on what user provides",
+  "core_input_features": [
+    "location_state",
+    "year",
+    "grid_carbon_intensity_kgCO2_per_kWh",
+    "mining_method",
+    "mining_ore_type",
+    "mining_ore_grade_%Cu",
+    "mining_equipment_type",
+    "mining_mine_production_t_per_day",
+    "mining_water_source",
+    "mining_amd_risk"
+  ],
+  "predictable_outputs": [
+    "mining_overburden_waste_rock_ratio_m3_per_t_ore",
+    "mining_average_haul_distance_km",
+    "mining_water_consumption_m3_per_t_ore",
+    "mining_fuel_consumption_L_diesel_per_t_ore",
+    "mining_electricity_consumption_kWh_per_t_ore",
+    "mining_dust_emissions_PM10_kg_per_t_ore",
+    "mining_land_disturbed_m2_per_t_ore",
+    "mining_explosives_used_kg_ANFO_per_t_ore",
+    "mining_tailings_and_waste_t_per_t_Cu",
+    "mining_ghg_kgCO2e_per_t_ore",
+    "mining_ghg_kgCO2e_per_t_ore_min",
+    "mining_ghg_kgCO2e_per_t_ore_max",
+    "mining_ghg_confidence"
+  ],
+  "all_mining_columns": [
+    "location_state",
+    "year",
+    "grid_carbon_intensity_kgCO2_per_kWh",
+    "mining_method",
+    "mining_ore_type",
+    "mining_ore_grade_%Cu",
+    "mining_equipment_type",
+    "mining_mine_production_t_per_day",
+    "mining_water_source",
+    "mining_amd_risk",
+    "mining_overburden_waste_rock_ratio_m3_per_t_ore",
+    "mining_average_haul_distance_km",
+    "mining_water_consumption_m3_per_t_ore",
+    "mining_fuel_consumption_L_diesel_per_t_ore",
+    "mining_electricity_consumption_kWh_per_t_ore",
+    "mining_dust_emissions_PM10_kg_per_t_ore",
+    "mining_land_disturbed_m2_per_t_ore",
+    "mining_explosives_used_kg_ANFO_per_t_ore",
+    "mining_tailings_and_waste_t_per_t_Cu",
+    "mining_ghg_kgCO2e_per_t_ore",
+    "mining_ghg_kgCO2e_per_t_ore_min",
+    "mining_ghg_kgCO2e_per_t_ore_max",
+    "mining_ghg_confidence"
+  ],
+  "feature_types": {
+    "numeric": [
+      "year",
+      "grid_carbon_intensity_kgCO2_per_kWh",
+      "mining_ore_grade_%Cu",
+      "mining_mine_production_t_per_day",
+      "mining_overburden_waste_rock_ratio_m3_per_t_ore",
+      "mining_average_haul_distance_km",
+      "mining_water_consumption_m3_per_t_ore",
+      "mining_fuel_consumption_L_diesel_per_t_ore",
+      "mining_electricity_consumption_kWh_per_t_ore",
+      "mining_dust_emissions_PM10_kg_per_t_ore",
+      "mining_land_disturbed_m2_per_t_ore",
+      "mining_explosives_used_kg_ANFO_per_t_ore",
+      "mining_tailings_and_waste_t_per_t_Cu",
+      "mining_ghg_kgCO2e_per_t_ore",
+      "mining_ghg_kgCO2e_per_t_ore_min",
+      "mining_ghg_kgCO2e_per_t_ore_max",
+      "mining_ghg_confidence"
+    ],
+    "nominal_categorical": [
+      "location_state",
+      "mining_method",
+      "mining_ore_type",
+      "mining_equipment_type",
+      "mining_water_source"
+    ],
+    "ordinal_categorical": [
+      "mining_amd_risk"
+    ]
+  },
+  "ordinal_mappings": {
+    "mining_amd_risk": [
+      "Low",
+      "Medium",
+      "High"
+    ]
+  },
+  "processed_feature_names": [
+    "num__year",
+    "num__grid_carbon_intensity_kgCO2_per_kWh",
+    "num__mining_ore_grade_%Cu",
+    "num__mining_mine_production_t_per_day",
+    "num__mining_overburden_waste_rock_ratio_m3_per_t_ore",
+    "num__mining_average_haul_distance_km",
+    "num__mining_water_consumption_m3_per_t_ore",
+    "num__mining_fuel_consumption_L_diesel_per_t_ore",
+    "num__mining_electricity_consumption_kWh_per_t_ore",
+    "num__mining_dust_emissions_PM10_kg_per_t_ore",
+    "num__mining_land_disturbed_m2_per_t_ore",
+    "num__mining_explosives_used_kg_ANFO_per_t_ore",
+    "num__mining_tailings_and_waste_t_per_t_Cu",
+    "num__mining_ghg_kgCO2e_per_t_ore",
+    "num__mining_ghg_kgCO2e_per_t_ore_min",
+    "num__mining_ghg_kgCO2e_per_t_ore_max",
+    "num__mining_ghg_confidence",
+    "nominal__location_state_Andhra Pradesh",
+    "nominal__location_state_Jharkhand",
+    "nominal__location_state_Karnataka",
+    "nominal__location_state_Madhya Pradesh",
+    "nominal__location_state_Maharashtra",
+    "nominal__location_state_Rajasthan",
+    "nominal__mining_method_In-situ Leaching",
+    "nominal__mining_method_Mixed Open-Pit/Underground",
+    "nominal__mining_method_Open-Pit Mining",
+    "nominal__mining_method_Underground Mining",
+    "nominal__mining_ore_type_Mixed",
+    "nominal__mining_ore_type_Oxide",
+    "nominal__mining_ore_type_Sulfide",
+    "nominal__mining_equipment_type_Diesel",
+    "nominal__mining_equipment_type_Electric",
+    "nominal__mining_equipment_type_Hybrid",
+    "nominal__mining_equipment_type_Mixed",
+    "nominal__mining_water_source_Groundwater",
+    "nominal__mining_water_source_Mixed",
+    "nominal__mining_water_source_Recycled",
+    "nominal__mining_water_source_Surface",
+    "ordinal__mining_amd_risk"
+  ],
+  "n_samples": 1000,
+  "n_original_features": 23,
+  "n_processed_features": 39,
+  "categorical_encodings": {
+    "location_state": [
+      "Andhra Pradesh",
+      "Jharkhand",
+      "Karnataka",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Rajasthan"
+    ],
+    "mining_method": [
+      "In-situ Leaching",
+      "Mixed Open-Pit/Underground",
+      "Open-Pit Mining",
+      "Underground Mining"
+    ],
+    "mining_ore_type": [
+      "Mixed",
+      "Oxide",
+      "Sulfide"
+    ],
+    "mining_equipment_type": [
+      "Diesel",
+      "Electric",
+      "Hybrid",
+      "Mixed"
+    ],
+    "mining_water_source": [
+      "Groundwater",
+      "Mixed",
+      "Recycled",
+      "Surface"
+    ],
+    "mining_amd_risk": [
+      "Low",
+      "Medium",
+      "High"
+    ]
+  }
+}
