@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { GuidedModeToggle } from "@/components/GuidedModeToggle";
 import { AdvancedOptionsSection } from "@/components/AdvancedOptionsSection";
 
@@ -3243,6 +3244,266 @@ const valorizationSchema = z.object({
   ironPrecipitateAsPigment: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
 });
 
+// Circular Combos Modal Component for Zinc
+function ZincCircularCombosModal() {
+  const [open, setOpen] = useState(false);
+  
+  const zincCombos = [
+    {
+      id: 1,
+      name: "Pb + Sn → Solder / Low-Melting Alloy",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "ISF fume/jarosite" },
+        { metal: "Sn", color: "bg-purple-600", source: "scrap/concentrate" }
+      ],
+      productIcon: "🔗",
+      products: ["Soft solder", "Fusible links", "Casting babbitt alloys"],
+      whyCircular: "Converts hazardous Pb/Sn residues into high-recovery-value solders."
+    },
+    {
+      id: 2,
+      name: "Fe + ZnO → Ferrite / Ceramic Magnetic Compound",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "jarosite/goethite" },
+        { metal: "ZnO", color: "bg-blue-600", source: "fume dust" }
+      ],
+      productIcon: "🧲",
+      products: ["Ferrite magnetic cores", "Electronic inductors", "Ceramic components"],
+      whyCircular: "ZnFe₂O₄ spinel ferrites are industry-standard components.",
+      industryReady: true
+    },
+    {
+      id: 3,
+      name: "Fe + Pb + Zn → Radiation Shielding / Dense Blocks",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "oxides" },
+        { metal: "Pb", color: "bg-indigo-700", source: "traces" },
+        { metal: "Zn", color: "bg-blue-600", source: "dust" }
+      ],
+      productIcon: "🛡️",
+      products: ["Counterweights", "Shielding bricks", "Industrial damping materials"],
+      whyCircular: "Immobilizes Pb & Zn in a safe heavy composite."
+    },
+    {
+      id: 4,
+      name: "Fe + Si + Al → Ceramic / Tile Additive",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "jarosite/hematite" },
+        { metal: "Si", color: "bg-gray-600", source: "leach residue" },
+        { metal: "Al", color: "bg-cyan-600", source: "galvanizing scrap" }
+      ],
+      productIcon: "🏗️",
+      products: ["Bricks, tiles, pavers", "Ceramic roof materials"],
+      whyCircular: "These oxides form stable mineral structures → fantastic industrial reuse."
+    },
+    {
+      id: 5,
+      name: "Cu + Zn → Micro-Brass Alloy Pellets",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Cu", color: "bg-amber-700", source: "concentrate impurity" },
+        { metal: "Zn", color: "bg-blue-600", source: "dust/fume" }
+      ],
+      productIcon: "⚙️",
+      products: ["Foundry brass feed pellets", "Decorative components", "Valves/fittings"],
+      whyCircular: "Transforms two impurities into highly recyclable non-ferrous alloy feedstock."
+    },
+    {
+      id: 6,
+      name: "Fe + Mn + Zn → Spinel for Pigments / Ceramics",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "oxides" },
+        { metal: "Mn", color: "bg-purple-700", source: "traces" },
+        { metal: "Zn", color: "bg-blue-600", source: "ZnO" }
+      ],
+      productIcon: "🎨",
+      products: ["Colored pigments", "Ceramic colorants", "Heat-resistant coatings"],
+      whyCircular: "Mixed Zn–Mn–Fe spinels = stable, pigment-grade materials."
+    },
+    {
+      id: 7,
+      name: "Fe + Cu → Hardfacing / Wear-Resistant Pellets",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "jarosite/ISF slag" },
+        { metal: "Cu", color: "bg-amber-700", source: "dust/impurity" }
+      ],
+      productIcon: "🔧",
+      products: ["Hardfacing rods", "Wear-resistant metal powder"],
+      whyCircular: "Turns Fe/Cu impurities into high-value welding materials."
+    },
+    {
+      id: 8,
+      name: "Pb + Ag → Silver-Bearing Solder / Contact Alloy",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "dust/slags" },
+        { metal: "Ag", color: "bg-slate-400", source: "ISF fume" }
+      ],
+      productIcon: "💎",
+      products: ["Silver-bearing solders", "Electrical contact alloy"],
+      whyCircular: "Maximizes precious metal recovery → extremely high value.",
+      note: "Only if Ag is present — common in Pb–Zn ores processed in ISF"
+    },
+    {
+      id: 9,
+      name: "Fe + Zn + Si + CaO → Cement / Concrete Additive",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "slag" },
+        { metal: "Zn", color: "bg-blue-600", source: "slag" },
+        { metal: "Si", color: "bg-gray-600", source: "residue" },
+        { metal: "CaO", color: "bg-lime-600", source: "slag" }
+      ],
+      productIcon: "🏭",
+      products: ["Cement clinker substitute", "Pozzolanic additives", "Road base material"],
+      whyCircular: "Fixes hazardous Zn/Pb in mineral matrix → near-zero landfill."
+    },
+    {
+      id: 10,
+      name: "ZnO + Al₂O₃ → Refractory / Glaze Additive",
+      emoji: "⚡",
+      residuals: [
+        { metal: "ZnO", color: "bg-blue-600", source: "dust" },
+        { metal: "Al₂O₃", color: "bg-cyan-600", source: "residues" }
+      ],
+      productIcon: "🔥",
+      products: ["Ceramic glazes", "High-temperature refractories"],
+      whyCircular: "Reuses ZnO that would otherwise be classified as hazardous fume waste."
+    },
+    {
+      id: 11,
+      name: "Fe + Al + Mn → Metallurgical Pellets for Steel Fluxes",
+      emoji: "⚡",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "oxide" },
+        { metal: "Al", color: "bg-cyan-600", source: "traces" },
+        { metal: "Mn", color: "bg-purple-700", source: "traces" }
+      ],
+      productIcon: "⚗️",
+      products: ["Pelletized fluxing agents", "Secondary ferroalloy feed"],
+      whyCircular: "Perfectly aligns with 'industrial symbiosis'."
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="relative overflow-hidden border-2 border-blue-600 bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-3 text-blue-700 shadow-md transition-all duration-200 hover:from-blue-100 hover:to-cyan-100 hover:shadow-lg"
+        >
+          <span className="mr-2 text-xl">♻️</span>
+          <span className="font-semibold">Circular Combos</span>
+          <span className="ml-2 text-xl">⚡</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+            <span className="text-3xl">♻️</span>
+            Circular Reuse of Residual Metals – Zinc Valorization
+            <span className="text-3xl">⚡</span>
+          </DialogTitle>
+          <DialogDescription className="text-base text-gray-700">
+            Discover how residual metals from zinc processing can be combined to create valuable circular economy products.
+            <span className="block mt-2 text-sm italic text-blue-600">💡 Residues added together to ensure circularity throughout the metal stream</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {zincCombos.map((combo) => (
+            <motion.div
+              key={combo.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: combo.id * 0.08 }}
+              className="group rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm transition-all duration-300 hover:border-blue-600 hover:shadow-lg"
+            >
+              {/* Header with emoji and name */}
+              <div className="mb-4 flex items-start gap-3">
+                <span className="text-3xl">{combo.emoji}</span>
+                <h3 className="flex-1 text-base font-bold text-gray-800 leading-tight">
+                  {combo.name}
+                </h3>
+                <span className="text-3xl">{combo.productIcon}</span>
+              </div>
+
+              {/* Residuals visualization */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-600">Residuals:</span>
+                {combo.residuals.map((residual, idx) => (
+                  <React.Fragment key={idx}>
+                    <div className={`flex flex-col items-center rounded-lg ${residual.color} px-3 py-2 shadow-sm`}>
+                      <span className="text-xs font-bold text-white">{residual.metal}</span>
+                      <span className="text-[10px] text-white/80">{residual.source}</span>
+                    </div>
+                    {idx < combo.residuals.length - 1 && (
+                      <span className="text-xl font-bold text-blue-600">+</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Products */}
+              <div className="mb-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-600">Products:</div>
+                <ul className="space-y-1">
+                  {combo.products.map((product, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-green-600">•</span>
+                      <span>{product}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Why Circular */}
+              <div className="rounded-lg bg-emerald-50 p-3 text-xs">
+                <span className="font-semibold text-emerald-800">♻️ Why Circular: </span>
+                <span className="text-emerald-700">{combo.whyCircular}</span>
+              </div>
+
+              {/* Industry Ready badge */}
+              {combo.industryReady && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                  <span>🏭</span> Industry-Ready
+                </div>
+              )}
+
+              {/* Note if exists */}
+              {combo.note && (
+                <div className="mt-2 rounded-md bg-amber-50 p-2 text-xs italic text-amber-800">
+                  <span className="font-semibold">Note: </span>
+                  {combo.note}
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Footer Message */}
+        <div className="mt-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-5 text-center">
+          <p className="text-sm font-semibold text-gray-700">
+            <span className="text-xl">🌍</span> Ensuring circularity throughout – every trace element finds purpose
+            <span className="text-xl ml-1">♻️</span>
+          </p>
+          <p className="mt-2 text-xs text-gray-600">
+            These combinations represent real industrial applications where residual metals are combined
+            to create valuable alloy products, closing the loop in sustainable metallurgy.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ValorizationStep({ onNext, onBack, onSave, initialValues, onCalculateLCA, isCalculatingLca }) {
   const [isSaving, setIsSaving] = useState(false);
   const [sustainabilityOpen, setSustainabilityOpen] = useState(false);
@@ -3367,6 +3628,11 @@ function ValorizationStep({ onNext, onBack, onSave, initialValues, onCalculateLC
             {errors.valorizationMethod && (
               <p className="text-red-500 text-sm mt-1">{errors.valorizationMethod.message}</p>
             )}
+          </div>
+
+          {/* Circular Combos Button */}
+          <div className="flex justify-center my-6">
+            <ZincCircularCombosModal />
           </div>
 
           {/* Advanced Options */}

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
 
 const HEADING_TEXT = "text-[22px] sm:text-[24px]";
@@ -3008,6 +3009,257 @@ function RecyclingStep({ onNext, onBack }) {
     )
 }
 
+// Circular Combos Modal Component for Lead
+function LeadCircularCombosModal() {
+  const [open, setOpen] = useState(false);
+  
+  const leadCombos = [
+    {
+      id: 1,
+      name: "Pb + Sn + Sb → Battery Grid Alloy (Secondary)",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "slag/dross" },
+        { metal: "Sn", color: "bg-purple-600", source: "solder waste" },
+        { metal: "Sb", color: "bg-purple-700", source: "battery scrap" }
+      ],
+      productIcon: "⚡",
+      products: ["Battery grid alloy (Pb–Sn–Sb)", "Industrial electrode grids"],
+      whyCircular: "Uses ALL major lead-group residues WITHOUT contaminating refined Pb. Highly recyclable at EoL (98%+).",
+      industryReady: true
+    },
+    {
+      id: 2,
+      name: "Pb + Ag → Electrical Contact Alloy",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "residue" },
+        { metal: "Ag", color: "bg-slate-400", source: "desilvering slime" }
+      ],
+      productIcon: "⚡",
+      products: ["Contact buttons", "Electrical terminals", "Relay components"],
+      whyCircular: "Ag-rich Pb composites have excellent electrical performance."
+    },
+    {
+      id: 3,
+      name: "Sb + Sn → Flame-Retardant Master Alloys",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Sb", color: "bg-purple-700", source: "battery grids" },
+        { metal: "Sn", color: "bg-purple-600", source: "lead refining" }
+      ],
+      productIcon: "🔥",
+      products: ["Master alloy additive for flame-retardant plastics", "Antimony–tin synergist compounds"],
+      whyCircular: "Turns two common impurities into in-demand FR additives."
+    },
+    {
+      id: 4,
+      name: "Cu + Sn → Bronze Microalloys",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Cu", color: "bg-amber-700", source: "scrap contamination" },
+        { metal: "Sn", color: "bg-purple-600", source: "solder residues" }
+      ],
+      productIcon: "⚙️",
+      products: ["Bronze bearings", "Bushings", "Precision mechanical components"],
+      whyCircular: "High-value metallurgy from simple impurity capture."
+    },
+    {
+      id: 5,
+      name: "Zn + Pb (Hardhead) → Alloying Pellets for Brass/Foundries",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "hardhead" },
+        { metal: "Pb", color: "bg-indigo-700", source: "residue" }
+      ],
+      productIcon: "🏭",
+      products: ["Brass foundry pellets", "Die-casting modifiers"],
+      whyCircular: "Even Parkes hardhead — usually a nuisance by-product — becomes useful."
+    },
+    {
+      id: 6,
+      name: "Bi + Sn → Fusible / Low-Melting Alloys",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Bi", color: "bg-pink-600", source: "residue" },
+        { metal: "Sn", color: "bg-purple-600", source: "residue" }
+      ],
+      productIcon: "🌡️",
+      products: ["Fusible links", "Temperature safety devices", "Low-temp solders"],
+      whyCircular: "Converts rare Bi traces into valuable alloy compositions."
+    },
+    {
+      id: 7,
+      name: "Sb + Zn → Anticorrosion Additive Alloy",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Sb", color: "bg-purple-700", source: "battery scrap" },
+        { metal: "Zn", color: "bg-blue-600", source: "residues" }
+      ],
+      productIcon: "🛡️",
+      products: ["Corrosion inhibitors", "Galvanizing bath stabilizers"],
+      whyCircular: "Sb–Zn compounds provide strong oxidation protection."
+    },
+    {
+      id: 8,
+      name: "Fe + CaO + SiO₂ (slag) → Heavy Ceramic & Brick Material",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "lead slag" },
+        { metal: "SiO₂", color: "bg-gray-600", source: "slag matrix" },
+        { metal: "CaO", color: "bg-lime-600", source: "slag matrix" }
+      ],
+      productIcon: "🧱",
+      products: ["Industrial pavers", "Heavy bricks", "Road base material"],
+      whyCircular: "Converts hazardous Pb-slag into fully mineralized ceramic-grade product."
+    },
+    {
+      id: 9,
+      name: "Cu + Zn + Pb → Low-Friction Bearing Alloy (Castable)",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Cu", color: "bg-amber-700", source: "residue" },
+        { metal: "Zn", color: "bg-blue-600", source: "residue" },
+        { metal: "Pb", color: "bg-indigo-700", source: "residue" }
+      ],
+      productIcon: "⚙️",
+      products: ["Sliding bearings", "Bushings", "Lubricated micro-components"],
+      whyCircular: "Pb + Zn improve lubricity; Cu gives structural strength. (Alloying done outside the Pb stream, so no purity issues.)"
+    },
+    {
+      id: 10,
+      name: "PbO + Fe₂O₃ + SiO₂ → Cement Kiln Feed / Heavy Aggregate",
+      emoji: "🔋",
+      residuals: [
+        { metal: "PbO", color: "bg-indigo-700", source: "dust" },
+        { metal: "Fe₂O₃", color: "bg-orange-700", source: "oxide" },
+        { metal: "SiO₂", color: "bg-gray-600", source: "slag" }
+      ],
+      productIcon: "🏗️",
+      products: ["Cement clinker adjuster", "Dense aggregates"],
+      whyCircular: "Pb gets chemically locked into the mineral structure."
+    },
+    {
+      id: 11,
+      name: "Ag + Sb + Sn → Specialty Solder Alloy",
+      emoji: "🔋",
+      residuals: [
+        { metal: "Ag", color: "bg-slate-400", source: "slime" },
+        { metal: "Sb", color: "bg-purple-700", source: "residue" },
+        { metal: "Sn", color: "bg-purple-600", source: "residue" }
+      ],
+      productIcon: "💎",
+      products: ["High-reliability solder for electronics"],
+      whyCircular: "Converts precious-metal residues into premium market products.",
+      industryReady: true
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="relative overflow-hidden border-2 border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-3 text-indigo-700 shadow-md transition-all duration-200 hover:from-indigo-100 hover:to-purple-100 hover:shadow-lg"
+        >
+          <span className="mr-2 text-xl">♻️</span>
+          <span className="font-semibold">Circular Combos</span>
+          <span className="ml-2 text-xl">🔋</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-2xl font-bold text-indigo-700 flex items-center gap-2">
+            <span className="text-3xl">♻️</span>
+            Circular Reuse of Residual Metals – Lead Valorization
+            <span className="text-3xl">🔋</span>
+          </DialogTitle>
+          <DialogDescription className="text-base text-gray-700">
+            Discover how residual metals from lead processing can be combined to create valuable circular economy products.
+            <span className="block mt-2 text-sm italic text-indigo-600">💡 Residues added together to ensure circularity throughout the metal stream</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {leadCombos.map((combo) => (
+            <motion.div
+              key={combo.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: combo.id * 0.08 }}
+              className="group rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm transition-all duration-300 hover:border-indigo-600 hover:shadow-lg"
+            >
+              {/* Header with emoji and name */}
+              <div className="mb-4 flex items-start gap-3">
+                <span className="text-3xl">{combo.emoji}</span>
+                <h3 className="flex-1 text-base font-bold text-gray-800 leading-tight">
+                  {combo.name}
+                </h3>
+                <span className="text-3xl">{combo.productIcon}</span>
+              </div>
+
+              {/* Residuals visualization */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-600">Residuals:</span>
+                {combo.residuals.map((residual, idx) => (
+                  <React.Fragment key={idx}>
+                    <div className={`flex flex-col items-center rounded-lg ${residual.color} px-3 py-2 shadow-sm`}>
+                      <span className="text-xs font-bold text-white">{residual.metal}</span>
+                      <span className="text-[10px] text-white/80">{residual.source}</span>
+                    </div>
+                    {idx < combo.residuals.length - 1 && (
+                      <span className="text-xl font-bold text-indigo-600">+</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Products */}
+              <div className="mb-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-600">Products:</div>
+                <ul className="space-y-1">
+                  {combo.products.map((product, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-green-600">•</span>
+                      <span>{product}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Why Circular */}
+              <div className="rounded-lg bg-emerald-50 p-3 text-xs">
+                <span className="font-semibold text-emerald-800">♻️ Why Circular: </span>
+                <span className="text-emerald-700">{combo.whyCircular}</span>
+              </div>
+
+              {/* Industry Ready badge */}
+              {combo.industryReady && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                  <span>🏭</span> Industry-Ready
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Footer Message */}
+        <div className="mt-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-5 text-center">
+          <p className="text-sm font-semibold text-gray-700">
+            <span className="text-xl">🌍</span> Ensuring circularity throughout – every trace element finds purpose
+            <span className="text-xl ml-1">♻️</span>
+          </p>
+          <p className="mt-2 text-xs text-gray-600">
+            These combinations represent real industrial applications where residual metals are combined
+            to create valuable alloy products, closing the loop in sustainable metallurgy.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ValorizationStep({ onNext, onBack }) {
     const schema = z.object({
         // Mandatory
@@ -3092,6 +3344,11 @@ function ValorizationStep({ onNext, onBack }) {
                     </div>
 
                     <hr className="my-8 border-gray-200" />
+
+                    {/* Circular Combos Button */}
+                    <div className="flex justify-center my-6">
+                        <LeadCircularCombosModal />
+                    </div>
 
                     {/* ADVANCED OPTIONS */}
                     <AdvancedOptionsSection defaultOpen={false}>
