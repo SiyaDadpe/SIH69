@@ -47,9 +47,9 @@ function App() {
     {
       path: "/",
       element: (
-        // <ProtectedRoute>
+        <ProtectedRoute>
           <MainLayout />
-          // </ProtectedRoute>
+        </ProtectedRoute>
       ),
       errorElement: <RouteError />,
       children: [
@@ -67,6 +67,16 @@ function App() {
         {
           path: "wizard-steel",
           element: <WizardSteel />,
+          errorElement: <RouteError />
+        },
+        {
+          path: "wizard-lead",
+          element: <WizardLead />,
+          errorElement: <RouteError />
+        },
+        {
+          path: "wizard-zinc",
+          element: <WizardZinc />,
           errorElement: <RouteError />
         },
         {
