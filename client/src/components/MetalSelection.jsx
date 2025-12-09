@@ -18,6 +18,9 @@ import {
   ChevronUp,
   ChevronRight,
   FileText,
+  Shield,
+  Recycle,
+  ArrowRight,
 } from 'lucide-react';
 import { getCurrentUser } from '../services/authService';
 import { getWizardWorkflows, getPublicWizardWorkflows } from '../services/wizardService';
@@ -150,7 +153,7 @@ export default function MetalSelection({ onSelect }) {
   };
 
   const handleMetalSelect = (metalType) => {
-    if (metalType !== 'aluminum' && metalType !== 'steel' && metalType !== 'copper' && metalType !== 'zinc') return;
+    if (metalType !== 'aluminum' && metalType !== 'steel' && metalType !== 'copper' && metalType !== 'zinc' && metalType !== 'lead') return;
     setSelectedMetal(metalType);
     setStage('action');
     setTimeout(() => {
@@ -212,6 +215,7 @@ export default function MetalSelection({ onSelect }) {
     else if (workflowMetalType === 'Aluminium') metal = 'aluminum';
     else if (workflowMetalType === 'Steel') metal = 'steel';
     else if (workflowMetalType === 'Zinc') metal = 'zinc';
+    else if (workflowMetalType === 'Lead') metal = 'lead';
     
     const payload = {
       metal: metal,
@@ -241,6 +245,12 @@ export default function MetalSelection({ onSelect }) {
         label: 'Zinc',
         description: 'zinc workflows',
         wizardLabel: 'Launch zinc wizard',
+      },
+      lead: {
+        color: 'slate',
+        label: 'Lead',
+        description: 'lead workflows',
+        wizardLabel: 'Launch lead wizard',
       },
     };
 
@@ -328,6 +338,34 @@ export default function MetalSelection({ onSelect }) {
         drawerDashed: 'border-[#E8E5D9] bg-[#F9F7ED]',
         drawerButton: 'border-[#E8E5D9] text-[#B8A87A]',
         drawerFooter: 'text-[#9A8E68]',
+      },
+      slate: {
+        badge: 'bg-[#E8EBF0] text-[#475569]',
+        text: 'text-[#475569]',
+        cardBorder: 'border-[#CBD5E1] shadow-[0_12px_28px_rgba(71,85,105,0.12)]',
+        iconBg: 'bg-[#E2E8F0] text-[#334155]',
+        buttonBg: 'bg-[#475569] hover:bg-[#334155]',
+        focusBorder: 'focus:border-[#475569] focus:ring-[#475569]/15',
+        infoBox: 'bg-[#F1F5F9] border-[#CBD5E1] text-[#334155]',
+        drawerBg: 'from-[#F8FAFC] via-[#F1F5F9] to-white',
+        drawerGradient: 'from-[#E2E8F0]/60',
+        drawerIconBg: 'bg-white/80 text-[#475569]',
+        drawerText: 'text-[#475569]',
+        drawerTitle: 'text-[#334155]',
+        drawerPill: 'text-[#475569]',
+        drawerInfoBox: 'bg-white/80 border-[#CBD5E1]',
+        drawerInfoText: 'text-[#334155]',
+        drawerInfoSubtext: 'text-[#64748B]',
+        drawerCardBg: 'bg-white/85 border-[#CBD5E1]',
+        drawerHandle: 'bg-[#94A3B8]',
+        drawerHandleText: 'text-[#475569]',
+        drawerBorder: 'border-[#CBD5E1]',
+        drawerContentText: 'text-[#334155]',
+        drawerChevron: 'text-[#475569]',
+        drawerContentSubtext: 'text-[#64748B]',
+        drawerDashed: 'border-[#CBD5E1] bg-[#F1F5F9]',
+        drawerButton: 'border-[#CBD5E1] text-[#475569]',
+        drawerFooter: 'text-[#64748B]',
       },
     };
 
@@ -953,6 +991,151 @@ export default function MetalSelection({ onSelect }) {
                         <div className="text-center py-4">
                           <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                           <p className="text-xs text-gray-500">No recent zinc projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lead Card */}
+        <div className="group">
+          <Card 
+            className="relative overflow-hidden border-[#CBD5E1] bg-gradient-to-br from-[#F8FAFC] via-white to-[#F1F5F9] shadow-[0_12px_28px_rgba(71,85,105,0.12)] hover:shadow-[0_20px_40px_rgba(71,85,105,0.16)] transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/wizard-lead')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#475569]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            <CardHeader className="relative pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#E2E8F0] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Shield className="w-6 h-6 text-[#475569]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-[#475569] group-hover:text-[#334155] transition-colors">
+                      Lead
+                    </CardTitle>
+                    <p className="text-xs text-[#64748B] mt-0.5">Pb • Industrial metal</p>
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-[#475569] animate-pulse" />
+              </div>
+            </CardHeader>
+
+            <CardContent className="relative space-y-4">
+              <p className="text-sm text-[#64748B] leading-relaxed">
+                High-density metal used in batteries, radiation shielding, and industrial applications with excellent recycling potential.
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F1F5F9] text-[#475569]">
+                  <Zap className="w-3 h-3" />
+                  Batteries
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F1F5F9] text-[#475569]">
+                  <Shield className="w-3 h-3" />
+                  Shielding
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F1F5F9] text-[#475569]">
+                  <Recycle className="w-3 h-3" />
+                  95% Recyclable
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  className="w-full bg-[#475569] hover:bg-[#334155] text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/wizard-lead');
+                  }}
+                >
+                  Start with Lead
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#CBD5E1] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F1F5F9] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#475569]" />
+                      <span className="text-sm font-medium text-[#475569]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Lead').length > 0 && (
+                        <span className="text-xs bg-[#F1F5F9] text-[#475569] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Lead').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#475569] group-hover:text-[#334155]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#475569] group-hover:text-[#334155]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#475569] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#475569] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Lead').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Lead').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#CBD5E1] hover:border-[#475569] hover:bg-[#F8FAFC] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#475569]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent lead projects</p>
                           <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
                         </div>
                       )}
