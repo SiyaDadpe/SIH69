@@ -40,14 +40,106 @@ import SustainableSolutionsModal from "@/components/SustainableSolutionsModal";
 import { GuidedModeToggle } from "@/components/GuidedModeToggle";
 import { AdvancedOptionsSection } from "@/components/AdvancedOptionsSection";
 import { GUIDED_MODE_DEFAULTS } from "@/constants/guidedModeDefaults";
-import {
-  computeMeltComposition,
-  computeMakeupAdditions,
-  computeManufacturingOutput,
-  computeRecyclingResult,
-  computeValorizationResult,
-  getDefaultPrimaryComposition,
-} from "@/utils/metalStreams";
+
+// Inline metal composition calculation utilities
+const getDefaultPrimaryComposition = (grade) => {
+  const compositions = {
+    'P1020': { Al: 99.7, Cu: 0.05, Mg: 0.05, Si: 0.1, Others: 0.1 },
+    'P1050': { Al: 99.5, Cu: 0.05, Mg: 0.05, Si: 0.25, Others: 0.15 },
+    'P1060': { Al: 99.6, Cu: 0.05, Mg: 0.03, Si: 0.25, Others: 0.07 },
+  };
+  return compositions[grade] || compositions['P1020'];
+};
+
+const computeManufacturingOutput = (productMass, scrapRatePercent) => {
+  const scrapRate = Math.max(0, Math.min(100, scrapRatePercent)) / 100;
+  const internalScrapMass = productMass * scrapRate;
+  return { productMass, internalScrapMass };
+};
+
+const computeMeltComposition = (streams) => {
+  let totalMass = 0;
+  const totalComp = { Al: 0, Cu: 0, Mg: 0, Si: 0, Others: 0 };
+  
+  streams.forEach(stream => {
+    totalMass += stream.mass;
+    Object.keys(totalComp).forEach(element => {
+      totalComp[element] += stream.mass * (stream.composition[element] || 0) / 100;
+    });
+  });
+  
+  const composition = {};
+  if (totalMass > 0) {
+    Object.keys(totalComp).forEach(element => {
+      composition[element] = (totalComp[element] / totalMass) * 100;
+    });
+  } else {
+    Object.keys(totalComp).forEach(element => {
+      composition[element] = 0;
+    });
+  }
+  
+  return { totalMass, composition };
+};
+
+const computeMakeupAdditions = (target, currentMelt) => {
+  const targetComp = target.composition;
+  const currentComp = currentMelt.composition;
+  const mass = currentMelt.totalMass;
+  const tolerance = target.tolerance || {};
+  
+  const additionsArray = [];
+  const elements = ['Al', 'Cu', 'Mg', 'Si', 'Others'];
+  
+  if (mass === 0) return additionsArray;
+  
+  elements.forEach(element => {
+    const targetPct = targetComp[element] || 0;
+    const currentPct = currentComp[element] || 0;
+    const allowedTolerance = tolerance[element] || 0;
+    
+    // Calculate deficit: if current is less than target (accounting for tolerance)
+    const deficit = targetPct - currentPct - allowedTolerance;
+    
+    if (deficit > 0.01) { // Only show if deficit is significant (> 0.01%)
+      const requiredMass = (mass * deficit) / 100;
+      additionsArray.push({
+        element,
+        deficit: deficit.toFixed(2),
+        requiredMass,
+        targetPct,
+        currentPct
+      });
+    }
+  });
+  
+  return additionsArray;
+};
+
+const computeRecyclingResult = (scrapStream, yieldPercent, slagPercent) => {
+  const yieldFraction = Math.max(0, Math.min(100, yieldPercent)) / 100;
+  const slagFraction = Math.max(0, Math.min(100, slagPercent)) / 100;
+  
+  const recoveredMass = scrapStream.mass * yieldFraction;
+  const slagMass = scrapStream.mass * slagFraction;
+  const lostMass = scrapStream.mass - recoveredMass - slagMass;
+  
+  return {
+    recoveredMass,
+    slagMass,
+    lostMass,
+    composition: scrapStream.composition
+  };
+};
+
+const computeValorizationResult = (slagMass, valorizationRatePercent) => {
+  const rate = Math.max(0, Math.min(100, valorizationRatePercent)) / 100;
+  return {
+    slagMass,
+    valorizedMass: slagMass * rate,
+    wastedMass: slagMass * (1 - rate)
+  };
+};
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
