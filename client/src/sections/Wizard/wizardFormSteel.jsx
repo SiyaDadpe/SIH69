@@ -31,6 +31,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LCASuccessModal from "@/components/LCASuccessModal";
 import LCAPromptModal from "@/components/LCAPromptModal";
 import SustainableSolutionsModal from "@/components/SustainableSolutionsModal";
@@ -3810,6 +3811,243 @@ function SteelRecyclingStep({
 // STEEL VALORIZATION STEP
 // =============================================================================
 
+// Circular Combos Modal Component for Steel
+function SteelCircularCombosModal() {
+  const [open, setOpen] = useState(false);
+
+  const steelCombos = [
+    {
+      id: 1,
+      name: "Zn + Al → Hot-Dip / Al-Zn Coating Pellets",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "EAF dust" },
+        { metal: "Al", color: "bg-cyan-600", source: "deoxidation residues" }
+      ],
+      productIcon: "✨",
+      products: ["Galvanizing pellets", "Al–Zn bath stabilizers"],
+      whyCircular: "Diverts hazardous Zn-bearing dust into high-demand coating alloy feedstock"
+    },
+    {
+      id: 2,
+      name: "Zn + Fe → Anti-Corrosion Additive Alloy",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "dust" },
+        { metal: "Fe", color: "bg-orange-700", source: "mill scale/slag FeO" }
+      ],
+      productIcon: "🛡️",
+      products: ["Passivation agents", "Micro-alloying pellets for surface coatings"],
+      whyCircular: "Zn–Fe phases are used in galvannealed steel coatings → massive industrial relevance"
+    },
+    {
+      id: 3,
+      name: "Cu + Sn → Free-Machining Bronze Microalloy",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Cu", color: "bg-amber-700", source: "scrap contamination" },
+        { metal: "Sn", color: "bg-purple-600", source: "tin-plated scrap" }
+      ],
+      productIcon: "⚙️",
+      products: ["Bushings", "Bearings", "Low-friction miniature components"],
+      whyCircular: "Turns Cu/Sn 'contaminants' into high-value bronze instead of steel downgrading"
+    },
+    {
+      id: 4,
+      name: "Cu + Zn → Brass Alloy Feed Pellets",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Cu", color: "bg-amber-700", source: "scrap residue" },
+        { metal: "Zn", color: "bg-blue-600", source: "EAF dust/fume" }
+      ],
+      productIcon: "🔧",
+      products: ["Brass foundry pellets", "Fittings & valve alloy feedstock"],
+      whyCircular: "Directly feeds into brass industry that thrives on recycled Zn/Cu blends"
+    },
+    {
+      id: 5,
+      name: "Fe + Cr + Ni → Stainless Flux Pellets (Secondary Input)",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "mill scale" },
+        { metal: "Cr", color: "bg-gray-600", source: "stainless recycling" },
+        { metal: "Ni", color: "bg-teal-600", source: "stainless recycling" }
+      ],
+      productIcon: "⚗️",
+      products: ["Secondary flux pellets for stainless melting shops", "Ferroalloy blend pellets"],
+      whyCircular: "Replaces mined Fe–Cr–Ni ores with recovered metallics"
+    },
+    {
+      id: 6,
+      name: "Fe + CaO–SiO₂ Slag + MgO → Construction & Cement Additives",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "Fe-rich slag" },
+        { metal: "CaO–SiO₂", color: "bg-stone-600", source: "high-CaO slag" },
+        { metal: "MgO", color: "bg-lime-600", source: "slag fractions" }
+      ],
+      productIcon: "🏗️",
+      products: ["Cement clinker substitute", "Road base / aggregate"],
+      whyCircular: "Huge CO₂ savings: slag substitutes limestone/clinker",
+      industryFit: true
+    },
+    {
+      id: 7,
+      name: "Pb + Sn → Solder / Fusible Alloys",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Pb", color: "bg-indigo-700", source: "coated scrap" },
+        { metal: "Sn", color: "bg-purple-600", source: "tinplate cuttings" }
+      ],
+      productIcon: "🔗",
+      products: ["Low-melting alloys", "Industrial solder"],
+      whyCircular: "Locks Pb in controlled alloy → high recovery at EoL"
+    },
+    {
+      id: 8,
+      name: "Ni + Cu + Zn → Specialty Brass/Bronze Modifiers",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Ni", color: "bg-teal-600", source: "stainless contamination" },
+        { metal: "Cu", color: "bg-amber-700", source: "mixed scrap" },
+        { metal: "Zn", color: "bg-blue-600", source: "dust" }
+      ],
+      productIcon: "🎨",
+      products: ["Hardness modifiers for brass & bronze industries", "Cast micro-components"],
+      whyCircular: "Non-ferrous foundries WANT these blended modifiers"
+    },
+    {
+      id: 9,
+      name: "Fe + Zn + Pb (Ternary) → Radiation Shielding / Dense Blocks",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe", color: "bg-orange-700", source: "Fe-rich slag" },
+        { metal: "Zn", color: "bg-blue-600", source: "Zn–Pb dust" },
+        { metal: "Pb", color: "bg-indigo-700", source: "Zn–Pb dust" }
+      ],
+      productIcon: "🛡️",
+      products: ["Shielding bricks", "Counterweights"],
+      whyCircular: "Converts hazardous mixed dust into safe, encapsulated end-products"
+    },
+    {
+      id: 10,
+      name: "Fe + Al (oxide blend) → Refractory / Ceramic Feed",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe oxide", color: "bg-red-700", source: "mill scale" },
+        { metal: "Al oxide", color: "bg-sky-600", source: "deoxidation residues" }
+      ],
+      productIcon: "🧱",
+      products: ["Refractory precursor", "Thermal insulation ceramic pellets"],
+      whyCircular: "Oxide-based residues transform into permanent industrial materials"
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="relative overflow-hidden border-2 border-[#BA7967] bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 text-[#BA7967] shadow-md transition-all duration-200 hover:from-amber-100 hover:to-orange-100 hover:shadow-lg"
+        >
+          <span className="mr-2 text-xl">♻️</span>
+          <span className="font-semibold">Circular Combos</span>
+          <span className="ml-2 text-xl">✨</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-2xl font-bold text-[#BA7967] flex items-center gap-2">
+            <span className="text-3xl">♻️</span>
+            Circular Reuse of Residual Metals – Steel Valorization
+            <span className="text-3xl">🔷</span>
+          </DialogTitle>
+          <DialogDescription className="text-base text-gray-700">
+            Based on your valorization stage, here's how steel production residues (1–5%) can be combined into valuable products.
+            <span className="block mt-2 text-sm italic text-[#BA7967]">💡 Residues added together to ensure circularity throughout the metal stream</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {steelCombos.map((combo) => (
+            <motion.div
+              key={combo.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: combo.id * 0.06 }}
+              className="group rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm transition-all duration-300 hover:border-[#BA7967] hover:shadow-lg"
+            >
+              {/* Header with emoji and name */}
+              <div className="mb-4 flex items-start gap-3">
+                <span className="text-3xl">{combo.emoji}</span>
+                <h3 className="flex-1 text-base font-bold text-gray-800 leading-tight">
+                  {combo.name}
+                </h3>
+                <span className="text-3xl">{combo.productIcon}</span>
+              </div>
+
+              {/* Residuals visualization */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-600">Residuals:</span>
+                {combo.residuals.map((residual, idx) => (
+                  <React.Fragment key={idx}>
+                    <div className={`flex flex-col items-center rounded-lg ${residual.color} px-3 py-2 shadow-sm`}>
+                      <span className="text-xs font-bold text-white">{residual.metal}</span>
+                      <span className="text-[10px] text-white/80">{residual.source}</span>
+                    </div>
+                    {idx < combo.residuals.length - 1 && (
+                      <span className="text-xl font-bold text-[#BA7967]">+</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Products */}
+              <div className="mb-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-600">Products:</div>
+                <ul className="space-y-1">
+                  {combo.products.map((product, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-green-600">•</span>
+                      <span>{product}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Why Circular */}
+              <div className="rounded-lg bg-emerald-50 p-3 text-xs">
+                <span className="font-semibold text-emerald-800">♻️ Why Circular: </span>
+                <span className="text-emerald-700">{combo.whyCircular}</span>
+              </div>
+
+              {/* Industry Fit badge */}
+              {combo.industryFit && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                  <span>🏭</span> Industry Fit
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Footer Message */}
+        <div className="mt-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-5 text-center">
+          <p className="text-sm font-semibold text-gray-700">
+            <span className="text-xl">🌍</span> Ensuring circularity throughout – every trace element finds purpose
+            <span className="text-xl ml-1">♻️</span>
+          </p>
+          <p className="mt-2 text-xs text-gray-600">
+            These combinations represent real industrial applications where residual metals from steel production
+            are combined to create valuable alloy products, closing the loop in sustainable metallurgy.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function SteelValorizationStep({
   onNext,
   onBack,
@@ -4034,23 +4272,30 @@ function SteelValorizationStep({
 
           {/* Sustainability */}
           <div className="space-y-4 pt-4 border-t border-gray-200">
-            <FormField
-              control={control}
-              name="followingSustainableRules"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 p-4 border border-green-200">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel className="!mt-0 cursor-pointer font-semibold text-green-900">
-                    🌱 Following Sustainable Rules
-                  </FormLabel>
-                </FormItem>
-              )}
-            />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <FormField
+                control={control}
+                name="followingSustainableRules"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 p-4 border border-green-200 flex-1">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0 cursor-pointer font-semibold text-green-900">
+                      🌱 Following Sustainable Rules
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              {/* Circular Combos Button */}
+              <div className="flex items-center">
+                <SteelCircularCombosModal />
+              </div>
+            </div>
 
             {followingSustainableRules && (
               <>

@@ -34,20 +34,113 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LCASuccessModal from "@/components/LCASuccessModal";
 import LCAPromptModal from "@/components/LCAPromptModal";
 import SustainableSolutionsModal from "@/components/SustainableSolutionsModal";
 import { GuidedModeToggle } from "@/components/GuidedModeToggle";
 import { AdvancedOptionsSection } from "@/components/AdvancedOptionsSection";
 import { GUIDED_MODE_DEFAULTS } from "@/constants/guidedModeDefaults";
-import {
-  computeMeltComposition,
-  computeMakeupAdditions,
-  computeManufacturingOutput,
-  computeRecyclingResult,
-  computeValorizationResult,
-  getDefaultPrimaryComposition,
-} from "@/utils/metalStreams";
+
+// Inline metal composition calculation utilities
+const getDefaultPrimaryComposition = (grade) => {
+  const compositions = {
+    'P1020': { Al: 99.7, Cu: 0.05, Mg: 0.05, Si: 0.1, Others: 0.1 },
+    'P1050': { Al: 99.5, Cu: 0.05, Mg: 0.05, Si: 0.25, Others: 0.15 },
+    'P1060': { Al: 99.6, Cu: 0.05, Mg: 0.03, Si: 0.25, Others: 0.07 },
+  };
+  return compositions[grade] || compositions['P1020'];
+};
+
+const computeManufacturingOutput = (productMass, scrapRatePercent) => {
+  const scrapRate = Math.max(0, Math.min(100, scrapRatePercent)) / 100;
+  const internalScrapMass = productMass * scrapRate;
+  return { productMass, internalScrapMass };
+};
+
+const computeMeltComposition = (streams) => {
+  let totalMass = 0;
+  const totalComp = { Al: 0, Cu: 0, Mg: 0, Si: 0, Others: 0 };
+  
+  streams.forEach(stream => {
+    totalMass += stream.mass;
+    Object.keys(totalComp).forEach(element => {
+      totalComp[element] += stream.mass * (stream.composition[element] || 0) / 100;
+    });
+  });
+  
+  const composition = {};
+  if (totalMass > 0) {
+    Object.keys(totalComp).forEach(element => {
+      composition[element] = (totalComp[element] / totalMass) * 100;
+    });
+  } else {
+    Object.keys(totalComp).forEach(element => {
+      composition[element] = 0;
+    });
+  }
+  
+  return { totalMass, composition };
+};
+
+const computeMakeupAdditions = (target, currentMelt) => {
+  const targetComp = target.composition;
+  const currentComp = currentMelt.composition;
+  const mass = currentMelt.totalMass;
+  const tolerance = target.tolerance || {};
+  
+  const additionsArray = [];
+  const elements = ['Al', 'Cu', 'Mg', 'Si', 'Others'];
+  
+  if (mass === 0) return additionsArray;
+  
+  elements.forEach(element => {
+    const targetPct = targetComp[element] || 0;
+    const currentPct = currentComp[element] || 0;
+    const allowedTolerance = tolerance[element] || 0;
+    
+    // Calculate deficit: if current is less than target (accounting for tolerance)
+    const deficit = targetPct - currentPct - allowedTolerance;
+    
+    if (deficit > 0.01) { // Only show if deficit is significant (> 0.01%)
+      const requiredMass = (mass * deficit) / 100;
+      additionsArray.push({
+        element,
+        deficit: deficit.toFixed(2),
+        requiredMass,
+        targetPct,
+        currentPct
+      });
+    }
+  });
+  
+  return additionsArray;
+};
+
+const computeRecyclingResult = (scrapStream, yieldPercent, slagPercent) => {
+  const yieldFraction = Math.max(0, Math.min(100, yieldPercent)) / 100;
+  const slagFraction = Math.max(0, Math.min(100, slagPercent)) / 100;
+  
+  const recoveredMass = scrapStream.mass * yieldFraction;
+  const slagMass = scrapStream.mass * slagFraction;
+  const lostMass = scrapStream.mass - recoveredMass - slagMass;
+  
+  return {
+    recoveredMass,
+    slagMass,
+    lostMass,
+    composition: scrapStream.composition
+  };
+};
+
+const computeValorizationResult = (slagMass, valorizationRatePercent) => {
+  const rate = Math.max(0, Math.min(100, valorizationRatePercent)) / 100;
+  return {
+    slagMass,
+    valorizedMass: slagMass * rate,
+    wastedMass: slagMass * (1 - rate)
+  };
+};
 
 // Add CSS for AI-populated fields
 const aiFieldStyles = `
@@ -364,7 +457,7 @@ function StepSection({
   )
 }
 
-function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false, showSustainableButton = false, onShowSustainable }) {
+function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 'Next', showLca = true, onLcaCalculate, isCalculatingLca = false, showSustainableButton = false, onShowSustainable, circularCombosButton = null }) {
   const handleForwardClick = () => {
     if (typeof onForward === 'function') {
       onForward()
@@ -391,6 +484,11 @@ function StepFooterActions({ onBack, onForward, forwardDisabled, forwardLabel = 
         </Button>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {circularCombosButton && (
+          <motion.div whileHover={{ scale: 1.03 }}>
+            {circularCombosButton}
+          </motion.div>
+        )}
         {showSustainableButton && (
           <motion.div whileHover={{ scale: 1.03 }}>
             <Button
@@ -6574,6 +6672,252 @@ function RecyclingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIP
 }
 
 // Step 7: Valorization
+// Circular Combos Modal Component for Aluminium
+function AluminiumCircularCombosModal() {
+  const [open, setOpen] = useState(false);
+
+  const aluminiumCombos = [
+    {
+      id: 1,
+      name: "Fe + Ti → Pigment / Ceramic / Heavy-Coating Feedstock",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe oxide", color: "bg-red-700", source: "red mud" },
+        { metal: "TiO₂", color: "bg-sky-600", source: "red mud" }
+      ],
+      productIcon: "🎨",
+      products: ["Industrial pigments (red, brown)", "Ceramic colorants", "High-temp coatings"],
+      whyCircular: "Red mud valorization becomes high-value pigment production — huge sustainability win"
+    },
+    {
+      id: 2,
+      name: "Fe + Si + Ti → Construction Tiles / Roof Ceramics / Bricks",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe + Ti oxides", color: "bg-red-700", source: "red mud" },
+        { metal: "SiO₂", color: "bg-stone-600", source: "red mud/SPL" }
+      ],
+      productIcon: "🏗️",
+      products: ["Ceramic tiles", "Pavers", "Roofing materials"],
+      whyCircular: "These oxides form stable ceramic matrices — zero-waste valorization opportunity"
+    },
+    {
+      id: 3,
+      name: "Cu + Zn → Micro-Brass Alloy Pellets",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Cu", color: "bg-amber-700", source: "mixed Al scrap" },
+        { metal: "Zn", color: "bg-blue-600", source: "coated scrap/dust" }
+      ],
+      productIcon: "🔧",
+      products: ["Small cast parts", "Foundry brass pellets", "Decorative micro-components"],
+      whyCircular: "Turns two contamination metals into a FULLY recyclable brass feedstock"
+    },
+    {
+      id: 4,
+      name: "Fe + Pb → Dense Blocks / Radiation Shield Components",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe oxides", color: "bg-red-700", source: "red mud" },
+        { metal: "Pb", color: "bg-indigo-700", source: "scrap traces" }
+      ],
+      productIcon: "🛡️",
+      products: ["Density blocks", "Industrial shielding", "Counterweights"],
+      whyCircular: "Pb becomes immobilized in a stable heavy composite"
+    },
+    {
+      id: 5,
+      name: "Zn + Si + Cu → Die-Cast Coating Additive Pellets",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Zn", color: "bg-blue-600", source: "coated scrap" },
+        { metal: "Si", color: "bg-stone-600", source: "cast Al residues" },
+        { metal: "Cu", color: "bg-amber-700", source: "scrap contamination" }
+      ],
+      productIcon: "✨",
+      products: ["Zn–Si–Cu filler for die-cast shops", "Specialized coating alloys"],
+      whyCircular: "All three residues form widely used zinc-based castable microalloys"
+    },
+    {
+      id: 6,
+      name: "Ti + Si → Ceramic Filler / Refractory Precursor",
+      emoji: "🔷",
+      residuals: [
+        { metal: "TiO₂", color: "bg-sky-600", source: "red mud" },
+        { metal: "SiO₂", color: "bg-stone-600", source: "red mud" }
+      ],
+      productIcon: "🧱",
+      products: ["Thermal insulation ceramics", "Refractory bricks", "Filler for high-temp coatings"],
+      whyCircular: "Transforms inert oxides into long-life materials"
+    },
+    {
+      id: 7,
+      name: "Fe + Mn → Ferrite Powder / Magnetic Composite",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe oxides", color: "bg-red-700", source: "red mud" },
+        { metal: "Mn", color: "bg-purple-700", source: "traces" }
+      ],
+      productIcon: "🧲",
+      products: ["Magnetic ferrite cores", "Electronic inductors"],
+      whyCircular: "Electronics industry loves ferrites → high-value reuse"
+    },
+    {
+      id: 8,
+      name: "Carbon (from SPL) + Fe oxide → Metallurgical Reductant Pellets",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Carbon", color: "bg-gray-800", source: "spent pot lining" },
+        { metal: "Fe₂O₃", color: "bg-red-700", source: "red mud" }
+      ],
+      productIcon: "🔥",
+      products: ["Reduction pellets for cement kilns / steel pre-processing"],
+      whyCircular: "Converts hazardous SPL into productive energy-bearing pellets"
+    },
+    {
+      id: 9,
+      name: "Na–F Compounds (from SPL) + Alumina Dust → Refractory Flux",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Cryolite (Na₃AlF₆)", color: "bg-cyan-700", source: "SPL" },
+        { metal: "Al₂O₃ dust", color: "bg-gray-400", source: "alumina dust" }
+      ],
+      productIcon: "⚗️",
+      products: ["Ceramic and refractory fluxes", "Foundry additives"],
+      whyCircular: "This is one of the most practical industrial reuses of SPL"
+    },
+    {
+      id: 10,
+      name: "Fe + Zn + Pb Mixed Residues → Cement Clinker Modifier",
+      emoji: "🔷",
+      residuals: [
+        { metal: "Fe", color: "bg-red-700", source: "red mud" },
+        { metal: "Zn/Pb dust", color: "bg-blue-700", source: "scrap processing" }
+      ],
+      productIcon: "🏗️",
+      products: ["Cement kiln feed", "Heavy-duty bricks"],
+      whyCircular: "Fixes hazardous Zn/Pb in a stable mineral structure"
+    },
+    {
+      id: 11,
+      name: "TiO₂ (red mud) + Rare Earths → Specialty Pigments",
+      emoji: "🌟",
+      residuals: [
+        { metal: "TiO₂", color: "bg-sky-600", source: "red mud" },
+        { metal: "Sc / REEs", color: "bg-yellow-600", source: "red mud processing" }
+      ],
+      productIcon: "💎",
+      products: ["UV-resistant pigments", "Aerospace coatings"],
+      whyCircular: "Converts 'waste' red mud into high-tech materials",
+      bonus: true
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="relative overflow-hidden border-2 border-[#BA7967] bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-3 text-[#BA7967] shadow-md transition-all duration-200 hover:from-amber-100 hover:to-orange-100 hover:shadow-lg"
+        >
+          <span className="mr-2 text-xl">♻️</span>
+          <span className="font-semibold">Circular Combos</span>
+          <span className="ml-2 text-xl">✨</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="text-2xl font-bold text-[#BA7967] flex items-center gap-2">
+            <span className="text-3xl">♻️</span>
+            Circular Reuse of Residual Metals – Aluminium Valorization
+            <span className="text-3xl">🔷</span>
+          </DialogTitle>
+          <DialogDescription className="text-base text-gray-700">
+            Based on your valorization stage, here's how aluminium production residues (1–5%) can be combined into valuable products.
+            <span className="block mt-2 text-sm italic text-[#BA7967]">💡 Residues added together to ensure circularity throughout the metal stream</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {aluminiumCombos.map((combo) => (
+            <motion.div
+              key={combo.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: combo.id * 0.05 }}
+              className="group rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm transition-all duration-300 hover:border-[#BA7967] hover:shadow-lg"
+            >
+              {/* Header with emoji and name */}
+              <div className="mb-4 flex items-start gap-3">
+                <span className="text-3xl">{combo.emoji}</span>
+                <h3 className="flex-1 text-base font-bold text-gray-800 leading-tight">
+                  {combo.name}
+                </h3>
+                <span className="text-3xl">{combo.productIcon}</span>
+              </div>
+
+              {/* Residuals visualization */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-gray-600">Residuals:</span>
+                {combo.residuals.map((residual, idx) => (
+                  <React.Fragment key={idx}>
+                    <div className={`flex flex-col items-center rounded-lg ${residual.color} px-3 py-2 shadow-sm`}>
+                      <span className="text-xs font-bold text-white">{residual.metal}</span>
+                      <span className="text-[10px] text-white/80">{residual.source}</span>
+                    </div>
+                    {idx < combo.residuals.length - 1 && (
+                      <span className="text-xl font-bold text-[#BA7967]">+</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Products */}
+              <div className="mb-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-600">Products:</div>
+                <ul className="space-y-1">
+                  {combo.products.map((product, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-green-600">•</span>
+                      <span>{product}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Why Circular */}
+              <div className="rounded-lg bg-emerald-50 p-3 text-xs">
+                <span className="font-semibold text-emerald-800">♻️ Why Circular: </span>
+                <span className="text-emerald-700">{combo.whyCircular}</span>
+              </div>
+
+              {/* Bonus badge */}
+              {combo.bonus && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
+                  <span>🌟</span> BONUS High-Tech
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Footer Message */}
+        <div className="mt-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-5 text-center">
+          <p className="text-sm font-semibold text-gray-700">
+            <span className="text-xl">🌍</span> Ensuring circularity throughout – every trace element finds purpose
+            <span className="text-xl ml-1">♻️</span>
+          </p>
+          <p className="mt-2 text-xs text-gray-600">
+            These combinations represent real industrial applications where residual metals from aluminium production
+            are combined to create valuable products, closing the loop in sustainable metallurgy.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSuccess, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, predictions = {}, acceptedPredictions = new Set(), onPredictionAcceptance, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -7117,9 +7461,14 @@ function ValorizationDetails({ onNext, onBack, onSave, initialValues, onSubmitSu
 
             {/* Sustainability Parameters */}
             <div className="rounded-lg border border-[#e3d4c8] bg-white/50 p-6">
-              <h3 className={`${GROUP_HEADING_TEXT} mb-4 font-semibold text-gray-900`}>
-                Sustainability Parameters
-              </h3>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                <h3 className={`${GROUP_HEADING_TEXT} font-semibold text-gray-900`}>
+                  Sustainability Parameters
+                </h3>
+                
+                {/* Circular Combos Button */}
+                <AluminiumCircularCombosModal />
+              </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={control}
