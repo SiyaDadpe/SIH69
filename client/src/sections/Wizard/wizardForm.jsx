@@ -13,6 +13,7 @@ import {
   updateManufacturingStep,
   updateRecyclingStep,
   updateValorizationStep,
+  updateCircularFlow,
   completeStep,
   saveAndCompleteStep,
   submitWizardWorkflow
@@ -32,6 +33,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LCASuccessModal from "@/components/LCASuccessModal";
@@ -3016,6 +3018,7 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       case 'manufacturing':
         return (
           <ManufacturingDetails
+            workflowId={workflowId}
             onNext={handleNext}
             onBack={handleBack}
             onSave={(data) => handleSaveStep('manufacturing', data)}
@@ -3242,28 +3245,48 @@ export default function WizardForm({ steps, activeStep, onStepChange, workflowId
       )}
 
       {renderStep()}
-      {!(stepKey === 'mining' || stepKey === 'beneficiation' || stepKey === 'refining' || stepKey === 'smelting' || stepKey === 'manufacturing' || stepKey === 'recycling' || stepKey === 'valorization') && (
-        <div className="mt-6 flex justify-between">
-          <Button variant="outline" onClick={handleBack} disabled={activeStep === 0} className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" style={{
-            clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
-            paddingLeft: '2rem'
-          }}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-            <span className="pl-4">Back</span>
-          </Button>
-          <Button onClick={handleNext} className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" style={{
-            clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
-            paddingRight: '2rem'
-          }}>
-            <span className="pr-4">{activeStep === steps.length - 1 ? "Finish" : "Next"}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </Button>
-        </div>
-      )}
+{![
+  'mining',
+  'beneficiation',
+  'refining',
+  'smelting',
+  'manufacturing',
+  'recycling',
+  'valorization'
+].includes(stepKey) && (
+  <div className="mt-6 flex justify-between">
+    <Button 
+      variant="outline" 
+      onClick={handleBack} 
+      disabled={activeStep === 0}
+      className="relative overflow-hidden border-gray-300 hover:border-gray-400 rounded-none" 
+      style={{
+        clipPath: 'polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%)',
+        paddingLeft: '2rem'
+      }}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      <span className="pl-4">Back</span>
+    </Button>
+
+    <Button 
+      onClick={handleNext}
+      className="relative overflow-hidden bg-[#BA7967] hover:bg-[#a86b5c] text-white border-0 rounded-none" 
+      style={{
+        clipPath: 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)',
+        paddingRight: '2rem'
+      }}
+    >
+      <span className="pr-4">{activeStep === steps.length - 1 ? "Finish" : "Next"}</span>
+      <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </Button>
+  </div>
+)}
+
 
       {completed && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
@@ -4382,10 +4405,16 @@ function SmeltingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPr
 }
 
 // Step 5: Manufacturing
-function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
+function ManufacturingDetails({ workflowId, onNext, onBack, onSave, initialValues, onGenerateAIPrediction, predicting, pollingProgress = { current: 0, max: 15 }, aiPopulatedFields = new Set(), onCalculateLCA, isCalculatingLca, setShowSustainableSolutions, setCurrentSustainableStage, setFormDataForSustainable }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // Circular Flow state
+  const [circularFlowLoading, setCircularFlowLoading] = useState(false);
+  const [circularFlowError, setCircularFlowError] = useState(null);
+  const [circularFlowResult, setCircularFlowResult] = useState(null);
+  
   const processOptions = [
     { id: 'casting', label: 'Casting (ingots, billets - high-temperature energy)' },
     { id: 'extrusion', label: 'Extrusion (tubes, profiles - efficient shaping)' },
@@ -4461,6 +4490,37 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     lightweightingOthers: z.string().nullable().optional(),
     corrosionImpact: z.enum(['minimal', 'moderate', 'severe', 'others']).nullable().optional(),
     corrosionOthers: z.string().nullable().optional(),
+    // ========== CIRCULAR FLOW FIELDS ==========
+    useCircularFlow: z.boolean().default(false).optional(),
+    recycledScrapProportion: z.coerce.number().min(0).max(100).nullable().optional(),
+    recycledScrapComposition: z.object({
+      Al: z.coerce.number().min(0).max(100).nullable().optional(),
+      Cu: z.coerce.number().min(0).max(100).nullable().optional(),
+      Fe: z.coerce.number().min(0).max(100).nullable().optional(),
+      Mg: z.coerce.number().min(0).max(100).nullable().optional(),
+      Mn: z.coerce.number().min(0).max(100).nullable().optional(),
+      Si: z.coerce.number().min(0).max(100).nullable().optional(),
+      Zn: z.coerce.number().min(0).max(100).nullable().optional(),
+      Ti: z.coerce.number().min(0).max(100).nullable().optional(),
+    }).nullable().optional(),
+    scrapQualityGrade: z.enum(['A', 'B', 'C', 'mixed', 'unknown']).nullable().optional(),
+    energyUsedInCircularFlow: z.coerce.number().min(0).nullable().optional(),
+    emissionsGeneratedInCircularFlow: z.coerce.number().min(0).nullable().optional(),
+    circularFlowNotes: z.string().nullable().optional(),
+    // Output fields (read-only, populated by backend)
+    primarySourceProportion: z.coerce.number().nullable().optional(),
+    blendedComposition: z.object({
+      Al: z.coerce.number().nullable().optional(),
+      Cu: z.coerce.number().nullable().optional(),
+      Fe: z.coerce.number().nullable().optional(),
+      Mg: z.coerce.number().nullable().optional(),
+      Mn: z.coerce.number().nullable().optional(),
+      Si: z.coerce.number().nullable().optional(),
+      Zn: z.coerce.number().nullable().optional(),
+      Ti: z.coerce.number().nullable().optional(),
+    }).nullable().optional(),
+    circularIterationNumber: z.coerce.number().nullable().optional(),
+    isCircularInput: z.boolean().nullable().optional(),
     // Sustainability Parameters
     followingSustainableRules: z.boolean().nullable().optional(),
     sustainabilityParameters: z.object({
@@ -4502,15 +4562,30 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       lightweightingSectors: [],
       scrapRate: 0,
       sustainabilityParameters: {},
-      transportDistance: 0
+      transportDistance: 0,
+      // Circular flow defaults
+      useCircularFlow: false,
+      recycledScrapProportion: 0,
+      recycledScrapComposition: {
+        Al: 0, Cu: 0, Fe: 0, Mg: 0, Mn: 0, Si: 0, Zn: 0, Ti: 0
+      },
+      energyUsedInCircularFlow: 0,
+      emissionsGeneratedInCircularFlow: 0,
     },
     mode: 'onTouched',
   })
 
-  const { control, handleSubmit, watch, setValue, formState: { isValid }, trigger } = form
+  const { control, handleSubmit, watch, setValue, formState: { isValid, errors }, trigger } = form
   const selectedProcesses = watch('processes')
   const selectedSectors = watch('lightweightingSectors')
   const transportMode = watch('transportMode')
+
+  // Debug validation errors
+  React.useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log('❌ Manufacturing Form Validation Errors:', errors);
+    }
+  }, [errors]);
 
   // Trigger validation when component mounts with existing data
   React.useEffect(() => {
@@ -4526,7 +4601,56 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
     }
   };
 
-  const onSubmit = (data) => { onSave?.(data); onNext?.() }
+  const onSubmit = async (data) => {
+    try {
+      // First, save the regular form data and WAIT for it to complete
+      if (onSave) {
+        await onSave(data);
+      }
+
+      // If circular flow is enabled and workflowId is available, call the circular flow API
+      if (data.useCircularFlow && workflowId) {
+        setCircularFlowLoading(true);
+        setCircularFlowError(null);
+
+        try {
+          const circularFlowData = {
+            recycledScrapProportion: data.recycledScrapProportion,
+            recycledScrapComposition: data.recycledScrapComposition,
+            scrapQualityGrade: data.scrapQualityGrade,
+            energyUsed: data.energyUsedInCircularFlow,
+            emissionsGenerated: data.emissionsGeneratedInCircularFlow,
+            notes: data.circularFlowNotes,
+          };
+
+          const response = await updateCircularFlow(workflowId, circularFlowData);
+          
+          // Update circular flow result state
+          setCircularFlowResult(response.data.circularFlow);
+          
+          // Optionally update form values with calculated results
+          if (response.data.circularFlow) {
+            setValue('primarySourceProportion', response.data.circularFlow.primarySourceProportion);
+            setValue('blendedComposition', response.data.circularFlow.blendedComposition);
+            setValue('circularIterationNumber', response.data.circularFlow.circularIterationNumber);
+            setValue('isCircularInput', response.data.circularFlow.isCircularInput);
+          }
+
+          setCircularFlowLoading(false);
+        } catch (error) {
+          console.error('Circular flow calculation failed:', error);
+          setCircularFlowError(error.response?.data?.message || 'Failed to calculate circular flow. Please check your inputs.');
+          setCircularFlowLoading(false);
+          // Don't block form progression on circular flow error
+        }
+      }
+
+      // Proceed to next step AFTER save completes
+      onNext?.();
+    } catch (error) {
+      console.error('Form submission error:', error);
+    }
+  };
 
   const footerContent = (
     <StepFooterActions
@@ -4558,6 +4682,26 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
       >
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            
+            {/* Validation Error Display - DEBUGGING */}
+            {!isValid && Object.keys(errors).length > 0 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-red-900 mb-2">Please fix the following errors:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
+                      {Object.entries(errors).map(([field, error]) => (
+                        <li key={field}>
+                          <strong>{field}:</strong> {error?.message || 'Invalid value'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Sustainability Checkbox */}
             <div className="mb-6 rounded-lg border border-[#e3d4c8] bg-linear-to-br from-green-50 to-emerald-50 p-4 shadow-sm">
               <FormField
@@ -4683,6 +4827,279 @@ function ManufacturingDetails({ onNext, onBack, onSave, initialValues, onGenerat
                 </div>
               </div>
             )}
+
+            {/* Circular Flow Section */}
+            <div className="rounded-lg border-2 border-blue-200 bg-blue-50/30 p-6 space-y-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className={`${GROUP_HEADING_TEXT} mb-2 font-semibold text-blue-900`}>
+                    🔄 Circular Economy Flow Tracking
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Track recycled scrap usage, calculate blended compositions, and iterate circular flows
+                  </p>
+                </div>
+              </div>
+
+              <FormField
+                control={control}
+                name="useCircularFlow"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-base font-medium cursor-pointer">
+                        Enable Circular Flow Tracking
+                      </FormLabel>
+                      <FormDescription className="text-sm">
+                        Activate to input recycled scrap data and calculate blended compositions
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {watch("useCircularFlow") === true && (
+                <div className="space-y-6 pt-4">
+                  {/* Recycled Scrap Proportion */}
+                  <FormField
+                    control={control}
+                    name="recycledScrapProportion"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">
+                          Recycled Scrap Proportion (% of total input)*
+                        </FormLabel>
+                        <FormControl>
+                          <div className="space-y-2">
+                            <Slider
+                              value={[typeof field.value === 'number' ? field.value : 0]}
+                              onValueChange={(v) => field.onChange(v[0])}
+                              min={0}
+                              max={100}
+                              step={1}
+                              className="w-full"
+                            />
+                            <div className="text-sm text-muted-foreground font-semibold">
+                              {(field.value ?? 0)}%
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Percentage of recycled aluminum scrap in your input material
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Recycled Scrap Composition */}
+                  <div className="space-y-3">
+                    <FormLabel className="text-sm font-medium">
+                      Recycled Scrap Composition (% by element)*
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Define the elemental composition of your recycled scrap. Total should equal 100%.
+                    </FormDescription>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {['Al', 'Cu', 'Fe', 'Mg', 'Mn', 'Si', 'Zn', 'Ti'].map((element) => (
+                        <FormField
+                          key={element}
+                          control={control}
+                          name={`recycledScrapComposition.${element}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">{element}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  placeholder="0"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Scrap Quality Grade */}
+                  <FormField
+                    control={control}
+                    name="scrapQualityGrade"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Scrap Quality Grade</FormLabel>
+                        <FormControl>
+                          <div className="flex flex-wrap gap-2">
+                            {['A', 'B', 'C', 'mixed', 'unknown'].map((grade) => (
+                              <CardRadio
+                                key={grade}
+                                id={`scrap-grade-${grade}`}
+                                label={grade.toUpperCase()}
+                                selected={field.value === grade}
+                                onSelect={() => field.onChange(field.value === grade ? undefined : grade)}
+                              />
+                            ))}
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Select the quality grade of your recycled scrap
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Energy and Emissions for Circular Flow */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={control}
+                      name="energyUsedInCircularFlow"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">
+                            Energy Used (MJ/t or kWh/t)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              placeholder="e.g., 500"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Energy consumed in circular flow processing
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={control}
+                      name="emissionsGeneratedInCircularFlow"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">
+                            Emissions Generated (kg CO₂e)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              placeholder="e.g., 50"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            CO₂ emissions from circular flow operations
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Circular Flow Notes */}
+                  <FormField
+                    control={control}
+                    name="circularFlowNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Notes (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Add any additional notes about your circular flow process..."
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Circular Flow Results Display */}
+                  {circularFlowResult && (
+                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg space-y-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <h4 className="font-semibold text-green-900">
+                          Circular Flow Results
+                        </h4>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Primary Source Proportion:</p>
+                          <p className="font-semibold">{circularFlowResult.primarySourceProportion}%</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Circular Iteration:</p>
+                          <p className="font-semibold">#{circularFlowResult.circularIterationNumber}</p>
+                        </div>
+                      </div>
+
+                      {circularFlowResult.blendedComposition && (
+                        <div>
+                          <p className="text-gray-600 font-medium mb-2">Blended Composition:</p>
+                          <div className="grid grid-cols-4 md:grid-cols-8 gap-2 text-xs">
+                            {Object.entries(circularFlowResult.blendedComposition).map(([element, value]) => (
+                              <div key={element} className="bg-white p-2 rounded border border-green-200">
+                                <p className="font-semibold text-gray-700">{element}</p>
+                                <p className="text-green-700">{Number(value).toFixed(2)}%</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {circularFlowResult.message && (
+                        <p className="text-sm text-gray-700 italic">
+                          {circularFlowResult.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Error Display */}
+                  {circularFlowError && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                        <p className="text-sm text-red-800">{circularFlowError}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading State */}
+                  {circularFlowLoading && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        ⏳ Calculating circular flow metrics...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* 1. Select Applicable Processes */}
             <FormField control={control} name="processes" render={() => (
