@@ -152,6 +152,38 @@ export const updateSmeltingStep = async (id, data) => {
 };
 
 /**
+ * Update Ironmaking Step (Step 3 - Steel)
+ * @param {string} id - Workflow ID
+ * @param {Object} data - Ironmaking step data
+ * @returns {Promise} Response with updated workflow
+ */
+export const updateIronmakingStep = async (id, data) => {
+  try {
+    const response = await api.put(`/wizard/workflows/${id}/steps/ironmaking`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating ironmaking step:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update Steelmaking Step (Step 4 - Steel)
+ * @param {string} id - Workflow ID
+ * @param {Object} data - Steelmaking step data
+ * @returns {Promise} Response with updated workflow
+ */
+export const updateSteelmakingStep = async (id, data) => {
+  try {
+    const response = await api.put(`/wizard/workflows/${id}/steps/steelmaking`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating steelmaking step:', error);
+    throw error;
+  }
+};
+
+/**
  * Update Manufacturing Step (Step 4)
  * @param {string} id - Workflow ID
  * @param {Object} data - Manufacturing step data
@@ -195,36 +227,6 @@ export const updateValorizationStep = async (id, data) => {
     return response.data;
   } catch (error) {
     console.error('Error updating valorization step:', error);
-    throw error;
-  }
-};
-
-// ==================== CIRCULAR FLOW (CIRCULAR ECONOMY) ====================
-
-/**
- * Update circular flow for manufacturing step
- * @param {string} id - Workflow ID
- * @param {Object} data - Circular flow data
- * @param {number} data.recycledScrapProportion - Percentage of recycled scrap (0-100, required)
- * @param {Object} data.recycledScrapComposition - Metal composition object (e.g., { Al: 95, Cu: 3, Fe: 2 })
- * @param {string} data.scrapQualityGrade - Quality grade: 'A', 'B', 'C', 'mixed', 'unknown'
- * @param {number} data.energyUsed - Energy used in this iteration (optional, defaults to 0)
- * @param {number} data.emissionsGenerated - Emissions generated (optional, defaults to 0)
- * @param {string} data.notes - Optional notes for this iteration
- * @returns {Promise} Response with updated workflow and iteration data
- */
-export const updateCircularFlow = async (id, data) => {
-  try {
-    console.log('🔄 [Frontend] Sending circular flow data:', {
-      workflowId: id,
-      dataKeys: Object.keys(data),
-      data: data
-    });
-    const response = await api.post(`/wizard/workflows/${id}/circular-update`, data);
-    console.log('✅ [Frontend] Circular flow response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('❌ [Frontend] Error updating circular flow:', error);
     throw error;
   }
 };
@@ -394,10 +396,11 @@ export default {
   updateBeneficiationStep,
   updateRefiningStep,
   updateSmeltingStep,
+  updateIronmakingStep,
+  updateSteelmakingStep,
   updateManufacturingStep,
   updateRecyclingStep,
   updateValorizationStep,
-  updateCircularFlow,  // ADD CIRCULAR FLOW FUNCTION
   completeStep,
   submitWizardWorkflow,
   generateWizardReport,
