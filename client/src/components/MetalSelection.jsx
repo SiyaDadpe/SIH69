@@ -252,6 +252,12 @@ export default function MetalSelection({ onSelect }) {
         description: 'lead workflows',
         wizardLabel: 'Launch lead wizard',
       },
+      steel: {
+        color: 'iron',
+        label: 'Steel',
+        description: 'steel workflows',
+        wizardLabel: 'Launch steel wizard',
+      },
     };
 
     const colorClasses = {
@@ -366,6 +372,34 @@ export default function MetalSelection({ onSelect }) {
         drawerDashed: 'border-[#CBD5E1] bg-[#F1F5F9]',
         drawerButton: 'border-[#CBD5E1] text-[#475569]',
         drawerFooter: 'text-[#64748B]',
+      },
+      iron: {
+        badge: 'bg-[#E5E7EB] text-[#374151]',
+        text: 'text-[#374151]',
+        cardBorder: 'border-[#D1D5DB] shadow-[0_12px_28px_rgba(55,65,81,0.12)]',
+        iconBg: 'bg-[#E5E7EB] text-[#1F2937]',
+        buttonBg: 'bg-[#374151] hover:bg-[#1F2937]',
+        focusBorder: 'focus:border-[#374151] focus:ring-[#374151]/15',
+        infoBox: 'bg-[#F3F4F6] border-[#D1D5DB] text-[#1F2937]',
+        drawerBg: 'from-[#F9FAFB] via-[#F3F4F6] to-white',
+        drawerGradient: 'from-[#E5E7EB]/60',
+        drawerIconBg: 'bg-white/80 text-[#374151]',
+        drawerText: 'text-[#374151]',
+        drawerTitle: 'text-[#1F2937]',
+        drawerPill: 'text-[#374151]',
+        drawerInfoBox: 'bg-white/80 border-[#D1D5DB]',
+        drawerInfoText: 'text-[#1F2937]',
+        drawerInfoSubtext: 'text-[#6B7280]',
+        drawerCardBg: 'bg-white/85 border-[#D1D5DB]',
+        drawerHandle: 'bg-[#9CA3AF]',
+        drawerHandleText: 'text-[#374151]',
+        drawerBorder: 'border-[#D1D5DB]',
+        drawerContentText: 'text-[#1F2937]',
+        drawerChevron: 'text-[#374151]',
+        drawerContentSubtext: 'text-[#6B7280]',
+        drawerDashed: 'border-[#D1D5DB] bg-[#F3F4F6]',
+        drawerButton: 'border-[#D1D5DB] text-[#374151]',
+        drawerFooter: 'text-[#6B7280]',
       },
     };
 
@@ -1136,6 +1170,151 @@ export default function MetalSelection({ onSelect }) {
                         <div className="text-center py-4">
                           <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                           <p className="text-xs text-gray-500">No recent lead projects</p>
+                          <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Steel Card */}
+        <div className="group">
+          <Card 
+            className="relative overflow-hidden border-[#D1D5DB] bg-gradient-to-br from-[#F9FAFB] via-white to-[#F3F4F6] shadow-[0_12px_28px_rgba(55,65,81,0.12)] hover:shadow-[0_20px_40px_rgba(55,65,81,0.16)] transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/wizard-steel')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#374151]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            <CardHeader className="relative pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#E5E7EB] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Construction className="w-6 h-6 text-[#374151]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-[#374151] group-hover:text-[#1F2937] transition-colors">
+                      Steel
+                    </CardTitle>
+                    <p className="text-xs text-[#6B7280] mt-0.5">Fe • Structural metal</p>
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-[#374151] animate-pulse" />
+              </div>
+            </CardHeader>
+
+            <CardContent className="relative space-y-4">
+              <p className="text-sm text-[#6B7280] leading-relaxed">
+                World's most used metal for construction, automotive, and infrastructure with excellent strength and recyclability.
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+                  <Construction className="w-3 h-3" />
+                  Construction
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+                  <Zap className="w-3 h-3" />
+                  Automotive
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+                  <Recycle className="w-3 h-3" />
+                  100% Recyclable
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  className="w-full bg-[#374151] hover:bg-[#1F2937] text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/wizard-steel');
+                  }}
+                >
+                  Start with Steel
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Recent Projects Section */}
+              {currentUser && (
+                <div className="border-t border-[#D1D5DB] pt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenProjectsExpanded(!openProjectsExpanded);
+                    }}
+                    className="w-full flex items-center justify-between text-left p-2 rounded-lg hover:bg-[#F3F4F6] transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#374151]" />
+                      <span className="text-sm font-medium text-[#374151]">Recent Projects</span>
+                      {recentProjects.filter(p => p.metalType === 'Steel').length > 0 && (
+                        <span className="text-xs bg-[#F3F4F6] text-[#374151] px-2 py-0.5 rounded-full">
+                          {recentProjects.filter(p => p.metalType === 'Steel').length}
+                        </span>
+                      )}
+                    </div>
+                    {openProjectsExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-[#374151] group-hover:text-[#1F2937]" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-[#374151] group-hover:text-[#1F2937]" />
+                    )}
+                  </button>
+                  
+                  {openProjectsExpanded && (
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {loadingProjects ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-[#374151] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                          <p className="text-xs text-[#374151] mt-2">Loading projects...</p>
+                        </div>
+                      ) : recentProjects.filter(p => p.metalType === 'Steel').length > 0 ? (
+                        recentProjects.filter(p => p.metalType === 'Steel').map((project) => (
+                          <button
+                            key={project._id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExistingWorkflow(project._id);
+                            }}
+                            className="w-full text-left p-3 rounded-lg border border-[#D1D5DB] hover:border-[#374151] hover:bg-[#F9FAFB] transition-all group"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-[#374151]">
+                                  {project.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {project.description || 'No description'}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(project.updatedAt).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="w-3 h-3" />
+                                    {project.completionPercentage || 0}% complete
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="ml-2 shrink-0">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  project.status === 'completed' ? 'bg-green-400' :
+                                  project.status === 'submitted' ? 'bg-blue-400' :
+                                  project.completionPercentage > 0 ? 'bg-yellow-400' : 'bg-gray-300'
+                                }`} />
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <FolderOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">No recent steel projects</p>
                           <p className="text-xs text-gray-400 mt-1">Start a new workflow to see it here</p>
                         </div>
                       )}
